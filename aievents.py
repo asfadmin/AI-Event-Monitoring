@@ -237,8 +237,8 @@ def train_model_wrapper(
                 dataset_path,
                 epochs,
                 input_shape,
-                batch_size,
                 filters,
+                batch_size,
                 dropout,
                 learning_rate
                 ):

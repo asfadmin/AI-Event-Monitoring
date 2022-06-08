@@ -162,9 +162,15 @@ def make_random_dataset(
         gaussians.append(Gaussian2D(amp, x_mean, y_mean, x_stddev, y_stddev, theta))
 
     interferogram = make_synthetic_interferogram(size, *gaussians)
-    
+
     wrapped_interferogram = wrap_interferogram(interferogram, seed, noise)
     
+    one_indices      = interferogram >= 1e-3
+    neg_one_indicies = interferogram <= -1e-3
+
+    interferogram[one_indices]      = 1.0
+    interferogram[neg_one_indicies] = 1.0
+
     if crop_size > 0:
         interferogram = simulate_unet_cropping(interferogram, (crop_size, crop_size))
 

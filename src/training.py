@@ -10,7 +10,7 @@ from math import ceil
 
 import numpy as np
 import tensorflow as tf
-from src.architectures.unet import create_cnn_lstm
+from src.architectures.unet import create_unet
 from src.architectures.resnet import create_resnet
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import Sequence
@@ -86,7 +86,6 @@ class DataGenerator(Sequence):
 def train(
         model_name:    str,
         dataset_path:  str,
-        archictecture: str,
         input_shape:   int   = 1024,
         num_epochs:    int   = 10,
         num_filters:   int   = 16,
@@ -140,7 +139,7 @@ def train(
     training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape)
     val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape)
 
-    model = create_resnet(input_shape, num_filters, learning_rate)
+    model = create_resnet(tile_size = input_shape, num_filters = num_filters, learning_rate = learning_rate)
     model.summary()
 
     early_stopping = EarlyStopping(

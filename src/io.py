@@ -14,7 +14,7 @@ from typing import Tuple
 import numpy as np
 from osgeo import gdal
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
-from src.processing import correlation_mask, tile
+from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
 
 
@@ -186,9 +186,6 @@ def dataset_from_products(
             print(f"{progress}/{product_count} | {product_path + '/' + product}")
 
             wrapped, unwrapped, correlation = get_product_arrays(product_path + '/' + product)
-
-            if cutoff > 0:
-                wrapped = correlation_mask(wrapped, correlation, cutoff, 0.0)
 
             tiled_wrapped, w_rows, w_cols = tile(
                 wrapped,
