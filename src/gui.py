@@ -7,24 +7,22 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.modeling.models import Gaussian2D
-from matplotlib.widgets import Slider
-from src.io import get_product_arrays
+
+from src.io         import get_product_arrays
 from src.processing import simulate_unet_cropping, tile, tiles_to_image
-from src.synthetic_interferogram import make_synthetic_interferogram, wrap_interferogram
 
 
-def show_dataset(unwrapped, wrapped) -> None:
+def show_dataset(masked, wrapped) -> None:
 
     """
-    Plot the unwrapped and wrapped arrays.
+    Plot the masked and wrapped arrays.
 
     Parameters:
     -----------
-    unwrapped : np.ndarray
-        The unwrapped interferogram array.
+    masked : np.ndarray
+        The event-mask of the interferogram.
     wrapped : np.ndarray
-        The wrapped interferogram array.
+        The wrapped interferogram.
 
     Returns:
     --------
@@ -33,8 +31,8 @@ def show_dataset(unwrapped, wrapped) -> None:
 
     _, [axs_unwrapped, axs_wrapped] = plt.subplots(1, 2)
 
-    axs_unwrapped.set_title("unwrapped")
-    axs_unwrapped.imshow(unwrapped, origin='lower', cmap='jet')
+    axs_unwrapped.set_title("masked")
+    axs_unwrapped.imshow(masked, origin='lower', cmap='jet')
 
     axs_wrapped.set_title("wrapped")
     axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
@@ -42,95 +40,11 @@ def show_dataset(unwrapped, wrapped) -> None:
     plt.show()
 
 
-def interactive_interferogram() -> None:
-
-    """
-    GUI interface for interactive interferogram simulation.
-    """
-
-    size = 256
-    amp = 1.0
-    noise = 0.0
-    xmean = 200.0
-    ymean = 200.0
-    xstddev = 100.0
-    ystddev = 100.0
-    theta = 0.0
-
-    fig, [axs_unwrapped, axs_wrapped] = plt.subplots(1, 2)
-
-    axs_unwrapped.set_title("unwrapped")
-    axs_unwrapped.set_position([0.05, 0.45, 0.5, 0.5])
-    axs_wrapped.set_title("wrapped")
-    axs_wrapped.set_position([0.5, 0.45, 0.5, 0.5])
-
-    axs_amp = plt.axes([0.25, 0.35, 0.65, 0.03])
-    slider_amp = Slider(axs_amp, 'amp', -250.0, 250.0, valinit=amp)
-
-    axs_noise = plt.axes([0.25, 0.30, 0.65, 0.03])
-    slider_noise = Slider(axs_noise, 'noise', 0.0, 1.0, valinit=noise)
-
-    axs_xmean = plt.axes([0.25, 0.25, 0.65, 0.03])
-    slider_xmean = Slider(axs_xmean, 'x mean', -250.0, 250.0, valinit=xmean)
-
-    axs_ymean = plt.axes([0.25, 0.20, 0.65, 0.03])
-    slider_ymean = Slider(axs_ymean, 'y mean', -250.0, 250.0, valinit=ymean)
-
-    axs_xstddev = plt.axes([0.25, 0.15, 0.65, 0.03])
-    slider_xstddev = Slider(axs_xstddev, 'x stddev',  0.0, 200.0, valinit=xstddev)
-
-    axs_ystddev = plt.axes([0.25, 0.10, 0.65, 0.03])
-    slider_ystddev = Slider(axs_ystddev, 'y stddev',  0.0, 200.0, valinit=ystddev)
-
-    axs_theta = plt.axes([0.25, 0.05, 0.60, 0.03])
-    slider_theta = Slider(axs_theta, 'theta', -np.pi, np.pi, valinit=theta)
-
-    g2d_1 = Gaussian2D(amplitude=amp, x_mean=xmean, y_mean=ymean, x_stddev=xstddev, y_stddev=ystddev, theta=theta)
-    gaussians = [g2d_1]
-    unwrapped_img = make_synthetic_interferogram(size, *gaussians)
-    wrapped_img = wrap_interferogram(unwrapped_img)
-
-    axs_unwrapped.imshow(unwrapped_img, origin='lower', cmap='hsv')
-    axs_wrapped.imshow(wrapped_img, origin='lower', cmap='hsv')
-
-    def update(val):
-        amp     = slider_amp.val
-        noise   = slider_noise.val
-        xmean   = slider_xmean.val
-        ymean   = slider_ymean.val
-        xstddev = slider_xstddev.val
-        ystddev = slider_ystddev.val
-        theta   = slider_theta.val
-
-        g2d_1 = Gaussian2D(
-            amplitude=amp,
-            x_mean=xmean,
-            y_mean=ymean,
-            x_stddev=xstddev,
-            y_stddev=ystddev,
-            theta=theta
-            )
-        gaussians = [g2d_1]
-        unwrapped_img = make_synthetic_interferogram(size, *gaussians)
-        wrapped_img = wrap_interferogram(unwrapped_img, noise=noise)
-
-        axs_wrapped.imshow(wrapped_img, origin='lower', cmap='hsv')
-        axs_unwrapped.imshow(unwrapped_img, origin='lower', cmap='hsv')
-
-        fig.canvas.draw()
-
-    slider_amp.on_changed(update)
-    slider_noise.on_changed(update)
-    slider_xmean.on_changed(update)
-    slider_ymean.on_changed(update)
-    slider_xstddev.on_changed(update)
-    slider_ystddev.on_changed(update)
-    slider_theta.on_changed(update)
-
-    plt.show()
-
-
-def show_product(product_path: str, crop_size: int = 0, tile_size: int = 0) -> None:
+def show_product(
+    product_path: str    ,
+    crop_size:    int = 0,
+    tile_size:    int = 0
+) -> None:
 
     """
     Plots the Wrapped, Unwrapped, and Correlation Images in the given product.
