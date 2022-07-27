@@ -9,14 +9,19 @@ import random
 from typing import Tuple
 
 import numpy as np
+from perlin_numpy import generate_perlin_noise_2d
 from astropy.modeling.models import Gaussian2D
 from src.processing import simulate_unet_cropping
 
 
-def make_synthetic_interferogram(size: int, *gaussians: Gaussian2D) -> np.ndarray:
+
+def make_synthetic_interferogram(
+    size:      int,
+   *gaussians: Gaussian2D
+) -> np.ndarray:
 
     """
-    Returns an array that simulates an interferogram
+    Returns an array that simulates an unwrapped interferogram
 
     Parameters:
     -----------
@@ -28,18 +33,78 @@ def make_synthetic_interferogram(size: int, *gaussians: Gaussian2D) -> np.ndarra
     Returns:
     --------
     interferogram : np.ndarray(shape=(size, size))
-        The simulated interferogram array.
+        The simulated unwrapped interferogram array.
     """
 
     y, x = np.mgrid[0:size, 0:size]
-    interferogram = np.zeros((size, size))
+    
+    gaussian_grid = np.zeros((size, size))
+    
     for gaussian in gaussians:
-        interferogram += (gaussian(x, y))
+        gaussian_grid += (gaussian(x, y))
+
+    interferogram = add_noise(np.copy(gaussian_grid), size)
+
+    return interferogram, gaussian_grid
+
+
+def add_noise(
+    interferogram,
+    size
+):
+    
+    y, x = np.mgrid[0:size, 0:size]
+    
+    perlingram       = generate_perlin(interferogram.shape[0])
+    max_pelin        = np.amax(perlingram)
+    perlin_multplier = 25 / (np.pi * max_pelin)
+    
+    interferogram += perlingram * perlin_multplier
+
+    m = np.random.uniform(0, 0.025, [2])
+    C = np.random.randint(0, 1)
+
+    interferogram = m[0]*x + m[1]*y + C + interferogram
 
     return interferogram
 
 
-def wrap_interferogram(interferogram: np.ndarray, seed: int = 0, noise: float = 0) -> np.ndarray:
+def generate_perlin(
+    size: int
+) -> np.ndarray:
+
+    """
+    Generate an array with perlin noise.
+
+    Parameters:
+    -----------
+    size : int
+        The number of rows/cols.
+
+    Returns:
+    --------
+    perlin_array : np.ndarray
+        The array containing the generated perlin noise.
+    
+    """
+
+    perlin_array = np.zeros((size, size))
+    for j in range(0,3):
+        for i in range(4*(2**j), size):
+            if size % i == 0:
+                res = i
+                perlin_array += generate_perlin_noise_2d((size, size), (res, res), (True, True)) * (2**(3-j))
+                break
+    min = np.amin(perlin_array)
+    perlin_array -= min
+    return perlin_array
+
+
+def wrap_interferogram(
+    interferogram: np.ndarray,
+    seed:          int   = 0, 
+    noise:         float = 0
+) -> np.ndarray:
 
     """
     Wrap the inputed array to values between -pi and pi.
@@ -61,10 +126,14 @@ def wrap_interferogram(interferogram: np.ndarray, seed: int = 0, noise: float = 
     wrapped_interferogram : np.ndarray(shape=interferogram.shape)
         The simulated wrapped interferogram array.
     """
+
     if seed:
         np.random.seed(seed)
+
     noise = np.random.uniform(-noise, noise, size=interferogram.shape)
-    wrapped_interferogram = np.angle(np.exp(1j*interferogram))
+
+    wrapped_interferogram = np.angle(np.exp(1j * (noise + interferogram)))
+
     return wrapped_interferogram
 
 
@@ -75,8 +144,8 @@ def make_random_dataset(
                 max_g2d:      int   = 1,
                 crop_size:    int   = 0,
                 max_noise:    float = 0.0,
-                min_amp:      float = -44.0,
-                max_amp:      float = 44.0,
+                min_amp:      float = -300.0,
+                max_amp:      float = 300.0,
                 min_x_mean:   float = 64,
                 max_x_mean:   float = 448,
                 min_y_mean:   float = 64,
@@ -88,7 +157,7 @@ def make_random_dataset(
                 ) -> Tuple[np.ndarray, np.ndarray]:
 
     """
-    Generate a psuedo-random unwrapped and wrapped interferogram pair.
+    Generate a simulated wrapped interferogram along with an event-mask
 
     Parameters:
     -----------
@@ -138,40 +207,44 @@ def make_random_dataset(
     --------
     interferogram : np.ndarray(shape=(size, size))
         The array of the generated simulated wrapped interferogram.
-    unwrapped_interferogram : np.ndarray(shape=(size, size) or (crop_size, crop_size))
-        The array of the generated simulated unwrapped interferogram.
+    masked_interferogram : np.ndarray(shape=(size, size) or (crop_size, crop_size))
+        An array representing a mask over the gaussian which simulates masking an event.
     """
 
     if seed:
         random.seed(seed)
 
-    g2d_count = random.randint(min_g2d, max_g2d)
-    
+    g2d_count = random.randint(1, 3)
+
     noise = random.uniform(0, max_noise)
 
     gaussians = []
     for g2d in range(g2d_count):
-        
+
         amp      = random.uniform(min_amp, max_amp)
         x_mean   = random.uniform(min_x_mean, max_x_mean)
         y_mean   = random.uniform(min_y_mean, max_y_mean)
         x_stddev = random.uniform(min_x_stddev, max_x_stddev)
         y_stddev = random.uniform(min_y_stddev, max_y_stddev)
         theta    = random.uniform(-np.pi, np.pi)
-        
+
         gaussians.append(Gaussian2D(amp, x_mean, y_mean, x_stddev, y_stddev, theta))
 
-    interferogram = make_synthetic_interferogram(size, *gaussians)
+    interferogram, gaussian_only = make_synthetic_interferogram(size, *gaussians)
 
     wrapped_interferogram = wrap_interferogram(interferogram, seed, noise)
-    
-    one_indices      = interferogram >= 1e-3
-    neg_one_indicies = interferogram <= -1e-3
 
-    interferogram[one_indices]      = 1.0
-    interferogram[neg_one_indicies] = 1.0
+    masked_interferogram = np.copy(gaussian_only)
+
+    one_indices      = masked_interferogram >=  0.1
+    neg_one_indicies = masked_interferogram <= -0.1
+    zero_indicies    = masked_interferogram <   0.1
+
+    masked_interferogram[zero_indicies]    = 0.0
+    masked_interferogram[one_indices]      = 1.0
+    masked_interferogram[neg_one_indicies] = 1.0
 
     if crop_size > 0:
         interferogram = simulate_unet_cropping(interferogram, (crop_size, crop_size))
 
-    return interferogram, wrapped_interferogram
+    return masked_interferogram, wrapped_interferogram
