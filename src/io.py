@@ -12,25 +12,27 @@ from pathlib import Path
 from typing import Tuple
 
 import numpy as np
+from PIL import Image
 from osgeo import gdal
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
+from src.sarsim import gen_simulated_deformation
 
 
-def save_dataset(save_path: Path, unwrapped: np.ndarray, wrapped: np.ndarray) -> None:
+def save_dataset(save_path: Path, mask: np.ndarray, wrapped: np.ndarray) -> None:
 
     """
-    Saves wrapped & unwrapped ndarrays to a single .npz file.
+    Saves event-mask and wrapped ndarrays to a single .npz file.
     """
 
-    np.savez(save_path, unwrapped=unwrapped, wrapped=wrapped)
+    np.savez(save_path, mask=mask, wrapped=wrapped)
 
 
 def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 
     """
-    Loads wrapped & unwrapped ndarrays from .npz file.
+    Loads event-mask and wrapped ndarrays from .npz file.
 
     Parameters:
     -----------
@@ -39,14 +41,14 @@ def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 
     Returns:
     --------
-    unwrapped : np.ndarray
-        The array of the unwrapped interferogram loaded from the .npz.
+    mask : np.ndarray
+        The array of the event-mask loaded from the .npz.
     wrapped : np.ndarray
         The array of the wrapped interferogram loaded from the .npz.
     """
 
     dataset_file = np.load(load_path)
-    return dataset_file['unwrapped'], dataset_file['wrapped']
+    return dataset_file['mask'], dataset_file['wrapped']
 
 
 def create_directories() -> None:
@@ -84,6 +86,52 @@ def get_image_array(image_path: str) -> np.ndarray:
     arr = band.ReadAsArray()
 
     return arr
+
+
+def get_dataset_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+    """
+    Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
+
+    Parameters:
+    -----------
+    product_path : str
+        The path to the InSAR product folder containing the images.
+
+    Returns:
+    --------
+    wrapped : np.ndarray
+        The array of the wrapped interferogram loaded from the .tif.
+    unwrapped : np.ndarray
+        The array of the unwrapped interferogram loaded from the .tif.
+    correlation : np.ndarray
+        The correlation map array loaded from the .tif,
+    """
+
+    wrapped_path = ""
+    masked_path = ""
+
+    for dir_path, _, filenames in walk(product_path):
+        for file in filenames:
+            f_len = len(file)
+            if file[f_len - 8:f_len] == 'sked.tif':
+                masked_path = dir_path + '/' + file
+            else:
+                wrapped_path = dir_path + '/' + file
+
+
+    wrapped_dataset = gdal.Open(wrapped_path, gdal.GA_ReadOnly)
+    band = wrapped_dataset.GetRasterBand(1)
+    wrapped = band.ReadAsArray()
+
+    masked_dataset = gdal.Open(masked_path, gdal.GA_ReadOnly)
+    band = masked_dataset.GetRasterBand(1)
+    masked = band.ReadAsArray()
+
+    unmasked_area = masked != 1
+    masked[unmasked_area] = 0
+
+    return wrapped, masked
 
 
 def get_product_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -135,14 +183,85 @@ def get_product_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.n
     return wrapped, unwrapped, correlation
 
 
-def dataset_from_products(
+def dataset_from_pngs(
                     dataset_name: str,
-                    product_path: str,
+                    dataset_path: str,
                     save_path: str,
                     tile_size: int,
                     crop_size: int,
-                    cutoff: int
                     ) -> int:
+
+    """
+    Creates a dataset from a folder containing real interferogram products.
+
+    Parameters:
+    -----------
+    dataset_name : str
+        The name for the folder that will contain the dataset.
+    product_path : str
+        The path to the folder containing sar product folders
+    save_path : str
+        The path to the folder where the dataset should be saved.
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int
+        If the models output shape is different than the input shape, this value needs to be
+        equal to the output shape.
+
+    Returns:
+    --------
+    dataset_size : int
+        The size of the dataset that was created.
+    """
+
+    save_directory = Path(save_path) / dataset_name
+    if not save_directory.is_dir():
+        save_directory.mkdir()
+
+    dataset_size = 0
+    for _, _, products in walk(dataset_path):
+
+        progress = 0
+        
+        product_count = len(products)
+
+        for product in products:
+
+            progress += 1
+            print(f"{progress}/{product_count} | {dataset_path + '/' + product}")
+
+            wrapped = np.asarray(Image.open(dataset_path + '/' + product))
+
+            tiled_wrapped, w_rows, w_cols = tile(
+                wrapped,
+                (tile_size, tile_size),
+                even_pad  = True,
+                crop_size = crop_size
+            )
+
+            label = np.ones((tile_size, tile_size)) if product[-5:] == '1.png' else np.zeros((tile_size, tile_size))
+                
+            for index in range(w_rows * w_cols):
+
+                dataset_size += 1
+
+                product_id = product[-22:-17]
+                current_name = f"real_{product_id}_{index}"
+                save_path = save_directory / current_name
+
+                save_dataset(save_path, label=label, wrapped=tiled_wrapped[index])
+
+    return dataset_size
+
+
+def dataset_from_products(
+    dataset_name: str,
+    product_path: str,
+    save_path:    str,
+    tile_size:    int,
+    crop_size:    int,
+) -> int:
 
     """
     Creates a dataset from a folder containing real interferogram products.
@@ -185,17 +304,17 @@ def dataset_from_products(
             progress += 1
             print(f"{progress}/{product_count} | {product_path + '/' + product}")
 
-            wrapped, unwrapped, correlation = get_product_arrays(product_path + '/' + product)
+            wrapped, masked = get_dataset_arrays(product_path + '/' + product)
 
             tiled_wrapped, w_rows, w_cols = tile(
                 wrapped,
                 (tile_size, tile_size),
-                even_pad=True,
-                crop_size=crop_size
-                )
+                even_pad  = True,
+                crop_size = crop_size
+            )
 
-            tiled_unwrapped, _, _ = tile(
-                unwrapped,
+            tiled_masked, _, _ = tile(
+                masked,
                 (tile_size, tile_size),
                 even_pad=True,
                 crop_size=crop_size
@@ -205,13 +324,13 @@ def dataset_from_products(
 
                 dataset_size += 1
 
-                cropped_unwrapped = simulate_unet_cropping(tiled_unwrapped[index], crop_shape=(crop_size, crop_size))
+                #cropped_unwrapped = simulate_unet_cropping(tiled_unwrapped[index], crop_shape=(crop_size, crop_size))
 
                 product_id = product[-4:]
                 current_name = f"real_{product_id}_{index}"
                 save_path = save_directory / current_name
 
-                save_dataset(save_path, unwrapped=cropped_unwrapped, wrapped=tiled_wrapped[index])
+                save_dataset(save_path, mask=tiled_masked[index], wrapped=tiled_wrapped[index])
 
     return dataset_size
 
@@ -236,7 +355,7 @@ def make_synthetic_dataset(
                     ) -> Tuple[int, int, str]:
 
     """
-    Generate a dataset of synthetic interferograms
+    Generate a dataset containing pairs of synthetic wrapped interferograms along with their event-masks
 
     Parameters:
     -----------
@@ -287,7 +406,7 @@ def make_synthetic_dataset(
 
         current_seed = new_seed()
 
-        interferogram, wrapped_interferogram = make_random_dataset(
+        mask, wrapped_interferogram = make_random_dataset(
             size         = tile_size,
             seed         = current_seed,
             crop_size    = crop_size,
@@ -305,7 +424,78 @@ def make_synthetic_dataset(
 
         current_name = f"synth_seed{current_seed}_{count}"
         save_path = save_directory / current_name
-        save_dataset(save_path, unwrapped=interferogram, wrapped=wrapped_interferogram)
+        save_dataset(save_path, mask=mask, wrapped=wrapped_interferogram)
+
+        count += 1
+
+    return seed, count, dir_name
+
+
+def make_simulated_dataset(
+                    name:         str,
+                    output_dir:   str,
+                    amount:       int,
+                    seed:         int,
+                    tile_size:    int,
+                    ) -> Tuple[int, int, str]:
+
+    """
+    Generate a dataset containing pairs of wrapped interferograms from simulated deformation along with their event-masks
+
+    Parameters:
+    -----------
+    name : str
+        The name of the dataset to be generate. The saved name will be formatted
+        like <name>_amount<amount>_seed<seed>.
+    output_dir : str
+        The directory to save the generated dataset to.
+    amount : int
+        The amount of simulated interferogram pairs to be generated.
+    seed : int
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        a seed will be generated and the results will be different every time.
+    tile_size : int
+        The size of the simulated interferograms, which should match the desired tile sizes of
+        of the real interferograms. This also needs to match the input shape of the model.
+
+    Returns:
+    --------
+    seed : int
+        The generated or inputed seed.
+    count : int
+        The number of samples that were generated.
+    dir_name : str
+        The generated name of the dataset directory.
+    """
+
+    def new_seed():
+        seed_value = random.randrange(sys.maxsize)
+        random.seed = seed_value
+        return random.randint(100000, 999999)
+
+    if not seed:
+        seed = random.randint(100000, 999999)
+
+    dir_name = f"{name}_amount{amount}_seed{seed}"
+
+    save_directory = Path(output_dir) / dir_name
+    if not save_directory.is_dir():
+        save_directory.mkdir()
+
+    count = 1
+    while count != amount:
+
+        current_seed = new_seed()
+
+        masked, wrapped = gen_simulated_deformation(
+            seed      = current_seed,
+            tile_size = tile_size
+        )
+
+        current_name = f"sim_seed{current_seed}_{count}"
+        save_path = save_directory / current_name
+        save_dataset(save_path, mask=masked, wrapped=wrapped)
 
         count += 1
 
@@ -332,7 +522,7 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
             The number of elements that went to the validation set.
     """
 
-    train_dir = Path(dataset_path) / "train"
+    train_dir      = Path(dataset_path) / "train"
     validation_dir = Path(dataset_path) / "validation"
 
     try:
