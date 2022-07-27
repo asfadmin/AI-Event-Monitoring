@@ -2,11 +2,12 @@
  Created By:   Andrew Player
  File Name:    training.py
  Date Created: 01-25-2021
- Description:  Contains the code for training the CNN+LSTM Model
+ Description:  Contains the code for training models
 """
 
 import os
-from math import ceil
+from math   import ceil
+from typing import Any
 
 import numpy as np
 import tensorflow as tf
@@ -78,7 +79,7 @@ class DataGenerator(Sequence):
             data_loc = os.path.join(self.path, ID)
             X = np.load(data_loc)
             x = X['wrapped'].reshape((1, self.tile_size, self.tile_size, 1))
-            y = X['unwrapped'].reshape((1, self.crop_size, self.crop_size, 1))
+            y = X['mask'].reshape((1, self.tile_size, self.tile_size, 1))
 
         return x, y
 
@@ -92,7 +93,7 @@ def train(
         batch_size:    int   = 64,
         learning_rate: float = 0.001,
         dropout:       float = 0.2
-        ) -> None:
+        ) -> Any:
 
     """
     Trains a model.
@@ -124,7 +125,8 @@ def train(
 
     Returns:
     --------
-    None
+    history : any
+        A history object containing the loss at each epoch of training.
     """
 
     train_path = dataset_path + '/train'
@@ -133,13 +135,19 @@ def train(
     all_training_files   = os.listdir(train_path)
     all_validation_files = os.listdir(test_path)
 
-    training_partition   = [item for item in all_training_files   if "synth_seed" in item]
-    validation_partition = [item for item in all_validation_files if "synth_seed" in item]
+    training_partition   = [item for item in all_training_files   if "synth" in item or "sim" in item or "real" in item]
+    validation_partition = [item for item in all_validation_files if "synth" in item or "sim" in item or "real" in item]
 
     training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape)
     val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape)
 
-    model = create_resnet(tile_size = input_shape, num_filters = num_filters, learning_rate = learning_rate)
+    model = create_unet(
+        model_name    = model_name,
+        tile_size     = input_shape,
+        num_filters   = num_filters,
+        learning_rate = learning_rate
+    )
+
     model.summary()
 
     early_stopping = EarlyStopping(
@@ -158,10 +166,11 @@ def train(
 
     training_samples   = len(training_partition)
     validation_samples = len(validation_partition)
+
     training_steps     = ceil(training_samples / batch_size)
     validation_steps   = ceil(validation_samples / batch_size)
 
-    model.fit(
+    history = model.fit(
         training_generator,
         epochs           = num_epochs,
         validation_data  = val_generator,
@@ -172,3 +181,5 @@ def train(
     )
 
     model.save("models/" + model_name)
+    
+    return history
