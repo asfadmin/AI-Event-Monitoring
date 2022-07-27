@@ -1,6 +1,6 @@
 """
  Created By:  Andrew Player
- File Name:   aisarevents.py
+ File Name:   aievents.py
  Description: CLI Interface
 """
 
@@ -12,15 +12,9 @@ from src.config import REAL_DIR, SYNTHETIC_DIR
 # Help Strings  #
 # ------------- #
 
-outputdir_help     = "Directory to save to. default=data/working/synthetic/<name of dataset>"
+outputdir_help     = "Directory to save to."
 seed_help          = "Seed integer for reproducible data."
 cropsize_help      = "Crop unwrapped image to: (crop_size, crop_size). This has to match the models output shape."
-maskoutput_help    = "Mask the unwrapped image where the coherence values are than 0.2, or cutoff if provided."
-mergeoffset_help   = "Unwraps with non-offset tiles and offset tiles and merges them together."
-needtsrncp_help    = "Enables experimental TSRNCP tile merging algorithm."
-xoffset_help       = "Integer value to offset the tiling to in the column direction."
-yoffset_help       = "Integer value to offset the tiling to in the row direction."
-cutoff_help        = "Float coherence cutoff to mask the wrapped interferogram before unwrapping."
 split_help         = "Float between 0 and 1 representing the percentage of items to go to the training set."
 tilesize_help      = "The width/height of the tiles. This should match the input shape of the model."
 inputshape_help    = "The input shape of the model. (input_shape, input_shape)"
@@ -86,7 +80,7 @@ def setup():
 def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, crop_size, split, amplitude):
 
     """
-    Create a randomly generated synthetic dataset.
+    Create a randomly generated synthetic dataset of wrapped interferograms and their corresponding event-masks.
 
     ARGS:\n
     name        Name of dataset. Seed is appended.\n
@@ -133,15 +127,48 @@ def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, cr
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
+@cli.command   ('make-simulated-dataset')
+@click.argument('name'              , type=str                                                                    )
+@click.argument('amount'            , type=int                        , default=1                                 )
+@click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
+@click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
+@click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
+@click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
+def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, split):
+
+    """
+    Create a randomly generated synthetic dataset of wrapped interferograms and their corresponding event-masks.
+
+    ARGS:\n
+    name        Name of dataset. Seed is appended.\n
+                <name>_seed<seed>\n
+    amount      Number of synthetic interferograms created.\n
+    """
+
+    from src.io import make_simulated_dataset, split_dataset
+
+    name, count, dir_name = make_simulated_dataset(
+        name,
+        output_dir,
+        amount,
+        seed,
+        tile_size
+    )
+
+    num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
+
+    print(f"\nCreated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}\n")
+    print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
+
+
 @cli.command   ('make-real-dataset')
 @click.argument('name'               , type=str                                         )
-@click.argument('path-to-products'   , type=str                                         )
+@click.argument('dataset-path'       , type=str                                         )
 @click.option  ('-t', '--tile_size'  , type=int  , default=1024    , help=tilesize_help )
 @click.option  ('-c', '--crop_size'  , type=int  , default=0       , help=cropsize_help )
 @click.option  ('-d', '--output_dir' , type=str  , default=REAL_DIR, help=outputdir_help)
-@click.option  ('-m', '--cutoff'     , type=float, default=0.0     , help=cutoff_help   )
 @click.option  ('-s', '--split'      , type=float, default=0.0     , help=split_help    )
-def dataset_from_products_wrapper(name, path_to_products, tile_size, output_dir, crop_size, cutoff, split):
+def dataset_from_products_wrapper(name, dataset_path, tile_size, output_dir, crop_size, split):
 
     """
     Create a dataset from real interferogran products.
@@ -155,16 +182,15 @@ def dataset_from_products_wrapper(name, path_to_products, tile_size, output_dir,
 
     size = dataset_from_products(
         name,
-        path_to_products,
+        dataset_path,
         output_dir,
         tile_size,
         crop_size,
-        cutoff
     )
 
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + name, split)
 
-    print(f"\nCreated dataset of size {size} from {path_to_products} at {output_dir.__str__() + '/' + name}.\n")
+    print(f"\nCreated dataset of size {size} from {dataset_path} at {output_dir.__str__() + '/' + name}.\n")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
@@ -193,7 +219,7 @@ def split_dataset_wrapper(dataset_path, split):
 def show_dataset_wrapper(file_path):
 
     """
-    Show the wrapped and unwrapped interferogram of a given dataset file (.npz).
+    Show the wrapped interferogram and event-mask from a given dataset file (.npz).
 
     ARGS:\n
     file_path       path to the .npz file to show.\n
@@ -202,8 +228,8 @@ def show_dataset_wrapper(file_path):
     from src.gui import show_dataset
     from src.io import load_dataset
 
-    unwrapped, wrapped = load_dataset(file_path)
-    show_dataset(unwrapped, wrapped)
+    mask, wrapped = load_dataset(file_path)
+    show_dataset(mask, wrapped)
 
 
 @cli.command ('show-random')
@@ -213,14 +239,14 @@ def show_dataset_wrapper(file_path):
 def show_random_wrapper(seed, tile_size, crop_size):
 
     """
-    Show a randomly generated wrapped and unwrapped synthetic interferogram.
+    Show a randomly generated synthetic wrapped interferogram along with an event-mask.
     """
 
     from src.gui import show_dataset
     from src.synthetic_interferogram import make_random_dataset
 
-    unwrapped, wrapped = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
-    show_dataset(unwrapped, wrapped)
+    mask, wrapped = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
+    show_dataset(mask, wrapped)
 
 
 @cli.command   ('train-model')
@@ -233,18 +259,18 @@ def show_random_wrapper(seed, tile_size, crop_size):
 @click.option  ('-d', '--dropout'      , type=float, default=0.2  , help=dropout_help     )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 def train_model_wrapper(
-                model_name,
-                dataset_path,
-                epochs,
-                input_shape,
-                filters,
-                batch_size,
-                dropout,
-                learning_rate
-                ):
+    model_name,
+    dataset_path,
+    epochs,
+    input_shape,
+    filters,
+    batch_size,
+    dropout,
+    learning_rate
+):
 
     """
-    Train a model on the UNET+LSTM Architecture with optional hyperparameter tuning settings.
+    Train a U-Net or ResNet style model.
 
     ARGS:\n
     model_name      name of the model to be trained.\n
@@ -274,7 +300,7 @@ def train_model_wrapper(
 def test_model_wrapper(model_path, seed, tile_size, crop_size):
 
     """
-    Predicts on a wrapped/unwrapped pair and plots the results
+    Predicts on a wrapped interferogram & event-mask pair and plots the results
 
     ARGS:\n
     model_path      path to model that should be tested.\n
@@ -311,87 +337,54 @@ def model_summary_wrapper(model_path):
     model.summary()
 
 
-@cli.command   ('unwrap')
-@click.argument('model_path', type=str)
-@click.argument('image_path', type=str)
-@click.argument('dest_path' , type=str)
-def unwrap_wrapper(model_path, image_path, dest_path):
+@cli.command   ('mask')
+@click.argument('model_path'          , type=str                                    )
+@click.argument('image_path'          , type=str                                    )
+@click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
+@click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
+@click.option  ('-d', '--dest_path'   , type=str  , default="" , help=outputdir_help)
+def mask(
+    model_path,
+    image_path, 
+    crop_size, 
+    tile_size,
+    dest_path
+):
 
     """
-    Unwraps the given wrapped interferogram using a tensorflow model, saves it, and plots it.
+    Masks events in the given wrapped interferogram using a tensorflow model and plots it, with the option to save.
 
     ARGS:\n
-    model_path      path to model to unwrap with.\n
-    image_path      path to image to unwrap.\n
-    dest_path       destination to save unwrapped image.\n
+    model_path      path to model to mask with.\n
+    image_path      path to wrapped interferogram to mask.\n
     """
 
     from os import environ
     
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     
-    from src.inference import save_and_plot
+    from src.inference import mask_and_plot
 
-    save_and_plot(model_path, image_path, dest_path)
-
-
-@cli.command   ('unwrap-compare')
-@click.argument('model_path'          , type=str                                       )
-@click.argument('product_path'        , type=str                                       )
-@click.option  ('-x', '--x_offset'    , type=int  , default=0   , help=xoffset_help    )
-@click.option  ('-y', '--y_offset'    , type=int  , default=0   , help=yoffset_help    )
-@click.option  ('-o', '--cutoff'      , type=float, default=0.0 , help=cutoff_help     )
-@click.option  ('-c', '--crop_size'   , type=int  , default=0   , help=cropsize_help   )
-@click.option  ('-t', '--tile_size'   , type=int  , default=1024, help=tilesize_help   )
-@click.option  ('-m', '--mask_output' , is_flag=True            , help=maskoutput_help )
-@click.option  ('-g', '--merge_offset', is_flag=True            , help=mergeoffset_help)
-@click.option  ('-n', '--need_tsrncp' , is_flag=True            , help=needtsrncp_help )
-def unwrap_compare_wrapper(
-                model_path,
-                product_path,
-                x_offset,
-                y_offset,
-                cutoff,
-                crop_size,
-                tile_size,
-                mask_output,
-                merge_offset,
-                need_tsrncp
-                ):
-
-    """
-    Predicts on a wrapped interferogram and plots the results.
-
-    ARGS:\n
-    model_path          path to model.\n
-    product_path        path to folder containing a InSAR product elements.\n
-    """
-
-    from os import environ
-    
-    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-    
-    from src.inference import unwrap_and_compare
-
-    unwrap_and_compare(
+    mask = mask_and_plot(
         model_path,
-        product_path,
+        image_path,
         tile_size,
-        crop_size,
-        x_offset,
-        y_offset,
-        mask_output,
-        merge_offset,
-        need_tsrncp,
-        cutoff
+        crop_size
     )
 
+    if dest_path != "":
+        
+        from PIL import Image
+        
+        out = Image.fromarray(mask)
+        out.save(dest_path)        
 
-@cli.command('visualize-features')
+
+@cli.command('visualize-layers')
 @click.argument('model_path'   , type=str                           )
 @click.argument('save_path'    , type=str                           )
 @click.option  ('-s', '--seed' , type=int, default=0, help=seed_help)
-def visualize_intermediate_activations_wrapper(model_path, save_path, seed):
+def visualize_layers_wrapper(model_path, save_path, seed):
 
     """
     Visualize the feature maps of the model for a random synthetic interferogram.
@@ -405,9 +398,9 @@ def visualize_intermediate_activations_wrapper(model_path, save_path, seed):
     
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     
-    from src.nn_functions import visualize_intermediate_activations
+    from src.inference import visualize_layers
 
-    visualize_intermediate_activations(model_path, save_path, seed)
+    visualize_layers(model_path, save_path, seed)
 
 
 @cli.command   ('show-product')
@@ -428,16 +421,24 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     show_product(product_path, crop_size, tile_size)
 
 
-@cli.command('interactive')
-def interactive_wrapper():
+@cli.command ('simulate')
+@click.option('-s', '--seed'     , type=int, default=0   , help=seed_help    )
+@click.option('-t', '--tile_size', type=int, default=1024, help=tilesize_help)
+def simulate_wrapper(seed, tile_size):
 
     """
-    Interactive interface for tinkering with synthetic interferogram component values.
+    Show a randomly generated wrapped interferogram from simulated deformation.
     """
 
-    from src.gui import interactive_interferogram
+    from src.gui    import show_dataset
+    from src.sarsim import gen_simulated_deformation
 
-    interactive_interferogram()
+    masked, wrapped = gen_simulated_deformation(
+        seed,
+        tile_size
+    )
+
+    show_dataset(masked, wrapped)
 
 
 if __name__ == '__main__':
