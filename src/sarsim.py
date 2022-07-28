@@ -801,7 +801,7 @@ def gen_simulated_deformation(
 
         masked_grid[mask_one_indicies] = 1
 
-        atmosphere_phase = aps_simulate() * 100 * np.pi
+        atmosphere_phase = aps_simulate() * 90 * np.pi
 
         interferogram = los_grid + atmosphere_phase[0:512, 0:512]
 
