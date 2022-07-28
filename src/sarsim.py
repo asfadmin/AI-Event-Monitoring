@@ -706,8 +706,8 @@ def aps_simulate():
 
     pixel_size_degs = 1/3600
     
-    lons = np.arange(14.0, 14.0 + (pixel_size_degs * 512), pixel_size_degs) # create a simple grid of lons and latitudes at the correct size
-    lats = np.arange(55.0, 55.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lons = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lats = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
@@ -715,6 +715,24 @@ def aps_simulate():
                                  method = 'fft')
 
     return ph_turb[0,]
+
+
+def coherence_mask_simulate(threshold: float = 0.3):
+
+    pixel_size_degs = 1/3600
+    
+    lons = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lats = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
+    lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
+
+    mask_coh_values = atmosphere_turb(1, lons_mg, lats_mg, verbose=True, mean_m = 0.01,
+                                 method = 'fft')
+
+    mask_coh_values = (mask_coh_values - np.min(mask_coh_values)) / np.max(mask_coh_values - np.min(mask_coh_values))
+    mask_coh = np.where(mask_coh_values > threshold, np.ones(lons_mg.shape), np.zeros(lons_mg.shape)) 
+
+    return mask_coh
 
 
 def gen_simulated_deformation(
@@ -748,7 +766,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = 10 # random.randint(0, 9)
+    only_noise_dice_roll = random.randint(0, 9)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -761,7 +779,7 @@ def gen_simulated_deformation(
     ij          = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
     ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
-    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9:
+    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9 and only_noise_dice_roll != 10:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
@@ -803,9 +821,14 @@ def gen_simulated_deformation(
 
         atmosphere_phase = aps_simulate() * 90 * np.pi
 
+        coherence_mask = coherence_mask_simulate(0.3)
+        coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
+
         interferogram = los_grid + atmosphere_phase[0:512, 0:512]
 
         wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
+
+        wrapped_grid[coh_masked_indicies] = 0
 
         if log:
             print("Max X Position (meters): ", np.max(X))
@@ -834,22 +857,17 @@ def gen_simulated_deformation(
 
         return masked_grid, wrapped_grid
 
-    elif only_noise_dice_roll == 9: 
-
-        grid = np.zeros((tile_size, tile_size))
-
-        interferogram = add_noise(grid, tile_size)
-
-        wrapped_grid = np.angle(np.exp(1j * (interferogram)))
-        masked_grid  = np.zeros((tile_size, tile_size))
-
-        return masked_grid, wrapped_grid
-    
     else:
 
-        atmosphere_turbulence = aps_simulate()
+        atmosphere_turbulence = aps_simulate() * 90 * np.pi
 
         wrapped_grid = np.angle(np.exp(1j * (atmosphere_turbulence)))
-        masked_grid  = np.zeros((tile_size, tile_size))
+
+        coherence_mask = coherence_mask_simulate(0.3)
+        coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
+
+        wrapped_grid[coh_masked_indicies] = 0
+
+        masked_grid = np.zeros((tile_size, tile_size))
 
         return masked_grid, wrapped_grid
