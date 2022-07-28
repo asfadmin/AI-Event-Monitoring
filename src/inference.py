@@ -196,9 +196,8 @@ def mask_and_plot(
     zeros        = (arr_uw == 0)
     arr_w[zeros] = 0
 
-
-    # bad_coherence = coherence < 0.5
-    # arr_w[bad_coherence] = 0
+    bad_coherence = coherence < 0.3
+    arr_w[bad_coherence] = 0
 
     prediction = mask(
         model_path = model_path,
@@ -207,7 +206,7 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    tolerance1  = 0.5
+    tolerance1  = 0.8
     # tolerance2  = 1.99
     round_up1   = prediction >= tolerance1
     # round_up2   = prediction >= tolerance2
