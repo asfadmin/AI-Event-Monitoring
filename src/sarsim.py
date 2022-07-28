@@ -454,7 +454,7 @@ def gen_simulated_deformation(
     ij          = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
     ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
-    if only_noise_dice_roll != 0:
+    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
@@ -480,21 +480,21 @@ def gen_simulated_deformation(
 
         U = deformation_eq_dyke_sill(source, (source_x, source_y), ijk, **kwargs)
 
-        amplitude_adjustment = 10000
+        amplitude_adjustment = 1000 * np.pi
 
         x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1])) * amplitude_adjustment
         y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1])) * amplitude_adjustment
         z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1])) * amplitude_adjustment
-        los_grid = (x_grid * los_vector[0,0]) + (y_grid * los_vector[1,0]) + (z_grid * los_vector[2,0])
+
+        los_grid = ((x_grid * los_vector[0,0]) + (y_grid * los_vector[1,0]) + (z_grid * los_vector[2,0]))
+    
+        masked_grid = np.zeros((tile_size, tile_size))
 
         mask_one_indicies  = np.abs(los_grid) >= np.pi
-        mask_zero_indicies = np.abs(los_grid) < np.pi
 
-        masked_grid = np.copy(los_grid)
-        masked_grid[mask_one_indicies]  = 1
-        masked_grid[mask_zero_indicies] = 0
+        masked_grid[mask_one_indicies] = 1
 
-        wrapped_grid = wrap_interferogram(add_noise(los_grid, nx))
+        wrapped_grid = wrap_interferogram(add_noise(los_grid, tile_size), noise = 0.1)
 
         if log:
             print("Max X Position (meters): ", np.max(X))
@@ -512,11 +512,22 @@ def gen_simulated_deformation(
         
         return masked_grid, wrapped_grid
 
-    else:
+    elif only_noise_dice_roll == 0:
 
         noise = np.random.uniform(1.0, 50.0, size=(tile_size, tile_size))
 
         interferogram = add_noise(noise, tile_size)
+
+        wrapped_grid = np.angle(np.exp(1j * (interferogram)))
+        masked_grid  = np.zeros((tile_size, tile_size))
+
+        return masked_grid, wrapped_grid
+
+    else: 
+
+        grid = np.zeros((tile_size, tile_size))
+
+        interferogram = add_noise(grid, tile_size)
 
         wrapped_grid = np.angle(np.exp(1j * (interferogram)))
         masked_grid  = np.zeros((tile_size, tile_size))
