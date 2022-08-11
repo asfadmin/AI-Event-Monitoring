@@ -422,9 +422,10 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 
 
 @cli.command ('simulate')
-@click.option('-s', '--seed'     , type=int, default=0   , help=seed_help    )
-@click.option('-t', '--tile_size', type=int, default=1024, help=tilesize_help)
-def simulate_wrapper(seed, tile_size):
+@click.option('-s', '--seed'     , type=int , default=0    , help=seed_help    )
+@click.option('-t', '--tile_size', type=int , default=1024 , help=tilesize_help)
+@click.option('-v', '--verbose'  , type=bool, default=False, help=""           )
+def simulate_wrapper(seed, tile_size, verbose):
 
     """
     Show a randomly generated wrapped interferogram from simulated deformation.
@@ -435,7 +436,8 @@ def simulate_wrapper(seed, tile_size):
 
     masked, wrapped = gen_simulated_deformation(
         seed,
-        tile_size
+        tile_size,
+        verbose
     )
 
     show_dataset(masked, wrapped)
