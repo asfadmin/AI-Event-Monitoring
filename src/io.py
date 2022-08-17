@@ -493,6 +493,9 @@ def make_simulated_dataset(
             tile_size = tile_size
         )
 
+        if count % 100 == 0:
+            print(f"Generated {count} of {amount} simulated interferogram pairs.")
+
         current_name = f"sim_seed{current_seed}_{count}"
         save_path = save_directory / current_name
         save_dataset(save_path, mask=masked, wrapped=wrapped)
