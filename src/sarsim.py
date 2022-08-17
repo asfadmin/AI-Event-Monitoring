@@ -16,13 +16,15 @@ from src.synthetic_interferogram import wrap_interferogram, add_noise
 
 
 def I1(xi, eta, q, delta, nu, R, X, d_tild):
-    '''
+
+    """
     Compute the component I1 of the model (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return I1
-    '''
+    """
+
     if math.cos(delta) > 10E-8:
         return (1 - 2*nu)*(-xi/(math.cos(delta)*(R + d_tild))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)/math.cos(delta)
     else:
@@ -30,24 +32,28 @@ def I1(xi, eta, q, delta, nu, R, X, d_tild):
 
 
 def I2(xi, eta, q, delta, nu, R, y_tild, d_tild):
-    '''
+
+    """
     Compute the component I2 of the model (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return I2
-    '''
+    """
+
     return (1 - 2*nu)*(-np.log(R + eta)) - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)
 
 
 def I3(xi, eta, q, delta, nu, R, y_tild, d_tild):
-    '''
+
+    """
     Compute the component I3 of the model (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return I3
-    '''
+    """
+
     if math.cos(delta) > 10E-8:
         return (1 - 2*nu)*(y_tild/(math.cos(delta)*(R + d_tild)) - np.log(R + eta)) + I4(xi, eta, q, delta, nu, R, d_tild)*math.sin(delta)/math.cos(delta)
     else:
@@ -55,13 +61,15 @@ def I3(xi, eta, q, delta, nu, R, y_tild, d_tild):
     
 
 def I4(xi, eta, q, delta, nu, R, d_tild):
-    '''
+
+    """
     Compute the component I4 of the model (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return I4
-    '''
+    """
+
     if math.cos(delta) > 10E-8:
         return (1 - 2*nu)*(np.log(R + d_tild) - math.sin(delta)*np.log(R + eta))/math.cos(delta)
     else:
@@ -69,13 +77,15 @@ def I4(xi, eta, q, delta, nu, R, d_tild):
     
 
 def I5(xi, eta, q, delta, nu, R, X, d_tild):
-    '''
+
+    """
     Compute the component I5 of the model (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return I5
-    '''
+    """
+
     if math.cos(delta) > 10E-8:
         return (1 - 2*nu)*2*np.arctan((eta*(X + q*math.cos(delta)) + X*(R + X)*math.sin(delta))/(xi*(R + X)*math.cos(delta)))/math.cos(delta)
     else:
@@ -83,13 +93,15 @@ def I5(xi, eta, q, delta, nu, R, X, d_tild):
 
 
 def f_x_strike(xi, eta, q, delta, nu):
-    '''
+
+    """
     Fault strike component along the x axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -97,13 +109,15 @@ def f_x_strike(xi, eta, q, delta, nu):
 
 
 def f_x_dip(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault dip component along the x axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     y_tild = eta*math.cos(delta) + q*math.sin(delta)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -111,13 +125,15 @@ def f_x_dip(xi, eta, q, delta, nu):
 
 
 def f_x_tensile(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault tensile component along the x axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     y_tild = eta*math.cos(delta) + q*math.sin(delta)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -125,13 +141,15 @@ def f_x_tensile(xi, eta, q, delta, nu):
 
 
 def f_y_strike(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault strike component along the y axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     y_tild = eta*math.cos(delta) + q*math.sin(delta)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -139,13 +157,15 @@ def f_y_strike(xi, eta, q, delta, nu):
 
 
 def f_y_dip(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault dip component along the y axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
     y_tild = eta*math.cos(delta) + q*math.sin(delta)
@@ -154,13 +174,15 @@ def f_y_dip(xi, eta, q, delta, nu):
 
 
 def f_y_tensile(xi, eta, q, delta, nu):
-    '''
+   
+    """
     Fault tensile component along the y axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -169,26 +191,30 @@ def f_y_tensile(xi, eta, q, delta, nu):
 
 
 def f_z_strike(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault strike component along the z axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+    
     R = np.sqrt(xi**2 + eta**2 + q**2)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
     return d_tild*q/(R*(R + eta)) + q*math.sin(delta)/(R + eta) + I4(xi, eta, q, delta, nu, R, d_tild)*math.sin(delta)
 
 
 def f_z_dip(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault dip component along the z axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+    
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
     d_tild = eta*math.sin(delta) - q*math.cos(delta)
@@ -196,13 +222,15 @@ def f_z_dip(xi, eta, q, delta, nu):
 
 
 def f_z_tensile(xi, eta, q, delta, nu):
-    '''
+    
+    """
     Fault tensile component along the z axis (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The associated component
-    '''
+    """
+    
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
     y_tild = eta*math.cos(delta) + q*math.sin(delta)
@@ -211,13 +239,15 @@ def f_z_tensile(xi, eta, q, delta, nu):
 
 
 def chinnerys_notation(f, x, p, q, L, W, delta, nu):
-    '''
+    
+    """
     Formula to add the different fault components (for more information, see 
     Okada, Surface deformation due to shear and tensile faults in a half-space,
     Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
     
     @return The combined components
-    '''
+    """
+    
     return f(x, p, q, delta, nu)\
            - f(x, p - W, q, delta, nu)\
            - f(x - L, p, q, delta, nu)\
@@ -294,6 +324,7 @@ def compute_okada_displacement(fault_centroid_x,
 
 
 def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):    
+    
     """
     A function to create deformation patterns for either an earthquake, dyke or sill.   Uses the Okada function from PyInSAR: https://github.com/MITeaps/pyinsar
     To aid in readability, different sources take different parameters (e.g. slip for a quake, opening for a dyke)
@@ -366,15 +397,10 @@ def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):
     """    
     
     # 1:  Setting for elastic parameters.  
-    lame = {'lambda' : 2.3e10,                                                         # elastic modulus (Lame parameter, units are pascals)
-            'mu'     : 2.3e10}                                                         # shear modulus (Lame parameter, units are pascals)
-    v = lame['lambda'] / (2*(lame['lambda'] + lame['mu']))                             #  calculate poisson's ration
-      
-    # import matplotlib.pyplot as plt
-    # both_arrays = np.hstack((np.ravel(coords), np.ravel(xyz_m)))
-    # f, axes = plt.subplots(1,2)
-    # axes[0].imshow(coords, aspect = 'auto', vmin = np.min(both_arrays), vmax = np.max(both_arrays))                 # goes from -1e4 to 1e4
-    # axes[1].imshow(xyz_m, aspect = 'auto', vmin = np.min(both_arrays), vmax = np.max(both_arrays))                  # goes from 0 to 2e4
+    lame = {'lambda' : 2.3e10,                              # elastic modulus (Lame parameter, units are pascals)
+            'mu'     : 2.3e10}                              # shear modulus (Lame parameter, units are pascals)
+    v = lame['lambda'] / (2*(lame['lambda'] + lame['mu']))  #  calculate poisson's ration
+
     if source == 'quake':
         opening = 0
         slip = kwargs['slip']
@@ -413,6 +439,7 @@ def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):
 def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
                     water_mask = None, difference = False, verbose = False,
                     cov_interpolate_threshold = 1e4, cov_Lc = 2000):
+    
     """ A function to create synthetic turbulent atmospheres based on the  methods in Lohman Simons 2005, or using Andy Hooper and Lin Shen's fft method.  
     Note that due to memory issues, when using the covariance (Lohman) method, largers ones are made by interpolateing smaller ones.  
     Can return atmsopheres for an individual acquisition, or as the difference of two (as per an interferogram).  Units are in metres.  
@@ -448,6 +475,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
     from scipy import interpolate as scipy_interpolate
     
     def lon_lat_to_ijk(lons_mg, lats_mg):
+        
         """ Given a meshgrid of the lons and lats of the lower left corner of each pixel, 
         find their distances (in metres) from the lower left corner.  
         Inputs:
@@ -459,6 +487,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         History:
             2020/10/01 | MEG | Written 
         """
+        
         from geopy import distance
         import numpy as np
         
@@ -473,34 +502,10 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))                                                                 # xy and 0 depth, as 3xlots
         
         return ijk, pixel_spacing
+    
 
-    def generate_correlated_noise_cov(pixel_distances, cov_Lc, shape):
-        """ given a matrix of pixel distances (in meters) and a length scale for the noise (also in meters),
-        generate some 2d spatially correlated noise.  
-        Inputs:
-            pixel_distances | rank 2 array | pixels x pixels, distance between each on in metres.  
-            cov_Lc | float | Length scale over which the noise is correlated.  units are metres.  
-            shape | tuple | (nx, ny)  NOTE X FIRST!
-        Returns:
-            y_2d | rank 2 array | spatially correlated noise.  
-        History:
-            2019/06/?? | MEG | Written
-            2020/10/05 | MEG | Overhauled to be in metres and use scipy cholesky
-            2020/10/06 | MEG | Add support for rectangular atmospheres.  
-        """
-        import scipy
-        nx = shape[0]
-        ny = shape[1]
-        Cd = np.exp((-1 * pixel_distances)/cov_Lc)                                # from the matrix of distances, convert to covariances using exponential equation
-        Cd_L = np.linalg.cholesky(Cd)                                             # ie Cd = CD_L @ CD_L.T      Worse error messages, so best called in a try/except form.  
-        #Cd_L = scipy.linalg.cholesky(Cd, lower=True)                             # better error messages than the numpy versio, but can cause crashes on some machines
-        x = np.random.randn((ny*nx))                                              # Parsons 2007 syntax - x for uncorrelated noise
-        y = Cd_L @ x                                                              # y for correlated noise
-        y_2d = np.reshape(y, (ny, nx))                                            # turn back to rank 2
-        return y_2d
-    
-    
     def generate_correlated_noise_fft(nx, ny, std_long, sp):
+        
         """ A function to create synthetic turbulent troposphere delay using an FFT approach. 
         The power of the turbulence is tuned by the weather model at the longer wavelengths.
         
@@ -543,9 +548,6 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         
         APS_power=np.zeros((ny,nx))                                         # mirror positive frequencies into other quadrants
         APS_power[0:int(ny/2), 0:int(nx/2)]=bin_power
-        # APS_power[0:int(ny/2), int(nx/2):nx]=npm.fliplr(bin_power)
-        # APS_power[int(ny/2):ny, 0:int(nx/2)]=npm.flipud(bin_power)
-        # APS_power[int(ny/2):ny, int(nx/2):nx]=npm.fliplr(npm.flipud(bin_power))
         APS_power[0:int(ny/2), int(np.ceil(nx/2)):]=npm.fliplr(bin_power)
         APS_power[int(np.ceil(ny/2)):, 0:int(nx/2)]=npm.flipud(bin_power)
         APS_power[int(np.ceil(ny/2)):, int(np.ceil(nx/2)):]=npm.fliplr(npm.flipud(bin_power))
@@ -563,6 +565,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         
 
     def rescale_atmosphere(atm, atm_mean = 0.02, atm_sigma = 0.005):
+        
         """ a function to rescale a 2d atmosphere with any scale to a mean centered
         one with a min and max value drawn from a normal distribution.  
         Inputs:
@@ -575,6 +578,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
             20YY/MM/DD | MEG | Written
             2020/10/02 | MEG | Standardise throughout to use metres for units.  
         """
+        
         atm -= np.mean(atm)                                                         # mean centre
         atm_strength = (atm_sigma * np.random.randn(1)) + atm_mean                  # maximum strength of signal is drawn from a gaussian distribution, mean and sigma set in metres.  
         if np.abs(np.min(atm)) > np.abs(np.max(atm)):                               # if range of negative numbers is larger
@@ -597,95 +601,64 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         if verbose:
             print(f"The number of pixels ({n_pixs}) is larger than 'cov_interpolate_threshold' ({int(cov_interpolate_threshold)}) so images will be created "
                   f"with {int(cov_interpolate_threshold)} pixels and interpolated to the full resolution.  ")
-        interpolate = True                                                                                  # set boolean flag
-        oversize_factor = n_pixs / cov_interpolate_threshold                                                # determine how many times too many pixels we have.  
-        lons_ds = np.linspace(lons_mg[-1,0], lons_mg[-1,-1], int(nx * (1/np.sqrt(oversize_factor))))        # make a downsampled vector of just the longitudes (square root as number of pixels is a measure of area, and this is length)
-        lats_ds = np.linspace(lats_mg[0,0], lats_mg[-1,0], int(ny * (1/np.sqrt(oversize_factor))))          # and for latitudes
-        lons_mg_ds = np.repeat(lons_ds[np.newaxis, :], lats_ds.shape, axis = 0)                             # make rank 2 again
-        lats_mg_ds = np.repeat(lats_ds[:, np.newaxis], lons_ds.shape, axis = 1)                             # and for latitudes
-        ny_generate, nx_generate = lons_mg_ds.shape                                                         # get the size of the downsampled grid we'll be generating at
+        interpolate = True                                                                           # set boolean flag
+        oversize_factor = n_pixs / cov_interpolate_threshold                                         # determine how many times too many pixels we have.  
+        lons_ds = np.linspace(lons_mg[-1,0], lons_mg[-1,-1], int(nx * (1/np.sqrt(oversize_factor)))) # make a downsampled vector of just the longitudes (square root as number of pixels is a measure of area, and this is length)
+        lats_ds = np.linspace(lats_mg[0,0], lats_mg[-1,0], int(ny * (1/np.sqrt(oversize_factor))))   # and for latitudes
+        lons_mg_ds = np.repeat(lons_ds[np.newaxis, :], lats_ds.shape, axis = 0)                      # make rank 2 again
+        lats_mg_ds = np.repeat(lats_ds[:, np.newaxis], lons_ds.shape, axis = 1)                      # and for latitudes
+        ny_generate, nx_generate = lons_mg_ds.shape                                                  # get the size of the downsampled grid we'll be generating at
     else:
-        interpolate = False                                                                                 # set boolean flag
-        nx_generate = nx                                                                                    # if not interpolating, these don't change.  
+        interpolate = False   # set boolean flag
+        nx_generate = nx      # if not interpolating, these don't change.  
         ny_generate = ny
-        lons_mg_ds = lons_mg                                                                                # if not interpolating, don't need to downsample.  
+        lons_mg_ds = lons_mg  # if not interpolating, don't need to downsample.  
         lats_mg_ds = lats_mg
     
     #2: calculate distance between points
-    ph_turbs = np.zeros((n_atms, ny_generate, nx_generate))                                                 # initiate output as a rank 3 (ie n_images x ny x nx)
-    xyz_m, pixel_spacing = lon_lat_to_ijk(lons_mg_ds, lats_mg_ds)                                           # get pixel positions in metres from origin in lower left corner (and also their size in x and y direction)
-    xy = xyz_m[0:2].T                                                                                       # just get the x and y positions (ie discard z), and make lots x 2 (ie two columns)
+    ph_turbs = np.zeros((n_atms, ny_generate, nx_generate))       # initiate output as a rank 3 (ie n_images x ny x nx)
+    xyz_m, pixel_spacing = lon_lat_to_ijk(lons_mg_ds, lats_mg_ds) # get pixel positions in metres from origin in lower left corner (and also their size in x and y direction)
+    xy = xyz_m[0:2].T                                             # just get the x and y positions (ie discard z), and make lots x 2 (ie two columns)
       
     
     #3: generate atmospheres, using either of the two methods.  
     if difference == True:
-        n_atms += 1                                                                                         # if differencing atmospheres, create one extra so that when differencing we are left with the correct number
+        n_atms += 1   # if differencing atmospheres, create one extra so that when differencing we are left with the correct number
     
     if method == 'fft':
         for i in range(n_atms):
             ph_turbs[i,:,:] = generate_correlated_noise_fft(nx_generate, ny_generate,    std_long=1, 
-                                                           sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) )      # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
-            # if verbose:
-                # print(f'Generated {i+1} of {n_atms} single acquisition atmospheres.  ')
+                                                           sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) ) # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
             
     else:
-        pixel_distances = sp_distance.cdist(xy,xy, 'euclidean')                                                     # calcaulte all pixelwise pairs - slow as (pixels x pixels)       
-        Cd = np.exp((-1 * pixel_distances)/cov_Lc)                                     # from the matrix of distances, convert to covariances using exponential equation
+        pixel_distances = sp_distance.cdist(xy,xy, 'euclidean') # calcaulte all pixelwise pairs - slow as (pixels x pixels)       
+        Cd = np.exp((-1 * pixel_distances)/cov_Lc)              # from the matrix of distances, convert to covariances using exponential equation
         success = False
         while not success:
             try:
-                Cd_L = np.linalg.cholesky(Cd)                                             # ie Cd = CD_L @ CD_L.T      Worse error messages, so best called in a try/except form.  
-                #Cd_L = scipy.linalg.cholesky(Cd, lower=True)                               # better error messages than the numpy versio, but can cause crashes on some machines
+                Cd_L = np.linalg.cholesky(Cd)                   # ie Cd = CD_L @ CD_L.T      Worse error messages, so best called in a try/except form.  
                 success = True
             except:
                 success = False
         for n_atm in range(n_atms):
-            x = np.random.randn((ny_generate*nx_generate))                                               # Parsons 2007 syntax - x for uncorrelated noise
-            y = Cd_L @ x                                                               # y for correlated noise
-            ph_turb = np.reshape(y, (ny_generate, nx_generate))                                             # turn back to rank 2
+            x = np.random.randn((ny_generate*nx_generate))      # Parsons 2007 syntax - x for uncorrelated noise
+            y = Cd_L @ x                                        # y for correlated noise
+            ph_turb = np.reshape(y, (ny_generate, nx_generate)) # turn back to rank 2
             ph_turbs[n_atm,:,:] = ph_turb
             print(f'Generated {n_atm} of {n_atms} single acquisition atmospheres.  ')
-        
-        
-        # nx = shape[0]
-        # ny = shape[1]
-
-        
-
-        # return y_2d
-        
-        # success = 0
-        # fail = 0
-        # while success < n_atms:
-        # #for i in range(n_atms):
-        #     try:
-        #         ph_turb = generate_correlated_noise_cov(pixel_distances, cov_Lc, (nx_generate,ny_generate))      # generate noise 
-        #         ph_turbs[success,:,:] = ph_turb
-        #         success += 1
-        #         if verbose:
-        #             print(f'Generated {success} of {n_atms} single acquisition atmospheres (with {fail} failures).  ')
-        #     except:
-        #         fail += 0
-        #         if verbose:
-        #             print(f"'generate_correlated_noise_cov' failed, which is usually due to errors in the cholesky decomposition that Numpy is performing.  The odd failure is normal.  ")
                 
-        #     # ph_turbs[i,:,:] = generate_correlated_noise_cov(pixel_distances, cov_Lc, (nx_generate,ny_generate))      # generate noise 
-        #     # if verbose:
-                
-                
-
     #3: possibly interplate to bigger size
     if interpolate:
         if verbose:
             print('Interpolating to the larger size...', end = '')
-        ph_turbs_output = np.zeros((n_atms, ny, nx))                                                                          # initiate output at the upscaled size (ie the same as the original lons_mg shape)
-        for atm_n, atm in enumerate(ph_turbs):                                                                                # loop through the 1st dimension of the rank 3 atmospheres.  
-            f = scipy_interpolate.interp2d(np.arange(0,nx_generate), np.arange(0,ny_generate), atm, kind='linear')           # and interpolate them to a larger size.  First we give it  meshgrids and values for each point
-            ph_turbs_output[atm_n,:,:] = f(np.linspace(0, nx_generate, nx), np.linspace(0, ny_generate, ny))                  # then new meshgrids at the original (full) resolution.  
+        ph_turbs_output = np.zeros((n_atms, ny, nx))                                                                # initiate output at the upscaled size (ie the same as the original lons_mg shape)
+        for atm_n, atm in enumerate(ph_turbs):                                                                      # loop through the 1st dimension of the rank 3 atmospheres.  
+            f = scipy_interpolate.interp2d(np.arange(0,nx_generate), np.arange(0,ny_generate), atm, kind='linear')  # and interpolate them to a larger size.  First we give it  meshgrids and values for each point
+            ph_turbs_output[atm_n,:,:] = f(np.linspace(0, nx_generate, nx), np.linspace(0, ny_generate, ny))        # then new meshgrids at the original (full) resolution.  
         if verbose:
             print('Done!')
     else:
-        ph_turbs_output = ph_turbs                                                                                              # if we're not interpolating, no change needed
+        ph_turbs_output = ph_turbs # if we're not interpolating, no change needed
        
     # 4: rescale to correct range (i.e. a couple of cm)
     ph_turbs_m = np.zeros(ph_turbs_output.shape)
@@ -723,6 +696,26 @@ def atm_topo_simulate(
     difference:    bool  = True
 ):
 
+    """
+    Generate simulated topographic atmospheric error.
+
+    Parameters:
+    -----------
+    dem_m : np.ndarray
+        An array containing either real dem values (in meters) or simulated ones.
+    strength_mean : float
+        The mean strength/magnitude of the error.
+    strength_var : float
+        The maximum variation from strength_mean of the magnitude of the error.
+    difference : bool
+        Whether the error should come from the difference of 2 aquisitions or just 1.
+
+    Returns:
+    --------
+    ph_turb : np.ndarray
+        The array containing the turbulent atmospheric error.
+    """
+
     import numpy as np
     import numpy.ma as ma
 
@@ -756,10 +749,23 @@ def atm_topo_simulate(
 
 def aps_simulate():
 
+    """
+    Generate simulated turbulent atmospheric error.
+
+    Parameters:
+    -----------
+    None
+
+    Returns:
+    --------
+    ph_turb : np.ndarray
+        The array containing the turbulent atmospheric error.
+    """
+
     pixel_size_degs = 1/3600
     
-    lons = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
-    lats = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lons    = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lats    = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
@@ -773,7 +779,21 @@ def coherence_mask_simulate(
     threshold: float = 0.3
 ):
 
-    pixel_size_degs = 1/3600
+    """
+    Generate simulated incoherence to be masked out.
+
+    Parameters:
+    -----------
+    threshold : float
+        The maximum value of coherence to be masked to zeros.
+
+    Returns:
+    --------
+    mask_coh : np.ndarray
+        The masked coherence array.
+    """
+
+    pixel_size_degs = 1 / 3600
     
     lons = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
     lats = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
