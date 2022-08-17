@@ -3,6 +3,21 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Poetry
+poetry.lock
+
+# project specific
+logs/
+data/
+models/
+tests/test_io/*
+
+# Pycharm
+.idea/
+
+# Vscode
+.vscode
+
 # C extensions
 *.so
 
