@@ -864,7 +864,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 9)
+    only_noise_dice_roll = random.randint(0, 20)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -879,14 +879,14 @@ def gen_simulated_deformation(
 
     atmosphere_scale = 90 * np.pi
 
-    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9:
+    if only_noise_dice_roll != 0 and only_noise_dice_roll != 20:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
 
-        strike       = random.randint(0, 359)
+        strike       = random.randint(0, 180)
         dip          = random.randint(0, 90)
-        rake         = [0, 90, -90, 180][random.randint(0, 3)]
+        rake         = [0, 90, -90][random.randint(0, 2)]
         slip         = 1
 
         length       = random.randint(1000, np.max(X) // 16)
@@ -922,14 +922,15 @@ def gen_simulated_deformation(
 
         atmosphere_phase = aps_simulate(tile_size) * atmosphere_scale
 
-        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
-        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-
         interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
 
         wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
 
-        wrapped_grid[coh_masked_indicies] = 0
+        mask_coherence_roll = random.randint(0, 1)
+        if mask_coherence_roll == 1:
+            coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+            coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+            wrapped_grid[coh_masked_indicies] = 0
 
         if log:
             print("Max X Position (meters): ", np.max(X))
@@ -961,14 +962,20 @@ def gen_simulated_deformation(
     else:
 
         turb_phase = aps_simulate(tile_size) * atmosphere_scale
-        topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=250, alt_scale_max=500)) * atmosphere_scale * random.randint(2, 10)
+        
+        topo_phase = np.zeros(turb_phase.shape)
+        
+        topo_phase_roll = random.randint(0, 2)
+        if topo_phase_roll == 2:
+            topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=0, alt_scale_max=250)) * atmosphere_scale * 10
 
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
 
-        coherence_mask = coherence_mask_simulate(0.3)
-        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-
-        wrapped_grid[coh_masked_indicies] = 0
+        mask_coherence_roll = random.randint(0, 1)
+        if mask_coherence_roll == 1:
+            coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+            coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+            wrapped_grid[coh_masked_indicies] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
 
