@@ -137,12 +137,12 @@ def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, cr
 def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, split):
 
     """
-    Create a randomly generated synthetic dataset of wrapped interferograms and their corresponding event-masks.
+    Create a randomly generated simulated dataset of wrapped interferograms and their corresponding event-masks.
 
     ARGS:\n
     name        Name of dataset. Seed is appended.\n
                 <name>_seed<seed>\n
-    amount      Number of synthetic interferograms created.\n
+    amount      Number of simulated interferograms created.\n
     """
 
     from src.io import make_simulated_dataset, split_dataset
@@ -428,7 +428,7 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 def simulate_wrapper(seed, tile_size, verbose):
 
     """
-    Show a randomly generated wrapped interferogram from simulated deformation.
+    Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
     from src.gui    import show_dataset
