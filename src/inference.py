@@ -196,7 +196,7 @@ def mask_and_plot(
     zeros        = (arr_uw == 0)
     arr_w[zeros] = 0
 
-    bad_coherence = coherence < 0.3
+    bad_coherence = coherence < 0.2
     arr_w[bad_coherence] = 0
 
     prediction = mask(
@@ -206,7 +206,7 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    tolerance1  = 0.8
+    tolerance1  = 0.85
     # tolerance2  = 1.99
     round_up1   = prediction >= tolerance1
     # round_up2   = prediction >= tolerance2
@@ -216,7 +216,7 @@ def mask_and_plot(
     # prediction[round_up2 ] = 2
     prediction[round_down1] = 0
 
-    # prediction[bad_coherence] = 0
+    prediction[bad_coherence] = 0
 
     _, [axs_wrapped, axs_mask] = plt.subplots(1, 2)
 
