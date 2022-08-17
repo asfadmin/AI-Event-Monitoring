@@ -765,14 +765,17 @@ def atm_topo_simulate(
     return ph_topo_m
 
 
-def aps_simulate():
+def aps_simulate(
+    size: int = 512
+):
 
     """
     Generate simulated turbulent atmospheric error.
 
     Parameters:
     -----------
-    None
+    size : int
+        The size n for the (n, n) dimension array that is returned.
 
     Returns:
     --------
@@ -782,8 +785,8 @@ def aps_simulate():
 
     pixel_size_degs = 1/3600
     
-    lons    = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
-    lats    = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lons    = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
+    lats    = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
@@ -794,6 +797,7 @@ def aps_simulate():
 
 
 def coherence_mask_simulate(
+    size:      int   = 512,
     threshold: float = 0.3
 ):
 
@@ -802,6 +806,8 @@ def coherence_mask_simulate(
 
     Parameters:
     -----------
+    size : int
+        The size n for the (n, n) dimension array that is returned.
     threshold : float
         The maximum value of coherence to be masked to zeros.
 
@@ -813,8 +819,8 @@ def coherence_mask_simulate(
 
     pixel_size_degs = 1 / 3600
     
-    lons = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
-    lats = np.arange(0.0, 0.0 + (pixel_size_degs * 512), pixel_size_degs)
+    lons = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
+    lats = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
@@ -914,12 +920,12 @@ def gen_simulated_deformation(
 
         masked_grid[mask_one_indicies] = 1
 
-        atmosphere_phase = aps_simulate() * atmosphere_scale
+        atmosphere_phase = aps_simulate(tile_size) * atmosphere_scale
 
-        coherence_mask = coherence_mask_simulate(0.3)
-        coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
+        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
 
-        interferogram = los_grid + atmosphere_phase[0:512, 0:512]
+        interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
 
         wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
 
@@ -954,13 +960,13 @@ def gen_simulated_deformation(
 
     else:
 
-        turb_phase = aps_simulate() * atmosphere_scale
+        turb_phase = aps_simulate(tile_size) * atmosphere_scale
         topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=250, alt_scale_max=500)) * atmosphere_scale * random.randint(2, 10)
 
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
 
         coherence_mask = coherence_mask_simulate(0.3)
-        coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
+        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
 
         wrapped_grid[coh_masked_indicies] = 0
 
