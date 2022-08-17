@@ -85,15 +85,15 @@ class DataGenerator(Sequence):
 
 
 def train(
-        model_name:    str,
-        dataset_path:  str,
-        input_shape:   int   = 1024,
-        num_epochs:    int   = 10,
-        num_filters:   int   = 16,
-        batch_size:    int   = 64,
-        learning_rate: float = 0.001,
-        dropout:       float = 0.2
-        ) -> Any:
+    model_name:    str,
+    dataset_path:  str,
+    input_shape:   int   = 1024,
+    num_epochs:    int   = 10,
+    num_filters:   int   = 16,
+    batch_size:    int   = 64,
+    learning_rate: float = 0.001,
+    dropout:       float = 0.2
+) -> Any:
 
     """
     Trains a model.

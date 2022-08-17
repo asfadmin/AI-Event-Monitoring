@@ -1,7 +1,7 @@
 """
- Created By:   Jason Herning
+ Created By:   Andrew Player
  File Name:    synthetic_interferogram.py
- Date Created: 01-25-2021
+ Date Created: 05-01-2022
  Description:  Functions for synthetic interferogram generation
 """
 
@@ -12,7 +12,6 @@ import numpy as np
 from perlin_numpy import generate_perlin_noise_2d
 from astropy.modeling.models import Gaussian2D
 from src.processing import simulate_unet_cropping
-
 
 
 def make_synthetic_interferogram(
@@ -49,9 +48,9 @@ def make_synthetic_interferogram(
 
 
 def add_noise(
-    interferogram,
-    size
-):
+    interferogram: np.ndarray,
+    size:          int
+) -> np.ndarray:
     
     y, x = np.mgrid[0:size, 0:size]
     
@@ -138,23 +137,23 @@ def wrap_interferogram(
 
 
 def make_random_dataset(
-                size:         int,
-                seed:         int   = 0,
-                min_g2d:      int   = 1,
-                max_g2d:      int   = 1,
-                crop_size:    int   = 0,
-                max_noise:    float = 0.0,
-                min_amp:      float = -300.0,
-                max_amp:      float = 300.0,
-                min_x_mean:   float = 64,
-                max_x_mean:   float = 448,
-                min_y_mean:   float = 64,
-                max_y_mean:   float = 448,
-                min_x_stddev:   float = 16,
-                max_x_stddev:   float = 64,
-                min_y_stddev:   float = 16,
-                max_y_stddev:   float = 64,
-                ) -> Tuple[np.ndarray, np.ndarray]:
+    size:           int,
+    seed:           int   = 0,
+    min_g2d:        int   = 1,
+    max_g2d:        int   = 1,
+    crop_size:      int   = 0,
+    max_noise:      float = 0.0,
+    min_amp:        float = -300.0,
+    max_amp:        float = 300.0,
+    min_x_mean:     float = 64,
+    max_x_mean:     float = 448,
+    min_y_mean:     float = 64,
+    max_y_mean:     float = 448,
+    min_x_stddev:   float = 16,
+    max_x_stddev:   float = 64,
+    min_y_stddev:   float = 16,
+    max_y_stddev:   float = 64,
+) -> Tuple[np.ndarray, np.ndarray]:
 
     """
     Generate a simulated wrapped interferogram along with an event-mask

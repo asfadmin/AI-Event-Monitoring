@@ -1,7 +1,7 @@
 """
- Created By:   Jason Herning and Andrew Player
+ Created By:   Andrew Player
  File Name:    io.py
- Date Created: 01-25-2021
+ Date Created: 05-01-2022
  Description:  Functions to handle file read/write.
 """
 
@@ -20,7 +20,11 @@ from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropp
 from src.sarsim import gen_simulated_deformation
 
 
-def save_dataset(save_path: Path, mask: np.ndarray, wrapped: np.ndarray) -> None:
+def save_dataset(
+    save_path: Path,
+    mask:      np.ndarray,
+    wrapped:   np.ndarray
+) -> None:
 
     """
     Saves event-mask and wrapped ndarrays to a single .npz file.
@@ -29,7 +33,9 @@ def save_dataset(save_path: Path, mask: np.ndarray, wrapped: np.ndarray) -> None
     np.savez(save_path, mask=mask, wrapped=wrapped)
 
 
-def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
+def load_dataset(
+    load_path: Path
+) -> Tuple[np.ndarray, np.ndarray]:
 
     """
     Loads event-mask and wrapped ndarrays from .npz file.
@@ -65,7 +71,9 @@ def create_directories() -> None:
             print(directory.__str__() + " already exists.")
 
 
-def get_image_array(image_path: str) -> np.ndarray:
+def get_image_array(
+    image_path: str
+) -> np.ndarray:
 
     """
     Load a interferogram .tif from storage into an array.
@@ -88,7 +96,9 @@ def get_image_array(image_path: str) -> np.ndarray:
     return arr
 
 
-def get_dataset_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_dataset_arrays(
+    product_path: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
@@ -134,7 +144,9 @@ def get_dataset_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.n
     return wrapped, masked
 
 
-def get_product_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_product_arrays(
+    product_path: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
@@ -184,12 +196,12 @@ def get_product_arrays(product_path: str,) -> Tuple[np.ndarray, np.ndarray, np.n
 
 
 def dataset_from_pngs(
-                    dataset_name: str,
-                    dataset_path: str,
-                    save_path: str,
-                    tile_size: int,
-                    crop_size: int,
-                    ) -> int:
+    dataset_name: str,
+    dataset_path: str,
+    save_path: str,
+    tile_size: int,
+    crop_size: int,
+) -> int:
 
     """
     Creates a dataset from a folder containing real interferogram products.
@@ -324,8 +336,6 @@ def dataset_from_products(
 
                 dataset_size += 1
 
-                #cropped_unwrapped = simulate_unet_cropping(tiled_unwrapped[index], crop_shape=(crop_size, crop_size))
-
                 product_id = product[-4:]
                 current_name = f"real_{product_id}_{index}"
                 save_path = save_directory / current_name
@@ -336,23 +346,23 @@ def dataset_from_products(
 
 
 def make_synthetic_dataset(
-                    name:         str,
-                    output_dir:   str,
-                    amount:       int,
-                    seed:         int,
-                    tile_size:    int,
-                    crop_size:    int,
-                    min_amp:      float,
-                    max_amp:      float,
-                    min_x_mean:   float,
-                    max_x_mean:   float,
-                    min_y_mean:   float,
-                    max_y_mean:   float,
-                    min_x_stddev: float,
-                    max_x_stddev: float,
-                    min_y_stddev: float,
-                    max_y_stddev: float,
-                    ) -> Tuple[int, int, str]:
+    name:         str,
+    output_dir:   str,
+    amount:       int,
+    seed:         int,
+    tile_size:    int,
+    crop_size:    int,
+    min_amp:      float,
+    max_amp:      float,
+    min_x_mean:   float,
+    max_x_mean:   float,
+    min_y_mean:   float,
+    max_y_mean:   float,
+    min_x_stddev: float,
+    max_x_stddev: float,
+    min_y_stddev: float,
+    max_y_stddev: float,
+) -> Tuple[int, int, str]:
 
     """
     Generate a dataset containing pairs of synthetic wrapped interferograms along with their event-masks
@@ -432,12 +442,12 @@ def make_synthetic_dataset(
 
 
 def make_simulated_dataset(
-                    name:         str,
-                    output_dir:   str,
-                    amount:       int,
-                    seed:         int,
-                    tile_size:    int,
-                    ) -> Tuple[int, int, str]:
+    name:         str,
+    output_dir:   str,
+    amount:       int,
+    seed:         int,
+    tile_size:    int,
+) -> Tuple[int, int, str]:
 
     """
     Generate a dataset containing pairs of wrapped interferograms from simulated deformation along with their event-masks
@@ -505,7 +515,10 @@ def make_simulated_dataset(
     return seed, count, dir_name
 
 
-def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
+def split_dataset(
+    dataset_path: str,
+    split:        float
+) -> Tuple[int, int]:
 
     """
         Split the dataset into train and test folders

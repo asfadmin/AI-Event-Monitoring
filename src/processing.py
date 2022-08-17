@@ -75,9 +75,6 @@ def tile(
         
         rows, cols = len(arr[:, 0]), len(arr[0, :])
 
-    # crop_offset_x => ((dims[1] + crop_size) // 2) - ((dims[1] - crop_size) // 2) = crop_size
-    # crop_offset_y => ((dims[0] + crop_size) // 2) - ((dims[0] - crop_size) // 2) = crop_size
-
     if not cropped:
         num_rows  = rows // tile_shape[0] - ceil(y_offset / tile_shape[0])
         num_cols  = cols // tile_shape[1] - ceil(x_offset / tile_shape[1])
@@ -86,9 +83,6 @@ def tile(
         num_cols  = ceil((cols - tile_shape[1]) / crop_size)  # = (w-tw)/cw
 
     num_tiles = num_rows * num_cols
-
-    # final_row_start = num_rows * crop_offset_y
-    # final_col_start = num_cols * crop_offset_x
 
     tiles = np.zeros((num_tiles, tile_shape[0], tile_shape[1]))
 
@@ -154,7 +148,7 @@ def pad(
 
 
 def simulate_unet_cropping(
-    arr: np.ndarray,
+    arr:        np.ndarray,
     crop_shape: tuple
 ) -> np.ndarray:
 
