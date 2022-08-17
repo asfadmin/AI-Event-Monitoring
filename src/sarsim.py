@@ -702,17 +702,26 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
     return ph_turbs_m
 
 
-def gen_fake_topo(size = 512):
+def gen_fake_topo(
+    size:          int = 512,
+    alt_scale_min: int = 0,
+    alt_scale_max: int = 500
+):
 
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
-    dem = generate_perlin(dem.shape[0]) * random.randint(0, 500)
+    dem = generate_perlin(dem.shape[0]) * random.randint(alt_scale_min, alt_scale_max)
 
     return dem
 
 
-def atm_topo_simulate(dem_m, strength_mean = 56.0, strength_var = 2.0, difference = True):
+def atm_topo_simulate(
+    dem_m:         np.ndarray,
+    strength_mean: float = 56.0,
+    strength_var:  float = 2.0,
+    difference:    bool  = True
+):
 
     import numpy as np
     import numpy.ma as ma
@@ -760,7 +769,9 @@ def aps_simulate():
     return ph_turb[0,]
 
 
-def coherence_mask_simulate(threshold: float = 0.3):
+def coherence_mask_simulate(
+    threshold: float = 0.3
+):
 
     pixel_size_degs = 1/3600
     
@@ -809,7 +820,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 20)
+    only_noise_dice_roll = random.randint(0, 9)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -824,7 +835,7 @@ def gen_simulated_deformation(
 
     atmosphere_scale = 90 * np.pi
 
-    if only_noise_dice_roll != 0 and only_noise_dice_roll != 20:
+    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
@@ -852,11 +863,12 @@ def gen_simulated_deformation(
 
         amplitude_adjustment = 1000 * np.pi
 
-        x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1])) * amplitude_adjustment
-        y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1])) * amplitude_adjustment
-        z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1])) * amplitude_adjustment
+        x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1]))
+        y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1]))
+        z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1]))
 
         los_grid = ((x_grid * los_vector[0,0]) + (y_grid * los_vector[1,0]) + (z_grid * los_vector[2,0]))
+        los_grid = los_grid * amplitude_adjustment
     
         masked_grid = np.zeros((tile_size, tile_size))
 
@@ -866,7 +878,7 @@ def gen_simulated_deformation(
 
         atmosphere_phase = aps_simulate() * atmosphere_scale
 
-        coherence_mask = coherence_mask_simulate(0.2)
+        coherence_mask = coherence_mask_simulate(0.3)
         coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
 
         interferogram = los_grid + atmosphere_phase[0:512, 0:512]
@@ -904,9 +916,10 @@ def gen_simulated_deformation(
 
     else:
 
-        atmosphere_phase = aps_simulate() * atmosphere_scale + atm_topo_simulate(gen_fake_topo()) * np.pi * random.randint(0, 900)
+        turb_phase = aps_simulate() * atmosphere_scale
+        topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=250, alt_scale_max=500)) * atmosphere_scale * random.randint(2, 10)
 
-        wrapped_grid = np.angle(np.exp(1j * (atmosphere_phase)))
+        wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
 
         coherence_mask = coherence_mask_simulate(0.3)
         coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
