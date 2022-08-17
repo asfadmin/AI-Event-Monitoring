@@ -625,8 +625,8 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         for i in range(n_atms):
             ph_turbs[i,:,:] = generate_correlated_noise_fft(nx_generate, ny_generate,    std_long=1, 
                                                            sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) )      # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
-            if verbose:
-                print(f'Generated {i+1} of {n_atms} single acquisition atmospheres.  ')
+            # if verbose:
+                # print(f'Generated {i+1} of {n_atms} single acquisition atmospheres.  ')
             
     else:
         pixel_distances = sp_distance.cdist(xy,xy, 'euclidean')                                                     # calcaulte all pixelwise pairs - slow as (pixels x pixels)       
@@ -702,6 +702,49 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
     return ph_turbs_m
 
 
+def gen_fake_topo(size = 512):
+
+    from src.synthetic_interferogram import generate_perlin
+
+    dem = np.zeros((size, size))    
+    dem = generate_perlin(dem.shape[0]) * random.randint(0, 500)
+
+    return dem
+
+
+def atm_topo_simulate(dem_m, strength_mean = 56.0, strength_var = 2.0, difference = True):
+
+    import numpy as np
+    import numpy.ma as ma
+
+    envisat_lambda = 0.056                     # envisat/S1 wavelength in m
+    dem = 0.001 * dem_m                        # convert from metres to km
+
+    if difference is False:
+        ph_topo = (strength_mean + strength_var * np.random.randn(1)) * dem
+    elif difference is True:
+        ph_topo_aq1 = (strength_mean + strength_var * np.random.randn(1)) * dem  # this is the delay for one acquisition
+        ph_topo_aq2 = (strength_mean + strength_var * np.random.randn(1)) * dem  # and for another
+        ph_topo = ph_topo_aq1 - ph_topo_aq2                                      # interferogram is the difference, still in rad
+    else:
+        print("'difference' must be either True or False.  Exiting...")
+        import sys; sys.exit()
+
+    # convert from rad to m
+    ph_topo_m = (ph_topo / (4*np.pi)) * envisat_lambda # delay/elevation ratio is taken from a paper (pinel 2011) using Envisat data
+
+
+    if np.max(ph_topo_m) < 0:                          # ensure that it always start from 0, either increasing or decreasing
+        ph_topo_m -= np.max(ph_topo_m)
+    else:
+        ph_topo_m -= np.min(ph_topo_m)
+
+    ph_topo_m = ma.array(ph_topo_m, mask = ma.getmask(dem_m))
+    ph_topo_m -= ma.mean(ph_topo_m)                   # mean centre the signal
+
+    return ph_topo_m
+
+
 def aps_simulate():
 
     pixel_size_degs = 1/3600
@@ -766,7 +809,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 9)
+    only_noise_dice_roll = random.randint(0, 20)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -779,7 +822,9 @@ def gen_simulated_deformation(
     ij          = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
     ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
-    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9 and only_noise_dice_roll != 10:
+    atmosphere_scale = 90 * np.pi
+
+    if only_noise_dice_roll != 0 and only_noise_dice_roll != 20:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
@@ -815,11 +860,11 @@ def gen_simulated_deformation(
     
         masked_grid = np.zeros((tile_size, tile_size))
 
-        mask_one_indicies  = np.abs(los_grid) >= np.pi
+        mask_one_indicies  = np.abs(los_grid) >= np.pi + 1
 
         masked_grid[mask_one_indicies] = 1
 
-        atmosphere_phase = aps_simulate() * 90 * np.pi
+        atmosphere_phase = aps_simulate() * atmosphere_scale + atm_topo_simulate(gen_fake_topo()) * np.pi * random.randint(0, 180)
 
         coherence_mask = coherence_mask_simulate(0.3)
         coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
@@ -859,9 +904,9 @@ def gen_simulated_deformation(
 
     else:
 
-        atmosphere_turbulence = aps_simulate() * 90 * np.pi
+        atmosphere_phase = aps_simulate() * atmosphere_scale + atm_topo_simulate(gen_fake_topo()) * np.pi * random.randint(0, 900)
 
-        wrapped_grid = np.angle(np.exp(1j * (atmosphere_turbulence)))
+        wrapped_grid = np.angle(np.exp(1j * (atmosphere_phase)))
 
         coherence_mask = coherence_mask_simulate(0.3)
         coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
