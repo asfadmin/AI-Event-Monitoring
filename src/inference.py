@@ -196,7 +196,7 @@ def mask_and_plot(
     zeros        = (arr_uw == 0)
     arr_w[zeros] = 0
 
-    bad_coherence = coherence < 0.2
+    bad_coherence = coherence < 0.3
     arr_w[bad_coherence] = 0
 
     prediction = mask(
@@ -207,16 +207,21 @@ def mask_and_plot(
     )
 
     tolerance1  = 0.85
-    # tolerance2  = 1.99
     round_up1   = prediction >= tolerance1
-    # round_up2   = prediction >= tolerance2
     round_down1 = prediction <  tolerance1
 
     prediction[round_up1 ] = 1
-    # prediction[round_up2 ] = 2
     prediction[round_down1] = 0
 
     prediction[bad_coherence] = 0
+
+    average_val = np.mean(prediction)
+    print("Average: ", average_val)
+
+    if average_val >= 1e-4:
+        print("Positive")
+    else:
+        print("Negative") 
 
     _, [axs_wrapped, axs_mask] = plt.subplots(1, 2)
 
@@ -229,10 +234,7 @@ def mask_and_plot(
     axs_mask.set_title("mask_predicted")
     axs_mask.imshow(prediction, origin='lower', cmap='jet')
 
-    plt.show()
-
-    average_val = np.mean(prediction)
-    print("Average: ", average_val)
+    plt.show()  
 
     return prediction
 
