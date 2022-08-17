@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "aiphase"
-version = "0.1.0"
-description = ""
+name = "AI-Event-Monitoring"
+version = "0.0.1"
+description = "A deep learning model that can recognize and mask significant deformation events in InSAR interferograms."
 authors = ["Your Name <you@example.com>"]
 license = "n"
 
