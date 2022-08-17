@@ -681,6 +681,24 @@ def gen_fake_topo(
     alt_scale_max: int = 500
 ):
 
+    """
+    Generate fake topography (a dem in meters) for generating simulated atmospheric topographic error.
+
+    Parameters:
+    -----------
+    size : int
+        The size n for the (n, n) dimension array that is returned.
+    alt_scale_min : int
+        The minimum altitude scaling value for the generated perlin noise.
+    alt_scale_max : int
+        The maximum altitude scaling value for the generated perlin noise.
+
+    Returns:
+    --------
+    dem : np.ndarray
+        The array that is meant to be used as a simulated dem with values in meters.
+    """
+
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
