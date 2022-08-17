@@ -64,20 +64,11 @@ def test_model(
     y  = y.reshape ((crop_size, crop_size))
     yp = yp.reshape((crop_size, crop_size))
 
-    # round_up   = yp >= 0.7
-    # round_down = yp < 0.7
-
-    # yp[round_up]   = 1
-    # yp[round_down] = 0
-
     tolerance1  = 0.75
-    # tolerance2  = 1.95
     round_up1   = yp >= tolerance1
-    # round_up2   = yp >= tolerance2
     round_down1 = yp <  tolerance1
 
     yp[round_up1 ] = 1
-    # yp[round_up2 ] = 2
     yp[round_down1] = 0
 
     _, [axs_wrapped, axs_mask_true, axs_mask_pred] = plt.subplots(1, 3)
@@ -227,9 +218,6 @@ def mask_and_plot(
 
     axs_wrapped.set_title("wrapped")
     axs_wrapped.imshow(arr_w, origin='lower', cmap='jet')
-
-    # axs_unwrapped_true.set_title("mask_true")
-    # axs_unwrapped_true.imshow(arr_uw, origin='lower', cmap='jet')
 
     axs_mask.set_title("mask_predicted")
     axs_mask.imshow(prediction, origin='lower', cmap='jet')
