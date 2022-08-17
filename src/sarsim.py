@@ -860,13 +860,13 @@ def gen_simulated_deformation(
     
         masked_grid = np.zeros((tile_size, tile_size))
 
-        mask_one_indicies  = np.abs(los_grid) >= np.pi + 1
+        mask_one_indicies  = np.abs(los_grid) >= np.pi
 
         masked_grid[mask_one_indicies] = 1
 
-        atmosphere_phase = aps_simulate() * atmosphere_scale + atm_topo_simulate(gen_fake_topo()) * np.pi * random.randint(0, 180)
+        atmosphere_phase = aps_simulate() * atmosphere_scale
 
-        coherence_mask = coherence_mask_simulate(0.3)
+        coherence_mask = coherence_mask_simulate(0.2)
         coh_masked_indicies = coherence_mask[0,0:512, 0:512] == 0
 
         interferogram = los_grid + atmosphere_phase[0:512, 0:512]
