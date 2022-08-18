@@ -13,7 +13,6 @@ from typing import Tuple
 
 import numpy as np
 from PIL import Image
-from osgeo import gdal
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
@@ -89,6 +88,8 @@ def get_image_array(
         The interferogram array.
     """
 
+    from osgeo import gdal
+
     dataset = gdal.Open(image_path, gdal.GA_ReadOnly)
     band = dataset.GetRasterBand(1)
     arr = band.ReadAsArray()
@@ -117,6 +118,8 @@ def get_dataset_arrays(
     correlation : np.ndarray
         The correlation map array loaded from the .tif,
     """
+
+    from osgeo import gdal
 
     wrapped_path = ""
     masked_path = ""
@@ -165,6 +168,8 @@ def get_product_arrays(
     correlation : np.ndarray
         The correlation map array loaded from the .tif,
     """
+
+    from osgeo import gdal
 
     wrapped_path = ""
     correlation_path = ""
