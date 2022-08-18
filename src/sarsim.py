@@ -932,7 +932,6 @@ def gen_simulated_deformation(
             coherence_mask = coherence_mask_simulate(tile_size, threshold)
             coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
             wrapped_grid[coh_masked_indicies] = 0
-            masked_grid [coh_masked_indicies] = 0
 
         if log:
             print("Max X Position (meters): ", np.max(X))
@@ -949,7 +948,6 @@ def gen_simulated_deformation(
             print("Maximum Phase Value: ", np.max(los_grid))
         
         return masked_grid, wrapped_grid
-
 
     else:
 
