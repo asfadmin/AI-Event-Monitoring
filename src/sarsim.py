@@ -864,7 +864,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 3)
+    only_noise_dice_roll = random.randint(0, 10)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -916,7 +916,7 @@ def gen_simulated_deformation(
     
         masked_grid = np.zeros((tile_size, tile_size))
 
-        mask_one_indicies  = np.abs(los_grid) >= np.pi
+        mask_one_indicies  = np.abs(los_grid) >= 2 * np.pi
 
         masked_grid[mask_one_indicies] = 1
 
@@ -926,12 +926,10 @@ def gen_simulated_deformation(
 
         wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
 
-        mask_coherence_roll = random.randint(0, 1)
-        if mask_coherence_roll == 1:
-            threshold = random.random() / 2
-            coherence_mask = coherence_mask_simulate(tile_size, threshold)
-            coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-            wrapped_grid[coh_masked_indicies] = 0
+        threshold = random.random() / 2
+        coherence_mask = coherence_mask_simulate(tile_size, threshold)
+        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+        wrapped_grid[coh_masked_indicies] = 0
 
         if log:
             print("Max X Position (meters): ", np.max(X))
