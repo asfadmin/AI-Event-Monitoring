@@ -442,7 +442,7 @@ def simulate_wrapper(seed, tile_size, verbose):
         verbose
     )
 
-    if event_is_present[1]:
+    if event_is_present[0]:
         print("This interferogram contains deformation.")
     else:
         print("This interferogram does not contain deformation.")
