@@ -13,6 +13,7 @@ from numpy import average
 
 from src.io                      import get_product_arrays
 from src.processing              import tile, tiles_to_image
+from src.sarsim                  import gen_simulated_deformation
 from src.synthetic_interferogram import make_random_dataset
 
 from tensorflow.keras.models import Model, load_model
@@ -23,7 +24,8 @@ def test_model(
     model_path: str,
     seed:       int,
     tile_size:  int,
-    crop_size:  int = 0
+    crop_size:  int  = 0,
+    use_sim:    bool = False
 ) -> None:
 
     """
@@ -54,7 +56,11 @@ def test_model(
     if crop_size == 0:
         crop_size = tile_size
 
-    y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
+    y, x = 0, 0
+    if use_sim:
+        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=True)
+    else:
+        y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
     x  = x.reshape((1, tile_size, tile_size, 1))
     y  = y.reshape((1, crop_size, crop_size, 1))
@@ -87,6 +93,66 @@ def test_model(
 
     print("Mean Squared Error   ", mse)
     print("Mean Absolute Error  ", mae)
+    
+    if use_sim:
+        print("Presence             ", presence)
+
+    plt.show()
+
+
+def test_model_eval(
+    model_path: str,
+    seed:       int,
+    tile_size:  int,
+    crop_size:  int  = 0
+) -> None:
+
+    """
+    Predicts the event-mask on a synthetic wrapped interferogram and plots the results.
+
+    Parameters:
+    -----------
+    model_path : str
+        The path to the model.
+    seed : int
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        the results will be different every time.
+    tile_size : int
+        The dimensional size of the simulated interferograms to generate, this must match the
+        input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs to be
+        equal to the output shape.
+
+    Returns:
+    --------
+    None
+    """
+
+    model = load_model(model_path)
+
+    if crop_size == 0:
+        crop_size = tile_size
+
+    y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=True)
+
+    x  = x.reshape((1, tile_size, tile_size, 1))
+    yp = model.predict(x)
+
+    x = x.reshape((tile_size, tile_size))
+
+    _, [axs_wrapped, axs_mask_true] = plt.subplots(1, 2)
+
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.imshow(x, origin='lower', cmap='jet')
+
+    axs_mask_true.set_title("true mask")
+    axs_mask_true.imshow(y, origin='lower', cmap='jet')
+
+    print("Prediction  ", yp      )
+
+    print("Presence    ", presence)
 
     plt.show()
 
@@ -197,7 +263,7 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    tolerance1  = 0.85
+    tolerance1  = 0.99
     round_up1   = prediction >= tolerance1
     round_down1 = prediction <  tolerance1
 
