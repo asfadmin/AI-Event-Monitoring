@@ -13,6 +13,7 @@ from typing import Tuple
 
 import numpy as np
 from PIL import Image
+from osgeo import gdal
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
@@ -22,14 +23,15 @@ from src.sarsim import gen_simulated_deformation
 def save_dataset(
     save_path: Path,
     mask:      np.ndarray,
-    wrapped:   np.ndarray
+    wrapped:   np.ndarray,
+    presence:  int
 ) -> None:
 
     """
     Saves event-mask and wrapped ndarrays to a single .npz file.
     """
 
-    np.savez(save_path, mask=mask, wrapped=wrapped)
+    np.savez(save_path, mask=mask, wrapped=wrapped, presence=presence)
 
 
 def load_dataset(
@@ -53,7 +55,7 @@ def load_dataset(
     """
 
     dataset_file = np.load(load_path)
-    return dataset_file['mask'], dataset_file['wrapped']
+    return dataset_file['mask'], dataset_file['wrapped'], dataset_file['presence']
 
 
 def create_directories() -> None:
@@ -120,7 +122,7 @@ def get_dataset_arrays(
     """
 
     from osgeo import gdal
-
+    
     wrapped_path = ""
     masked_path = ""
 
@@ -170,7 +172,7 @@ def get_product_arrays(
     """
 
     from osgeo import gdal
-
+    
     wrapped_path = ""
     correlation_path = ""
     unwrapped_path = ""
@@ -503,7 +505,7 @@ def make_simulated_dataset(
 
         current_seed = new_seed()
 
-        masked, wrapped = gen_simulated_deformation(
+        masked, wrapped, presence = gen_simulated_deformation(
             seed      = current_seed,
             tile_size = tile_size
         )
@@ -513,7 +515,7 @@ def make_simulated_dataset(
 
         current_name = f"sim_seed{current_seed}_{count}"
         save_path = save_directory / current_name
-        save_dataset(save_path, mask=masked, wrapped=wrapped)
+        save_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
 
         count += 1
 
