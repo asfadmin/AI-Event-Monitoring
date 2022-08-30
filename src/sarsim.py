@@ -878,8 +878,10 @@ def gen_simulated_deformation(
     ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
     atmosphere_scale = 90 * np.pi
+     
+    presence = np.asarray([0])
 
-    if only_noise_dice_roll != 1:
+    if only_noise_dice_roll != 1 and only_noise_dice_roll != 2 and only_noise_dice_roll != 10:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
@@ -944,8 +946,17 @@ def gen_simulated_deformation(
             print("Source Parameters: ", kwargs)
 
             print("Maximum Phase Value: ", np.max(los_grid))
+
+        presence[0] = 1
         
-        return masked_grid, wrapped_grid
+        return masked_grid, wrapped_grid, presence
+
+    elif only_noise_dice_roll == 10:
+
+        masked_grid  = np.zeros((tile_size, tile_size))
+        wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
+
+        return masked_grid, wrapped_grid, presence
 
     else:
 
@@ -968,4 +979,4 @@ def gen_simulated_deformation(
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-        return masked_grid, wrapped_grid
+        return masked_grid, wrapped_grid, presence
