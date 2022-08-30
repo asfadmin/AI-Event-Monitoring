@@ -817,7 +817,7 @@ def coherence_mask_simulate(
         The masked coherence array.
     """
 
-    pixel_size_degs = 1 / 3600
+    pixel_size_degs = 1 / 360
     
     lons = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
     lats = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
@@ -864,7 +864,7 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 9)
+    only_noise_dice_roll = random.randint(0, 10)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
@@ -878,15 +878,17 @@ def gen_simulated_deformation(
     ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
     atmosphere_scale = 90 * np.pi
+     
+    presence = np.asarray([0])
 
-    if only_noise_dice_roll != 0 and only_noise_dice_roll != 9:
+    if only_noise_dice_roll != 1 and only_noise_dice_roll != 2 and only_noise_dice_roll != 10:
 
         source_x = np.max(X) / random.randint(1, 10)
         source_y = np.max(Y) / random.randint(1, 10)
 
-        strike       = random.randint(0, 359)
+        strike       = random.randint(0, 180)
         dip          = random.randint(0, 90)
-        rake         = [0, 90, -90, 180][random.randint(0, 3)]
+        rake         = [0, 90, -90][random.randint(0, 2)]
         slip         = 1
 
         length       = random.randint(1000, np.max(X) // 16)
@@ -916,19 +918,19 @@ def gen_simulated_deformation(
     
         masked_grid = np.zeros((tile_size, tile_size))
 
-        mask_one_indicies  = np.abs(los_grid) >= np.pi
+        mask_one_indicies  = np.abs(los_grid) >= 2 * np.pi
 
         masked_grid[mask_one_indicies] = 1
 
         atmosphere_phase = aps_simulate(tile_size) * atmosphere_scale
 
-        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
-        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-
         interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
 
         wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
 
+        threshold = random.random() / 2
+        coherence_mask = coherence_mask_simulate(tile_size, threshold)
+        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
         wrapped_grid[coh_masked_indicies] = 0
 
         if log:
@@ -944,32 +946,37 @@ def gen_simulated_deformation(
             print("Source Parameters: ", kwargs)
 
             print("Maximum Phase Value: ", np.max(los_grid))
+
+        presence[0] = 1
         
-        return masked_grid, wrapped_grid
+        return masked_grid, wrapped_grid, presence
 
-    elif only_noise_dice_roll == 0:
+    elif only_noise_dice_roll == 10:
 
-        noise = np.random.uniform(1.0, 50.0, size=(tile_size, tile_size))
-
-        interferogram = add_noise(noise, tile_size)
-
-        wrapped_grid = np.angle(np.exp(1j * (interferogram)))
         masked_grid  = np.zeros((tile_size, tile_size))
+        wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
 
-        return masked_grid, wrapped_grid
+        return masked_grid, wrapped_grid, presence
 
     else:
 
         turb_phase = aps_simulate(tile_size) * atmosphere_scale
-        topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=250, alt_scale_max=500)) * atmosphere_scale * random.randint(2, 10)
+        
+        topo_phase = np.zeros(turb_phase.shape)
+        
+        topo_phase_roll = random.randint(0, 1)
+        if topo_phase_roll == 1:
+            topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=100, alt_scale_max=500)) * atmosphere_scale * 10
 
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
 
-        coherence_mask = coherence_mask_simulate(0.3)
-        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-
-        wrapped_grid[coh_masked_indicies] = 0
+        mask_coherence_roll = random.randint(0, 1)
+        if mask_coherence_roll == 1:
+            threshold = random.random() / 2
+            coherence_mask = coherence_mask_simulate(tile_size, threshold)
+            coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+            wrapped_grid[coh_masked_indicies] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-        return masked_grid, wrapped_grid
+        return masked_grid, wrapped_grid, presence

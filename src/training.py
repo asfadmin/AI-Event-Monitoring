@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 from src.architectures.unet import create_unet
 from src.architectures.resnet import create_resnet
+from src.architectures.eventnet import create_eventnet
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import Sequence
 
