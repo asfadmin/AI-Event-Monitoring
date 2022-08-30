@@ -27,6 +27,7 @@ dropout_help      += " 0 <= Dropout <= 1"
 learningrate_help  = "The rate which affects how much the model changes in response to estimated error."
 learningrate_help += "0.0005 <= learning_rate <= 0.005"
 amplitude_help     = "Max amplitude of the gaussians (minimum is the negative of this)."
+usesim_help        = "Flag to use simulated interferograms rather than synthetic interferograms. Default is False."
 
 
 # ------------------ #
@@ -293,11 +294,12 @@ def train_model_wrapper(
 
 
 @cli.command   ('test-model')
-@click.argument('model_path'       , type=str                                  )
-@click.option  ('-s', '--seed'     , type=int, default=0   , help=seed_help    )
-@click.option  ('-t', '--tile_size', type=int, default=1024, help=tilesize_help)
-@click.option  ('-c', '--crop_size', type=int, default=0   , help=cropsize_help)
-def test_model_wrapper(model_path, seed, tile_size, crop_size):
+@click.argument('model_path'           , type=str                                    )
+@click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help  )
+@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help    )
+@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help)
+@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help)
+def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -434,11 +436,16 @@ def simulate_wrapper(seed, tile_size, verbose):
     from src.gui    import show_dataset
     from src.sarsim import gen_simulated_deformation
 
-    masked, wrapped = gen_simulated_deformation(
+    masked, wrapped, event_is_present = gen_simulated_deformation(
         seed,
         tile_size,
         verbose
     )
+
+    if event_is_present[1]:
+        print("This interferogram contains deformation.")
+    else:
+        print("This interferogram does not contain deformation.")
 
     show_dataset(masked, wrapped)
 
