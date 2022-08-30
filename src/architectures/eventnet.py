@@ -85,13 +85,6 @@ def create_eventnet(
 
     c1 = conv2d_block(input, 25)
     m1 = MaxPooling2D((2, 2), strides=2)  (c1)
-    # c2 = conv2d_block(m1   , num_filters *  2)
-    # m2 = MaxPooling2D((2, 2), strides=2)  (c2)
-    # c3 = conv2d_block(m2   , num_filters *  4)
-    # m3 = MaxPooling2D((2, 2), strides=2)  (c3)
-    # c4 = conv2d_block(m3   , num_filters *  8)
-    # m4 = MaxPooling2D((2, 2), strides=2)  (c4)
-    # c5 = conv2d_block(m4   , num_filters * 16)
 
 
     # --------------------------------- #
