@@ -172,7 +172,7 @@ def get_product_arrays(
     """
 
     from osgeo import gdal
-    
+
     wrapped_path = ""
     correlation_path = ""
     unwrapped_path = ""
@@ -510,7 +510,7 @@ def make_simulated_dataset(
             tile_size = tile_size
         )
 
-        if count % 100 == 0:
+        if count % 10 == 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
 
         current_name = f"sim_seed{current_seed}_{count}"
