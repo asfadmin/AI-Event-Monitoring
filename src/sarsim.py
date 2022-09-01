@@ -835,8 +835,8 @@ def gen_simulated_deformation(
 
     if only_noise_dice_roll != 1 and only_noise_dice_roll != 2 and only_noise_dice_roll != 10:
 
-        source_x = np.max(X) / np.random.randint(0, 11)
-        source_y = np.max(Y) / np.random.randint(0, 11)
+        source_x = np.max(X) / np.random.randint(1, 11)
+        source_y = np.max(Y) / np.random.randint(1, 11)
 
         strike       = np.random.randint(0, 181)
         dip          = np.random.randint(0, 91)
