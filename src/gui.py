@@ -12,7 +12,10 @@ from src.io         import get_product_arrays
 from src.processing import simulate_unet_cropping, tile, tiles_to_image
 
 
-def show_dataset(masked, wrapped) -> None:
+def show_dataset(
+    masked:  np.ndarray, 
+    wrapped: np.ndarray
+) -> None:
 
     """
     Plot the masked and wrapped arrays.
