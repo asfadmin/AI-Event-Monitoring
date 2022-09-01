@@ -25,8 +25,8 @@ def I1(xi, eta, q, delta, nu, R, X, d_tild):
     @return I1
     """
 
-    if math.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(-xi/(math.cos(delta)*(R + d_tild))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)/math.cos(delta)
+    if np.cos(delta) > 10E-8:
+        return (1 - 2*nu)*(-xi/(np.cos(delta)*(R + d_tild))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)/np.cos(delta)
     else:
         return -((1 - 2*nu)/2.)*(xi*q/((R + d_tild)**2))
 
@@ -54,8 +54,8 @@ def I3(xi, eta, q, delta, nu, R, y_tild, d_tild):
     @return I3
     """
 
-    if math.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(y_tild/(math.cos(delta)*(R + d_tild)) - np.log(R + eta)) + I4(xi, eta, q, delta, nu, R, d_tild)*math.sin(delta)/math.cos(delta)
+    if np.cos(delta) > 10E-8:
+        return (1 - 2*nu)*(y_tild/(np.cos(delta)*(R + d_tild)) - np.log(R + eta)) + I4(xi, eta, q, delta, nu, R, d_tild)*np.sin(delta)/np.cos(delta)
     else:
         return ((1 - 2*nu)/2.)*(eta/(R + d_tild) + y_tild*q/((R + d_tild)**2) - np.log(R + eta))
     
@@ -70,8 +70,8 @@ def I4(xi, eta, q, delta, nu, R, d_tild):
     @return I4
     """
 
-    if math.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(np.log(R + d_tild) - math.sin(delta)*np.log(R + eta))/math.cos(delta)
+    if np.cos(delta) > 10E-8:
+        return (1 - 2*nu)*(np.log(R + d_tild) - np.sin(delta)*np.log(R + eta))/np.cos(delta)
     else:
         return -(1 - 2*nu)*q/(R + d_tild)
     
@@ -86,10 +86,10 @@ def I5(xi, eta, q, delta, nu, R, X, d_tild):
     @return I5
     """
 
-    if math.cos(delta) > 10E-8:
-        return (1 - 2*nu)*2*np.arctan((eta*(X + q*math.cos(delta)) + X*(R + X)*math.sin(delta))/(xi*(R + X)*math.cos(delta)))/math.cos(delta)
+    if np.cos(delta) > 10E-8:
+        return (1 - 2*nu)*2*np.arctan((eta*(X + q*np.cos(delta)) + X*(R + X)*np.sin(delta))/(xi*(R + X)*np.cos(delta)))/np.cos(delta)
     else:
-        return -(1 - 2*nu)*xi*math.sin(delta)/(R + d_tild)
+        return -(1 - 2*nu)*xi*np.sin(delta)/(R + d_tild)
 
 
 def f_x_strike(xi, eta, q, delta, nu):
@@ -104,8 +104,8 @@ def f_x_strike(xi, eta, q, delta, nu):
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return xi*q/(R*(R + eta)) + np.arctan(xi*eta/(q*R)) + I1(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return xi*q/(R*(R + eta)) + np.arctan(xi*eta/(q*R)) + I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)
 
 
 def f_x_dip(xi, eta, q, delta, nu):
@@ -119,9 +119,9 @@ def f_x_dip(xi, eta, q, delta, nu):
     """
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*math.cos(delta) + q*math.sin(delta)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return q/R - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*math.sin(delta)*math.cos(delta)
+    y_tild = eta*np.cos(delta) + q*np.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return q/R - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)*np.cos(delta)
 
 
 def f_x_tensile(xi, eta, q, delta, nu):
@@ -135,9 +135,9 @@ def f_x_tensile(xi, eta, q, delta, nu):
     """
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*math.cos(delta) + q*math.sin(delta)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return (q**2)/(R*(R + eta)) - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*math.sin(delta)**2
+    y_tild = eta*np.cos(delta) + q*np.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return (q**2)/(R*(R + eta)) - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)**2
 
 
 def f_y_strike(xi, eta, q, delta, nu):
@@ -151,9 +151,9 @@ def f_y_strike(xi, eta, q, delta, nu):
     """
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*math.cos(delta) + q*math.sin(delta)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return y_tild*q/(R*(R + eta)) + q*math.cos(delta)/(R + eta) + I2(xi, eta, q, delta, nu, R, y_tild, d_tild)*math.sin(delta)
+    y_tild = eta*np.cos(delta) + q*np.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return y_tild*q/(R*(R + eta)) + q*np.cos(delta)/(R + eta) + I2(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)
 
 
 def f_y_dip(xi, eta, q, delta, nu):
@@ -168,9 +168,9 @@ def f_y_dip(xi, eta, q, delta, nu):
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
-    y_tild = eta*math.cos(delta) + q*math.sin(delta)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return y_tild*q/(R*(R + xi)) + math.cos(delta)*np.arctan(xi*eta/(q*R)) - I1(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)*math.cos(delta)
+    y_tild = eta*np.cos(delta) + q*np.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return y_tild*q/(R*(R + xi)) + np.cos(delta)*np.arctan(xi*eta/(q*R)) - I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)*np.cos(delta)
 
 
 def f_y_tensile(xi, eta, q, delta, nu):
@@ -185,8 +185,8 @@ def f_y_tensile(xi, eta, q, delta, nu):
 
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return -d_tild*q/(R*(R + xi)) - math.sin(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I1(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)**2
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return -d_tild*q/(R*(R + xi)) - np.sin(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)**2
 
 
 
@@ -201,8 +201,8 @@ def f_z_strike(xi, eta, q, delta, nu):
     """
     
     R = np.sqrt(xi**2 + eta**2 + q**2)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return d_tild*q/(R*(R + eta)) + q*math.sin(delta)/(R + eta) + I4(xi, eta, q, delta, nu, R, d_tild)*math.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return d_tild*q/(R*(R + eta)) + q*np.sin(delta)/(R + eta) + I4(xi, eta, q, delta, nu, R, d_tild)*np.sin(delta)
 
 
 def f_z_dip(xi, eta, q, delta, nu):
@@ -217,8 +217,8 @@ def f_z_dip(xi, eta, q, delta, nu):
     
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return d_tild*q/(R*(R + xi)) + math.sin(delta)*np.arctan(xi*eta/(q*R)) - I5(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)*math.cos(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return d_tild*q/(R*(R + xi)) + np.sin(delta)*np.arctan(xi*eta/(q*R)) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)*np.cos(delta)
 
 
 def f_z_tensile(xi, eta, q, delta, nu):
@@ -233,9 +233,9 @@ def f_z_tensile(xi, eta, q, delta, nu):
     
     R = np.sqrt(xi**2 + eta**2 + q**2)
     X = np.sqrt(xi**2 + q**2)
-    y_tild = eta*math.cos(delta) + q*math.sin(delta)
-    d_tild = eta*math.sin(delta) - q*math.cos(delta)
-    return y_tild*q/(R*(R + xi)) + math.cos(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*math.sin(delta)**2
+    y_tild = eta*np.cos(delta) + q*np.sin(delta)
+    d_tild = eta*np.sin(delta) - q*np.cos(delta)
+    return y_tild*q/(R*(R + xi)) + np.cos(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)**2
 
 
 def chinnerys_notation(f, x, p, q, L, W, delta, nu):
@@ -289,17 +289,17 @@ def compute_okada_displacement(fault_centroid_x,
     
     @return The surface displacement field
     '''
-    U1 = math.cos(fault_rake)*fault_slip
-    U2 = math.sin(fault_rake)*fault_slip
+    U1 = np.cos(fault_rake)*fault_slip
+    U2 = np.sin(fault_rake)*fault_slip
 
-    east_component = x_array - fault_centroid_x + math.cos(fault_strike)*math.cos(fault_dip)*fault_width/2.
-    north_component = y_array - fault_centroid_y - math.sin(fault_strike)*math.cos(fault_dip)*fault_width/2.
-    okada_x_array = math.cos(fault_strike)*north_component + math.sin(fault_strike)*east_component + fault_length/2.
-    okada_y_array = math.sin(fault_strike)*north_component - math.cos(fault_strike)*east_component + math.cos(fault_dip)*fault_width
+    east_component = x_array - fault_centroid_x + np.cos(fault_strike)*np.cos(fault_dip)*fault_width/2.
+    north_component = y_array - fault_centroid_y - np.sin(fault_strike)*np.cos(fault_dip)*fault_width/2.
+    okada_x_array = np.cos(fault_strike)*north_component + np.sin(fault_strike)*east_component + fault_length/2.
+    okada_y_array = np.sin(fault_strike)*north_component - np.cos(fault_strike)*east_component + np.cos(fault_dip)*fault_width
     
-    d = fault_centroid_depth + math.sin(fault_dip)*fault_width/2.
-    p = okada_y_array*math.cos(fault_dip) + d*math.sin(fault_dip)
-    q = okada_y_array*math.sin(fault_dip) - d*math.cos(fault_dip)
+    d = fault_centroid_depth + np.sin(fault_dip)*fault_width/2.
+    p = okada_y_array*np.cos(fault_dip) + d*np.sin(fault_dip)
+    q = okada_y_array*np.sin(fault_dip) - d*np.cos(fault_dip)
 
     displacement_shape = [3] + list(x_array.shape)
     okada_displacement_array = np.zeros(displacement_shape)
@@ -316,8 +316,8 @@ def compute_okada_displacement(fault_centroid_x,
 
     displacement_array = np.zeros(displacement_shape)
 
-    displacement_array[0] = math.sin(fault_strike)*okada_displacement_array[0] - math.cos(fault_strike)*okada_displacement_array[1]
-    displacement_array[1] = math.cos(fault_strike)*okada_displacement_array[0] + math.sin(fault_strike)*okada_displacement_array[1]
+    displacement_array[0] = np.sin(fault_strike)*okada_displacement_array[0] - np.cos(fault_strike)*okada_displacement_array[1]
+    displacement_array[1] = np.cos(fault_strike)*okada_displacement_array[0] + np.sin(fault_strike)*okada_displacement_array[1]
     displacement_array[2] = okada_displacement_array[2]
             
     return displacement_array
@@ -522,47 +522,46 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
             2020_??_?? | LS | Adapted from code by Andy Hooper.  
             2021_03_01 | MEG | Small change to docs and inputs to work with SyInterferoPy
         """
-        
-        import numpy as np
-        import numpy.matlib as npm
-        import math
-        
+                
         np.seterr(divide='ignore')
     
-        cut_off_freq=1/50                                                   # drop wavelengths above 50 km 
+        cut_off_freq = 1/50                                                    # drop wavelengths above 50 km 
         
-        x=np.arange(0,int(nx/2))                                            # positive frequencies only
-        y=np.arange(0,int(ny/2))                                            # positive frequencies only
-        freq_x=np.divide(x,nx*sp)
-        freq_y=np.divide(y,ny*sp)
-        Y,X=npm.meshgrid(freq_x,freq_y)
-        freq=np.sqrt((X*X+Y*Y)/2)                                           # 2D positive frequencies
+        x      = np.arange(0, int(nx / 2))                                     # positive frequencies only
+        y      = np.arange(0, int(ny / 2))                                     # positive frequencies only
+        freq_x = np.divide(x, nx * sp)
+        freq_y = np.divide(y, ny * sp)
+        Y, X   = np.meshgrid(freq_x, freq_y)
+        freq   = np.sqrt((X * X + Y * Y) / 2)                                  # 2D positive frequencies
         
-        log_power=np.log10(freq)*-11/3                                      # -11/3 in 2D gives -8/3 in 1D
-        ix=np.where(freq<2/3)
-        log_power[ix]=np.log10(freq[ix])*-8/3-math.log10(2/3)               # change slope at 1.5 km (2/3 cycles per km)
+        log_power     = np.log10(freq) * -11/3                                 # -11/3 in 2D gives -8/3 in 1D
+        ix            = np.where(freq < 2/3)
+        log_power[ix] = np.log10(freq[ix]) * -8/3 -np.log10(2/3)               # change slope at 1.5 km (2/3 cycles per km)
         
-        bin_power=np.power(10,log_power)
-        ix=np.where(freq<cut_off_freq)
-        bin_power[ix]=0
+        bin_power     = np.power(10, log_power)
+        ix            = np.where(freq < cut_off_freq)
+        bin_power[ix] = 0
         
-        APS_power=np.zeros((ny,nx))                                         # mirror positive frequencies into other quadrants
-        APS_power[0:int(ny/2), 0:int(nx/2)]=bin_power
-        APS_power[0:int(ny/2), int(np.ceil(nx/2)):]=npm.fliplr(bin_power)
-        APS_power[int(np.ceil(ny/2)):, 0:int(nx/2)]=npm.flipud(bin_power)
-        APS_power[int(np.ceil(ny/2)):, int(np.ceil(nx/2)):]=npm.fliplr(npm.flipud(bin_power))
-        APS_filt=np.sqrt(APS_power)
+        APS_power = np.zeros((ny,nx))                                         # mirror positive frequencies into other quadrants
         
-        x=np.random.randn(ny,nx)                                            # white noise
-        y_tmp=np.fft.fft2(x)
-        y_tmp2=np.multiply(y_tmp,APS_filt)                                  # convolve with filter
-        y=np.fft.ifft2(y_tmp2)
-        APS=np.real(y)
-    
-        APS=APS/np.std(APS)*std_long                                        #  adjust the turbulence by the weather model at the longer wavelengths.
-        APS=APS*0.01                                                        # convert from cm to m
+        APS_power[0:int(ny / 2)      , 0:int(nx / 2)        ] = bin_power
+        APS_power[0:int(ny / 2)      , int(np.ceil(nx / 2)):] = np.fliplr(bin_power)
+        APS_power[int(np.ceil(ny/2)):, 0:int(nx / 2)        ] = np.flipud(bin_power)
+        APS_power[int(np.ceil(ny/2)):, int(np.ceil(nx/2))  :] = np.fliplr(np.flipud(bin_power))
+       
+        APS_filt = np.sqrt(APS_power)
+        
+        x      = np.random.randn(ny, nx)      # white noise
+        y_tmp  = np.fft.fft2(x)
+        y_tmp2 = np.multiply(y_tmp, APS_filt) # convolve with filter
+        y      = np.fft.ifft2(y_tmp2)
+        
+        APS = np.real(y)
+        APS = APS / np.std(APS) * std_long  #  adjust the turbulence by the weather model at the longer wavelengths.
+        APS = APS * 0.01                    # convert from cm to m
+        
         return APS 
-        
+
 
     def rescale_atmosphere(atm, atm_mean = 0.02, atm_sigma = 0.005):
         
@@ -586,92 +585,43 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         else:
             atm *= (atm_strength / np.max(atm))                     # but if positive part is larger, rescale in the same way as above.  
         return atm
-    
-    
+
+
     # 0: Check inputs
     if method not in ['fft', 'cov']:
         raise Exception(f"'method' must be either 'fft' (for the fourier transform based method), "
                         f" or 'cov' (for the covariance based method).  {method} was supplied, so exiting.  ")
-    
+
     #1: determine if linear interpolation is required
     ny, nx = lons_mg.shape
-    n_pixs = nx * ny
-    
-    if (n_pixs > cov_interpolate_threshold) and (method == 'cov'):
-        if verbose:
-            print(f"The number of pixels ({n_pixs}) is larger than 'cov_interpolate_threshold' ({int(cov_interpolate_threshold)}) so images will be created "
-                  f"with {int(cov_interpolate_threshold)} pixels and interpolated to the full resolution.  ")
-        interpolate = True                                                                           # set boolean flag
-        oversize_factor = n_pixs / cov_interpolate_threshold                                         # determine how many times too many pixels we have.  
-        lons_ds = np.linspace(lons_mg[-1,0], lons_mg[-1,-1], int(nx * (1/np.sqrt(oversize_factor)))) # make a downsampled vector of just the longitudes (square root as number of pixels is a measure of area, and this is length)
-        lats_ds = np.linspace(lats_mg[0,0], lats_mg[-1,0], int(ny * (1/np.sqrt(oversize_factor))))   # and for latitudes
-        lons_mg_ds = np.repeat(lons_ds[np.newaxis, :], lats_ds.shape, axis = 0)                      # make rank 2 again
-        lats_mg_ds = np.repeat(lats_ds[:, np.newaxis], lons_ds.shape, axis = 1)                      # and for latitudes
-        ny_generate, nx_generate = lons_mg_ds.shape                                                  # get the size of the downsampled grid we'll be generating at
-    else:
-        interpolate = False   # set boolean flag
-        nx_generate = nx      # if not interpolating, these don't change.  
-        ny_generate = ny
-        lons_mg_ds = lons_mg  # if not interpolating, don't need to downsample.  
-        lats_mg_ds = lats_mg
-    
+
+    nx_generate = nx      # if not interpolating, these don't change.  
+    ny_generate = ny
+    lons_mg_ds = lons_mg  # if not interpolating, don't need to downsample.  
+    lats_mg_ds = lats_mg
+
     #2: calculate distance between points
     ph_turbs = np.zeros((n_atms, ny_generate, nx_generate))       # initiate output as a rank 3 (ie n_images x ny x nx)
-    xyz_m, pixel_spacing = lon_lat_to_ijk(lons_mg_ds, lats_mg_ds) # get pixel positions in metres from origin in lower left corner (and also their size in x and y direction)
-    xy = xyz_m[0:2].T                                             # just get the x and y positions (ie discard z), and make lots x 2 (ie two columns)
-      
-    
+    _, pixel_spacing = lon_lat_to_ijk(lons_mg_ds, lats_mg_ds) # get pixel positions in metres from origin in lower left corner (and also their size in x and y direction)      
+
     #3: generate atmospheres, using either of the two methods.  
     if difference == True:
         n_atms += 1   # if differencing atmospheres, create one extra so that when differencing we are left with the correct number
-    
-    if method == 'fft':
-        for i in range(n_atms):
-            ph_turbs[i,:,:] = generate_correlated_noise_fft(nx_generate, ny_generate,    std_long=1, 
-                                                           sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) ) # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
-            
-    else:
-        pixel_distances = sp_distance.cdist(xy,xy, 'euclidean') # calcaulte all pixelwise pairs - slow as (pixels x pixels)       
-        Cd = np.exp((-1 * pixel_distances)/cov_Lc)              # from the matrix of distances, convert to covariances using exponential equation
-        success = False
-        while not success:
-            try:
-                Cd_L = np.linalg.cholesky(Cd)                   # ie Cd = CD_L @ CD_L.T      Worse error messages, so best called in a try/except form.  
-                success = True
-            except:
-                success = False
-        for n_atm in range(n_atms):
-            x = np.random.randn((ny_generate*nx_generate))      # Parsons 2007 syntax - x for uncorrelated noise
-            y = Cd_L @ x                                        # y for correlated noise
-            ph_turb = np.reshape(y, (ny_generate, nx_generate)) # turn back to rank 2
-            ph_turbs[n_atm,:,:] = ph_turb
-            print(f'Generated {n_atm} of {n_atms} single acquisition atmospheres.  ')
-                
-    #3: possibly interplate to bigger size
-    if interpolate:
-        if verbose:
-            print('Interpolating to the larger size...', end = '')
-        ph_turbs_output = np.zeros((n_atms, ny, nx))                                                                # initiate output at the upscaled size (ie the same as the original lons_mg shape)
-        for atm_n, atm in enumerate(ph_turbs):                                                                      # loop through the 1st dimension of the rank 3 atmospheres.  
-            f = scipy_interpolate.interp2d(np.arange(0,nx_generate), np.arange(0,ny_generate), atm, kind='linear')  # and interpolate them to a larger size.  First we give it  meshgrids and values for each point
-            ph_turbs_output[atm_n,:,:] = f(np.linspace(0, nx_generate, nx), np.linspace(0, ny_generate, ny))        # then new meshgrids at the original (full) resolution.  
-        if verbose:
-            print('Done!')
-    else:
-        ph_turbs_output = ph_turbs # if we're not interpolating, no change needed
+
+    for i in range(n_atms):
+        ph_turbs[i,:,:] = generate_correlated_noise_fft(nx_generate, ny_generate,    std_long=1, 
+                                                        sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) ) # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
+
+    ph_turbs_output = ph_turbs # if we're not interpolating, no change needed
        
     # 4: rescale to correct range (i.e. a couple of cm)
     ph_turbs_m = np.zeros(ph_turbs_output.shape)
     for atm_n, atm in enumerate(ph_turbs_output):
         ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
-                
+
     # 5: return back to the shape given, which can be a rectangle:
     ph_turbs_m = ph_turbs_m[:,:lons_mg.shape[0],:lons_mg.shape[1]]
-    
-    if water_mask is not None:
-        water_mask_r3 = ma.repeat(water_mask[np.newaxis,], ph_turbs_m.shape[0], axis = 0)
-        ph_turbs_m = ma.array(ph_turbs_m, mask = water_mask_r3)
-    
+
     return ph_turbs_m
 
 
@@ -759,7 +709,7 @@ def atm_topo_simulate(
     else:
         ph_topo_m -= np.min(ph_topo_m)
 
-    ph_topo_m = ma.array(ph_topo_m, mask = ma.getmask(dem_m))
+    ph_topo_m  = ma.array(ph_topo_m, mask = ma.getmask(dem_m))
     ph_topo_m -= ma.mean(ph_topo_m)                   # mean centre the signal
 
     return ph_topo_m
@@ -785,8 +735,10 @@ def aps_simulate(
 
     pixel_size_degs = 1/3600
     
-    lons    = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
-    lats    = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
+    scaled_size = pixel_size_degs * size
+
+    lons    = np.arange(0.0, 0.0 + scaled_size, pixel_size_degs)
+    lats    = np.arange(0.0, 0.0 + scaled_size, pixel_size_degs)
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
@@ -864,18 +816,18 @@ def gen_simulated_deformation(
 
     if seed != 0: random.seed = seed
 
-    only_noise_dice_roll = random.randint(0, 10)
+    only_noise_dice_roll = np.random.randint(0, 11)
 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
                             [ 0.92050485]])
 
-    source      = "quake"
-    nx          = ny = tile_size                                                  # ?m in each direction with 90m pixels
-    X, Y        = np.meshgrid(90 * np.arange(0, nx),90 * np.arange(0,ny))         # make a meshgrid
-    Y           = np.flipud(Y)                                                    # change 0 y cordiante from matrix style (top left) to axes style (bottom left)
-    ij          = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
-    ijk         = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
+    source = "quake"
+    nx     = ny = tile_size                                                  # ?m in each direction with 90m pixels
+    X, Y   = np.meshgrid(90 * np.arange(0, nx),90 * np.arange(0,ny))         # make a meshgrid
+    Y      = np.flipud(Y)                                                    # change 0 y cordiante from matrix style (top left) to axes style (bottom left)
+    ij     = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
+    ijk    = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
     atmosphere_scale = 90 * np.pi
      
@@ -883,17 +835,17 @@ def gen_simulated_deformation(
 
     if only_noise_dice_roll != 1 and only_noise_dice_roll != 2 and only_noise_dice_roll != 10:
 
-        source_x = np.max(X) / random.randint(1, 10)
-        source_y = np.max(Y) / random.randint(1, 10)
+        source_x = np.max(X) / np.random.randint(0, 11)
+        source_y = np.max(Y) / np.random.randint(0, 11)
 
-        strike       = random.randint(0, 180)
-        dip          = random.randint(0, 90)
-        rake         = [0, 90, -90][random.randint(0, 2)]
+        strike       = np.random.randint(0, 181)
+        dip          = np.random.randint(0, 91)
+        rake         = [90, -90][np.random.randint(0, 2)] # Add 0 and 180 if Strike-Slip events are desired.
         slip         = 1
 
-        length       = random.randint(1000, np.max(X) // 16)
-        top_depth    = random.randint(1000, np.max(X) // 8)
-        bottom_depth = top_depth * random.randint(2, 4)
+        length       = np.random.randint(2000, 1 + np.max(X) // 16)
+        top_depth    = np.random.randint(4000, 1 + np.max(X) // 8)
+        bottom_depth = top_depth * np.random.randint(2, 5)
 
         kwargs = {
             'strike'      : strike,
@@ -916,21 +868,18 @@ def gen_simulated_deformation(
         los_grid = ((x_grid * los_vector[0,0]) + (y_grid * los_vector[1,0]) + (z_grid * los_vector[2,0]))
         los_grid = los_grid * amplitude_adjustment
     
-        masked_grid = np.zeros((tile_size, tile_size))
+        atmosphere_phase = aps_simulate(tile_size) * np.abs(atmosphere_scale)
 
-        mask_one_indicies  = np.abs(los_grid) >= 2 * np.pi
-
+        masked_grid                    = np.zeros((tile_size, tile_size))
+        mask_one_indicies              = np.abs(los_grid) >= 3 * np.pi    # Num of fringes to say yes to.
         masked_grid[mask_one_indicies] = 1
 
-        atmosphere_phase = aps_simulate(tile_size) * atmosphere_scale
+        interferogram    = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
+        wrapped_grid     = wrap_interferogram(interferogram, noise = 0.0)
 
-        interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
-
-        wrapped_grid = wrap_interferogram(interferogram, noise = 0.1)
-
-        threshold = random.random() / 2
-        coherence_mask = coherence_mask_simulate(tile_size, threshold)
-        coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+        threshold                         = random.random() / 2
+        coherence_mask                    = coherence_mask_simulate(tile_size, threshold)
+        coh_masked_indicies               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
         wrapped_grid[coh_masked_indicies] = 0
 
         if log:
@@ -945,7 +894,7 @@ def gen_simulated_deformation(
 
             print("Source Parameters: ", kwargs)
 
-            print("Maximum Phase Value: ", np.max(los_grid))
+            print("Maximum Phase Value: ", np.max(np.abs(interferogram)))
 
         presence[0] = 1
         
@@ -960,21 +909,29 @@ def gen_simulated_deformation(
 
     else:
 
+        topo_phase = 0
         turb_phase = aps_simulate(tile_size) * atmosphere_scale
-        
-        topo_phase = np.zeros(turb_phase.shape)
-        
-        topo_phase_roll = random.randint(0, 1)
+
+        topo_phase_roll = np.random.randint(0, 2)
         if topo_phase_roll == 1:
-            topo_phase = atm_topo_simulate(gen_fake_topo(size=tile_size, alt_scale_min=100, alt_scale_max=500)) * atmosphere_scale * 10
+            
+            simulated_topography = gen_fake_topo(
+                size          = tile_size,
+                alt_scale_min = 100,
+                alt_scale_max = 500
+            )
+
+            topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scale * 10
 
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
 
-        mask_coherence_roll = random.randint(0, 1)
+        mask_coherence_roll = np.random.randint(0, 2)
         if mask_coherence_roll == 1:
-            threshold = random.random() / 2
-            coherence_mask = coherence_mask_simulate(tile_size, threshold)
-            coh_masked_indicies = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+            
+            threshold           = random.random() / 2
+            coherence_mask      = coherence_mask_simulate(tile_size, threshold)
+
+            coh_masked_indicies               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
             wrapped_grid[coh_masked_indicies] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
