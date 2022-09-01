@@ -25,7 +25,8 @@ def test_model(
     seed:       int,
     tile_size:  int,
     crop_size:  int  = 0,
-    use_sim:    bool = False
+    count:      int  = 1,
+    use_sim:    bool = False,
 ) -> None:
 
     """
@@ -45,6 +46,11 @@ def test_model(
     crop_size : int, Optional
         If the models output shape is different than the input shape, this value needs to be
         equal to the output shape.
+    count : int, Optional
+        Predict on [count] simulated or synthetic interferograms and log the results. The
+        default value of 1 simply plots the single prediction.
+    use_sim : bool, Optional
+        Use simulated interferograms rather than synthetic interferograms
 
     Returns:
     --------
@@ -57,47 +63,79 @@ def test_model(
         crop_size = tile_size
 
     y, x = 0, 0
-    if use_sim:
-        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=True)
-    else:
-        y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
-    x  = x.reshape((1, tile_size, tile_size, 1))
-    y  = y.reshape((1, crop_size, crop_size, 1))
-    yp = model.predict(x)
+    total_mse = 0
+    total_mae = 0
+    total_yes = 0
 
-    x  = x.reshape ((tile_size, tile_size))
-    y  = y.reshape ((crop_size, crop_size))
-    yp = yp.reshape((crop_size, crop_size))
+    avg_px_ct = 0.0
 
-    tolerance1  = 0.75
-    round_up1   = yp >= tolerance1
-    round_down1 = yp <  tolerance1
+    for _ in range(count):
 
-    yp[round_up1 ] = 1
-    yp[round_down1] = 0
+        if use_sim:
+            y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=True)
+        else:
+            y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
-    _, [axs_wrapped, axs_mask_true, axs_mask_pred] = plt.subplots(1, 3)
+        x  = x.reshape((1, tile_size, tile_size, 1))
+        y  = y.reshape((1, crop_size, crop_size, 1))
+        yp = model.predict(x)
 
-    axs_wrapped.set_title("wrapped")
-    axs_wrapped.imshow(x, origin='lower', cmap='jet')
+        x  = x.reshape ((tile_size, tile_size))
+        y  = y.reshape ((crop_size, crop_size))
+        yp = yp.reshape((crop_size, crop_size))
 
-    axs_mask_true.set_title("true mask")
-    axs_mask_true.imshow(y, origin='lower', cmap='jet')
+        tolerance1  = 0.85
+        round_up1   = yp >= tolerance1
+        round_down1 = yp <  tolerance1
 
-    axs_mask_pred.set_title("predicted mask")
-    axs_mask_pred.imshow(yp, origin='lower', cmap='jet')
+        yp[round_up1 ] = 1
+        yp[round_down1] = 0
 
-    mse = np.mean(np.power(yp - y, 2))
-    mae = np.mean(np.absolute(yp - y))
+        mse = np.mean(np.power(yp - y, 2))
+        mae = np.mean(np.absolute(yp - y))
 
-    print("Mean Squared Error   ", mse)
-    print("Mean Absolute Error  ", mae)
-    
-    if use_sim:
-        print("Presence             ", presence)
+        total_mse += mse
+        total_mae += mae
 
-    plt.show()
+        if count == 1:
+            print("Mean Squared Error   ", mse)
+            print("Mean Absolute Error  ", mae)
+            
+            if use_sim:
+                total_yes += presence[0]
+
+                if presence[0] == 1:
+                    avg_px_ct += np.mean(y)
+                print("Presence             ", presence)
+
+    if count > 1:
+
+        num_px = crop_size * crop_size
+
+        avg_mse = total_mse / num_px
+        avg_mae = total_mae / num_px
+        avg_yes = total_yes / count
+
+        print("Mean Squared Error   ", avg_mse)
+        print("Mean Absolute Error  ", avg_mae)
+        print("Has Event %          ", avg_yes)
+
+
+    elif count == 1:
+        
+        _, [axs_wrapped, axs_mask_true, axs_mask_pred] = plt.subplots(1, 3)
+
+        axs_wrapped.set_title("wrapped")
+        axs_wrapped.imshow(x, origin='lower', cmap='jet')
+
+        axs_mask_true.set_title("true mask")
+        axs_mask_true.imshow(y, origin='lower', cmap='jet')
+
+        axs_mask_pred.set_title("predicted mask")
+        axs_mask_pred.imshow(yp, origin='lower', cmap='jet')
+
+        plt.show()
 
 
 def test_model_eval(
@@ -223,7 +261,10 @@ def mask_and_plot(
     model_path:   str,
     product_path: str,
     tile_size:    int,
-    crop_size:    int   = 0,
+    crop_size:    int  = 0,
+    mask_coh:     bool = True,
+    round_pred:   bool = True
+
 ) -> np.ndarray:
 
     """
@@ -253,8 +294,9 @@ def mask_and_plot(
     zeros        = (arr_uw == 0)
     arr_w[zeros] = 0
 
-    bad_coherence = coherence < 0.3
-    arr_w[bad_coherence] = 0
+    if mask_coh:
+        bad_coherence = coherence < 0.2
+        arr_w[bad_coherence] = 0
 
     prediction = mask(
         model_path = model_path,
@@ -263,19 +305,22 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    tolerance1  = 0.99
-    round_up1   = prediction >= tolerance1
-    round_down1 = prediction <  tolerance1
+    if round_pred:
 
-    prediction[round_up1 ] = 1
-    prediction[round_down1] = 0
+        tolerance1  = 0.85
+        round_up1   = prediction >= tolerance1
+        round_down1 = prediction <  tolerance1
 
-    prediction[bad_coherence] = 0
+        prediction[round_up1 ]  = 1
+        prediction[round_down1] = 0
 
     average_val = np.mean(prediction)
     print("Average: ", average_val)
 
-    if average_val >= 1e-4:
+    if mask_coh: 
+        prediction[bad_coherence] = 0
+
+    if average_val >= 5e-3:
         print("Positive")
     else:
         print("Negative") 
@@ -296,11 +341,13 @@ def mask_and_plot(
 def visualize_layers(
     model_path: str,
     save_path:  str,
+    tile_size:  int = 512,
     seed:       int = 0
 ) -> None:
 
     """
-    Visualize the layers in the model.
+    Make a prediction on a simulated interferogram and save tifs of
+    the outputs of each layer in the model.
 
     Parameters:
     -----------
@@ -327,10 +374,10 @@ def visualize_layers(
     print(f"\nModel Input Shape: {input_shape}")
     print(f"Model Output Shape: {output_shape}")
 
-    unwrapped, wrapped = make_random_dataset(size=1024, crop_size=883, seed=seed)
+    masked, wrapped, _ = gen_simulated_deformation(tile_size=tile_size, seed=seed, log=True)
 
-    unwrapped = unwrapped.reshape(output_shape)
-    wrapped   = wrapped.reshape(input_shape)
+    masked  = masked.reshape(output_shape)
+    wrapped = wrapped.reshape(input_shape)
 
     layer_names   = [layer.name   for layer in model.layers]
     layer_outputs = [layer.output for layer in model.layers]
@@ -356,9 +403,9 @@ def visualize_layers(
                 feature_image = feature_map[0, :, :, i]
                 image_belt[:, i * size : (i + 1) * size] = feature_image
 
-            current_save_path = Path(save_path) / f"{layer_name}.tif"
+            current_save_path = Path(save_path) / f"{layer_name}.jpeg"
             out = Image.fromarray(image_belt)
-            out.save(current_save_path)
+            out.save(current_save_path, "JPEG")
 
             print(f"Saved figure for layer: {layer_name}, {index} of {num_feature_maps_filtered}")
             index += 1
