@@ -229,7 +229,7 @@ def show_dataset_wrapper(file_path):
     from src.gui import show_dataset
     from src.io import load_dataset
 
-    mask, wrapped = load_dataset(file_path)
+    mask, wrapped, _ = load_dataset(file_path)
     show_dataset(mask, wrapped)
 
 
@@ -314,7 +314,7 @@ def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
     
     from src.inference import test_model
 
-    test_model(model_path, seed, tile_size, crop_size)
+    test_model(model_path, seed, tile_size, crop_size, use_sim=use_simulated)
 
 
 @cli.command   ('model-summary')
