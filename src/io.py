@@ -454,6 +454,7 @@ def make_simulated_dataset(
     amount:       int,
     seed:         int,
     tile_size:    int,
+    crop_size:    int
 ) -> Tuple[int, int, str]:
 
     """
@@ -475,6 +476,9 @@ def make_simulated_dataset(
     tile_size : int
         The size of the simulated interferograms, which should match the desired tile sizes of
         of the real interferograms. This also needs to match the input shape of the model.
+    crop_size : int
+        If the model's output shape does not match its input shape, this should be set to match
+        the output shape. The unwrapped interferogram will be cropped to this.
 
     Returns:
     --------
@@ -509,6 +513,9 @@ def make_simulated_dataset(
             seed      = current_seed,
             tile_size = tile_size
         )
+
+        if crop_size < tile_size:
+            masked = simulate_unet_cropping(masked, (crop_size, crop_size))
 
         if count % 10 == 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
