@@ -56,9 +56,9 @@ def transpose_block(
         strides      = (2, 2),
         padding      = 'same'
     )(input_tensor)
-    
+
     x = concatenate([x, concat_tensor])
-    
+
     y = conv2d_block(x, num_filters)
 
     return y
@@ -66,9 +66,8 @@ def transpose_block(
 
 def create_unet(
     model_name:    str   = 'model',
-    tile_size:     int   = 1024   ,
-    num_filters:   int   = 16     ,
-    dropout:       float = 0.2    ,
+    tile_size:     int   = 512    ,
+    num_filters:   int   = 32     ,
     learning_rate: float = 1e-4
 ) -> Model:
 
