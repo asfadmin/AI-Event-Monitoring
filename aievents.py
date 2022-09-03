@@ -132,10 +132,11 @@ def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, cr
 @click.argument('name'              , type=str                                                                    )
 @click.argument('amount'            , type=int                        , default=1                                 )
 @click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=1024         , help=cropsize_help )
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
-def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, split):
+def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_dir, seed, split):
 
     """
     Create a randomly generated simulated dataset of wrapped interferograms and their corresponding event-masks.
@@ -153,7 +154,8 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, sp
         output_dir,
         amount,
         seed,
-        tile_size
+        tile_size,
+        crop_size
     )
 
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
@@ -426,8 +428,9 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 @cli.command ('simulate')
 @click.option('-s', '--seed'     , type=int , default=0    , help=seed_help    )
 @click.option('-t', '--tile_size', type=int , default=1024 , help=tilesize_help)
+@click.option('-t', '--crop_size', type=int , default=1024 , help=cropsize_help)
 @click.option('-v', '--verbose'  , type=bool, default=False, help=""           )
-def simulate_wrapper(seed, tile_size, verbose):
+def simulate_wrapper(seed, tile_size, crop_size, verbose):
 
     """
     Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
@@ -435,6 +438,8 @@ def simulate_wrapper(seed, tile_size, verbose):
 
     from src.gui    import show_dataset
     from src.sarsim import gen_simulated_deformation
+    from src.processing import simulate_unet_cropping
+
 
     masked, wrapped, event_is_present = gen_simulated_deformation(
         seed,
@@ -442,10 +447,17 @@ def simulate_wrapper(seed, tile_size, verbose):
         verbose
     )
 
+    if crop_size < tile_size:
+        masked = simulate_unet_cropping(masked, (crop_size, crop_size))
+
     if event_is_present[0]:
+        print("_______\n")
         print("This interferogram contains deformation.")
+        print("_______\n")
     else:
+        print("_______\n")
         print("This interferogram does not contain deformation.")
+        print("_______\n")
 
     show_dataset(masked, wrapped)
 
