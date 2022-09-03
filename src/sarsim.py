@@ -432,7 +432,7 @@ def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):
                                    np.deg2rad(rake),                                  # rake, in rads
                                    slip, opening,                                     # slip (if quake) or opening (if dyke or sill)
                                    v, xyz_m[0,], xyz_m[1,:])                          # poissons ratio, x and y coords of surface locations.
-       
+
     return U
 
 
@@ -769,7 +769,7 @@ def coherence_mask_simulate(
         The masked coherence array.
     """
 
-    pixel_size_degs = 1 / 360
+    pixel_size_degs = 1 / 3600
     
     lons = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
     lats = np.arange(0.0, 0.0 + (pixel_size_degs * size), pixel_size_degs)
@@ -814,93 +814,88 @@ def gen_simulated_deformation(
         The wrapped interferogram.
     """
 
-    if seed != 0: random.seed = seed
+    if seed != 0: np.random.seed(seed)
 
-    only_noise_dice_roll = np.random.randint(0, 11)
+    atmosphere_scalar = 90 * np.pi
+    amplitude_scalar  = 1000 * np.pi
 
+    presence    = np.asarray([0])
+    masked_grid = np.zeros((tile_size, tile_size)) 
     los_vector  = np.array([[ 0.38213591],
                             [-0.08150437],
                             [ 0.92050485]])
 
-    source = "quake"
-    nx     = ny = tile_size                                                  # ?m in each direction with 90m pixels
-    X, Y   = np.meshgrid(90 * np.arange(0, nx),90 * np.arange(0,ny))         # make a meshgrid
-    Y      = np.flipud(Y)                                                    # change 0 y cordiante from matrix style (top left) to axes style (bottom left)
-    ij     = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))   # pairs of coordinates of everywhere we have data   
-    ijk    = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
+    img_composition_choice = np.random.randint(0, 10)
 
-    atmosphere_scale = 90 * np.pi
-     
-    presence = np.asarray([0])
+    if img_composition_choice < 5:
 
-    if only_noise_dice_roll != 1 and only_noise_dice_roll != 2 and only_noise_dice_roll != 10:
+        random_nums = np.random.rand(9)
 
-        source_x = np.max(X) / np.random.randint(1, 11)
-        source_y = np.max(Y) / np.random.randint(1, 11)
+        X, Y = np.meshgrid(np.arange(0, tile_size) * 90, np.arange(0, tile_size) * 90)
+        Y    = np.flipud(Y)
 
-        strike       = np.random.randint(0, 181)
-        dip          = np.random.randint(0, 91)
-        rake         = [90, -90][np.random.randint(0, 2)] # Add 0 and 180 if Strike-Slip events are desired.
-        slip         = 1
+        ij  = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))
+        ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
 
-        length       = np.random.randint(2000, 1 + np.max(X) // 16)
-        top_depth    = np.random.randint(4000, 1 + np.max(X) // 8)
-        bottom_depth = top_depth * np.random.randint(2, 5)
+        source_x = np.max(X) // ((random_nums[0] * 10) + 1)
+        source_y = np.max(Y) // ((random_nums[1] * 10) + 1)
+
+        length    = 1000 + ((1 + np.max(X) // 16) * random_nums[2])
+        top_depth = 4000 + ((1 + np.max(X) // 8 ) * random_nums[3])
 
         kwargs = {
-            'strike'      : strike,
-            'dip'         : dip,
+            'strike'      : 180 * random_nums[4],
+            'dip'         :  90 * random_nums[5],
             'length'      : length,
-            'rake'        : rake,
-            'slip'        : slip,
+            'rake'        : [90, -90][random_nums[6] < 0.5],
+            'slip'        : 1,
             'top_depth'   : top_depth,
-            'bottom_depth': bottom_depth
+            'bottom_depth': top_depth * (1.1 + (5 * random_nums[7]))
         }
 
-        U = deformation_eq_dyke_sill(source, (source_x, source_y), ijk, **kwargs)
+        U = deformation_eq_dyke_sill("quake", (source_x, source_y), ijk, **kwargs)
 
-        amplitude_adjustment = 1000 * np.pi
+        x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1])) * los_vector[0,0]
+        y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1])) * los_vector[1,0]
+        z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1])) * los_vector[2,0]
 
-        x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1]))
-        y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1]))
-        z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1]))
+        los_grid = (x_grid + y_grid + z_grid) * amplitude_scalar
 
-        los_grid = ((x_grid * los_vector[0,0]) + (y_grid * los_vector[1,0]) + (z_grid * los_vector[2,0]))
-        los_grid = los_grid * amplitude_adjustment
-    
-        atmosphere_phase = aps_simulate(tile_size) * np.abs(atmosphere_scale)
+        masked_indices = np.abs(los_grid) >= np.pi * 2  # Num of fringes to say yes to.
+        masked_grid[masked_indices] = np.abs(los_grid[masked_indices]) / (np.max(np.abs(los_grid[masked_indices])))
 
-        masked_grid                    = np.zeros((tile_size, tile_size))
-        mask_one_indicies              = np.abs(los_grid) >= 3 * np.pi    # Num of fringes to say yes to.
-        masked_grid[mask_one_indicies] = 1
-
+        atmosphere_phase = aps_simulate(tile_size) * np.abs(atmosphere_scalar)
         interferogram    = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
         wrapped_grid     = wrap_interferogram(interferogram, noise = 0.0)
 
-        threshold                         = random.random() / 2
-        coherence_mask                    = coherence_mask_simulate(tile_size, threshold)
-        coh_masked_indicies               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-        wrapped_grid[coh_masked_indicies] = 0
+        coherence_mask                   = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.5)
+        coh_masked_indices               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+        wrapped_grid[coh_masked_indices] = 0
 
         if log:
-            print("Max X Position (meters): ", np.max(X))
-            print("Max Y Position (meters): ", np.max(Y))
-
-            print("Source X Position (meters): ", source_x)
-            print("Source Y Position (meters): ", source_y)
-
-            print("Source X Position (meters): ", source_x)
-            print("Source Y Position (meters): ", source_y)
-
-            print("Source Parameters: ", kwargs)
-
+            print("_______\n")
+            print("Length         (meters)  ", length)
+            print("Top Depth      (meters)  ", top_depth)
+            print("Bottom Depth   (meters)  ", kwargs['bottom_depth'])
+            print("")
+            print("Max X Position (meters)  ", np.max(X))
+            print("Max Y Position (meters)  ", np.max(Y))
+            print("Src X Position (meters)  ", source_x)
+            print("Src Y Position (meters)  ", source_y)
+            print("")
+            print("Slip           (0  or 1) ", kwargs['slip'])
+            print("Dip            (degrees) ", kwargs['dip'])
+            print("Rake           (degrees) ", kwargs['rake'])
+            print("Strike         (degrees) ", kwargs['strike'])
+            print("")
             print("Maximum Phase Value: ", np.max(np.abs(interferogram)))
+            print("_______\n")
 
         presence[0] = 1
-        
+
         return masked_grid, wrapped_grid, presence
 
-    elif only_noise_dice_roll == 10:
+    elif img_composition_choice == 10:
 
         masked_grid  = np.zeros((tile_size, tile_size))
         wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
@@ -910,29 +905,24 @@ def gen_simulated_deformation(
     else:
 
         topo_phase = 0
-        turb_phase = aps_simulate(tile_size) * atmosphere_scale
+        turb_phase = aps_simulate(tile_size) * atmosphere_scalar
 
-        topo_phase_roll = np.random.randint(0, 2)
+        topo_phase_roll = np.random.randint(0, 1)
         if topo_phase_roll == 1:
-            
+
             simulated_topography = gen_fake_topo(
                 size          = tile_size,
                 alt_scale_min = 100,
                 alt_scale_max = 500
             )
 
-            topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scale * 10
+            topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * 10
 
+        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+        coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
+        
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
-
-        mask_coherence_roll = np.random.randint(0, 2)
-        if mask_coherence_roll == 1:
-            
-            threshold           = random.random() / 2
-            coherence_mask      = coherence_mask_simulate(tile_size, threshold)
-
-            coh_masked_indicies               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-            wrapped_grid[coh_masked_indicies] = 0
+        wrapped_grid[coh_indices] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
 
