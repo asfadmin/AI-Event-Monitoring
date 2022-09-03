@@ -12,7 +12,7 @@ from pathlib import Path
 from numpy import average
 
 from src.io                      import get_product_arrays
-from src.processing              import tile, tiles_to_image
+from src.processing              import tile, tiles_to_image, blur2d
 from src.sarsim                  import gen_simulated_deformation
 from src.synthetic_interferogram import make_random_dataset
 
@@ -57,23 +57,23 @@ def test_model(
     None
     """
 
+    print(f'Running tests over {count} Simulated Interferograms\n_______\n')
+
     model = load_model(model_path)
 
     if crop_size == 0:
         crop_size = tile_size
 
-    y, x = 0, 0
+    total_mae           = 0
+    total_pos           = 0
+    total_correct       = 0
+    total_pos_incorrect = 0
+    total_neg_incorrect = 0
 
-    total_mse = 0
-    total_mae = 0
-    total_yes = 0
-
-    avg_px_ct = 0.0
-
-    for _ in range(count):
+    for i in range(count):
 
         if use_sim:
-            y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=True)
+            y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=False)
         else:
             y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
@@ -85,55 +85,80 @@ def test_model(
         y  = y.reshape ((crop_size, crop_size))
         yp = yp.reshape((crop_size, crop_size))
 
-        tolerance1  = 0.85
-        round_up1   = yp >= tolerance1
-        round_down1 = yp <  tolerance1
+        y_conv = blur2d(yp)
+        for _ in range(64):
+            y_conv = blur2d(y_conv)
 
-        yp[round_up1 ] = 1
-        yp[round_down1] = 0
+        y_conv_r = np.zeros((tile_size, tile_size))
 
-        mse = np.mean(np.power(yp - y, 2))
-        mae = np.mean(np.absolute(yp - y))
+        tolerance2  = 0.4
+        round_up2   = y_conv >= tolerance2
+        round_down2 = y_conv <  tolerance2
 
-        total_mse += mse
-        total_mae += mae
+        y_conv_r[round_up2  ] = 1
+        y_conv_r[round_down2] = 0
 
-        if count == 1:
-            print("Mean Squared Error   ", mse)
-            print("Mean Absolute Error  ", mae)
+        zeros           = x == 0
+        y_conv[zeros]   = 0
+        y_conv_r[zeros] = 0
+
+        curr_mae    = np.mean(np.absolute(y_conv_r - y))
+        total_mae  += curr_mae
+        average_val = np.mean(y_conv_r)
+
+        guess  = "Positive"   if average_val >= 2.25e-2 else "Negative"
+        actual = "Positive"   if presence[0] == 1       else "Negative"
+        result = "CORRECT!  " if guess == actual        else "INCORRECT!"
+
+        print(f'{result} Guess: {guess}   Actual: {actual}   Count: {i}')
+
+        if count > 1:
+
+            correctness    = guess == actual 
+            total_correct += int(correctness)
             
-            if use_sim:
-                total_yes += presence[0]
-
-                if presence[0] == 1:
-                    avg_px_ct += np.mean(y)
-                print("Presence             ", presence)
+            total_pos  += presence[0]
+            total_pos_incorrect += 1 if     presence[0] and not correctness else 0
+            total_neg_incorrect += 1 if not presence[0] and not correctness else 0
 
     if count > 1:
 
-        num_px = crop_size * crop_size
+        avg_mae = total_mae / count
+        avg_cor = total_correct / count
 
-        avg_mse = total_mse / num_px
-        avg_mae = total_mae / num_px
-        avg_yes = total_yes / count
+        print("")
+        print("Mean Absolute Error ", avg_mae)
+        print("")
+        print("Positives Missed: ", total_pos_incorrect, " of ", total_pos      , ".")
+        print("Negatives Missed: ", total_neg_incorrect, " of ", count-total_pos, ".")
+        print("")
+        print("Overall Score ", avg_cor, "%")
+        print("_______\n")
 
-        print("Mean Squared Error   ", avg_mse)
-        print("Mean Absolute Error  ", avg_mae)
-        print("Has Event %          ", avg_yes)
+    else:
 
+        print("_______\n")
+        print("Maximum Value        ", np.max(y_conv))
+        print("Minimum Value        ", np.min(y_conv))
+        print("Mean Value           ", average_val)
+        print("Mean Absolute Error  ", curr_mae)
+        print("_______\n")
 
-    elif count == 1:
-        
-        _, [axs_wrapped, axs_mask_true, axs_mask_pred] = plt.subplots(1, 3)
+        y[zeros] = 0
 
-        axs_wrapped.set_title("wrapped")
+        _, [[axs_wrapped, axs_mask], [axs_unwrapped, axs_mask_rounded]] = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=True)
+
+        axs_wrapped.set_title("Wrapped")
         axs_wrapped.imshow(x, origin='lower', cmap='jet')
 
-        axs_mask_true.set_title("true mask")
-        axs_mask_true.imshow(y, origin='lower', cmap='jet')
+        axs_unwrapped.set_title("True Mask")
+        axs_unwrapped.imshow(y, origin='lower', cmap='jet')
 
-        axs_mask_pred.set_title("predicted mask")
-        axs_mask_pred.imshow(yp, origin='lower', cmap='jet')
+        axs_mask.set_title("Mask w/o Rounding")
+        axs_mask.imshow(y_conv, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+
+        axs_mask_rounded.set_title("Mask w/ Rounding")
+        axs_mask_rounded.imshow(y_conv_r, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
 
         plt.show()
 
@@ -243,8 +268,14 @@ def mask(
 
     count = 0
     for x in tiled_arr_w:
-        y = model.predict(x.reshape((1, tile_size, tile_size, 1)))
-        tile_predictions[count] = y.reshape((crop_size, crop_size))
+
+        yp = model.predict(x.reshape((1, tile_size, tile_size, 1))).reshape((crop_size, crop_size))
+
+        y_conv = blur2d(yp)
+        for _ in range(64):
+            y_conv = blur2d(y_conv)
+
+        tile_predictions[count] = y_conv
         count += 1
 
     prediction = tiles_to_image(
@@ -264,7 +295,6 @@ def mask_and_plot(
     crop_size:    int  = 0,
     mask_coh:     bool = True,
     round_pred:   bool = True
-
 ) -> np.ndarray:
 
     """
@@ -295,7 +325,7 @@ def mask_and_plot(
     arr_w[zeros] = 0
 
     if mask_coh:
-        bad_coherence = coherence < 0.2
+        bad_coherence = coherence < 0.3
         arr_w[bad_coherence] = 0
 
     prediction = mask(
@@ -305,33 +335,43 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
+    prediction[zeros] = 0
+
+    if mask_coh:
+        arr_uw[bad_coherence] = 0
+        prediction[bad_coherence] = 0
+
+    prediction_rounded = np.copy(prediction)
     if round_pred:
 
-        tolerance1  = 0.85
-        round_up1   = prediction >= tolerance1
-        round_down1 = prediction <  tolerance1
+        tolerance1  = 0.4
+        round_up1   = prediction_rounded >= tolerance1
+        round_down1 = prediction_rounded <  tolerance1
 
-        prediction[round_up1 ]  = 1
-        prediction[round_down1] = 0
+        prediction_rounded[round_up1 ]  = 1
+        prediction_rounded[round_down1] = 0
 
-    average_val = np.mean(prediction)
+    average_val = np.mean(prediction_rounded)
     print("Average: ", average_val)
-
-    if mask_coh: 
-        prediction[bad_coherence] = 0
 
     if average_val >= 5e-3:
         print("Positive")
     else:
         print("Negative") 
 
-    _, [axs_wrapped, axs_mask] = plt.subplots(1, 2)
+    _, [[axs_wrapped, axs_unwrapped], [axs_mask, axs_mask_rounded]] = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=True)
 
     axs_wrapped.set_title("wrapped")
     axs_wrapped.imshow(arr_w, origin='lower', cmap='jet')
 
-    axs_mask.set_title("mask_predicted")
-    axs_mask.imshow(prediction, origin='lower', cmap='jet')
+    axs_unwrapped.set_title("unwrapped_magnitude")
+    axs_unwrapped.imshow(np.abs(arr_uw), origin='lower', cmap='jet')
+
+    axs_mask.set_title("mask_unrounded")
+    axs_mask.imshow(prediction, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+
+    axs_mask_rounded.set_title("mask_rounded")
+    axs_mask_rounded.imshow(prediction_rounded, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
 
     plt.show()  
 
