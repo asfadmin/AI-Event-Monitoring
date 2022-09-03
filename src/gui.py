@@ -32,12 +32,12 @@ def show_dataset(
     None
     """
 
-    _, [axs_unwrapped, axs_wrapped] = plt.subplots(1, 2)
+    _, [axs_masked, axs_wrapped] = plt.subplots(1, 2)
 
-    axs_unwrapped.set_title("masked")
-    axs_unwrapped.imshow(masked, origin='lower', cmap='jet')
+    axs_masked.set_title("Masked")
+    axs_masked.imshow(masked, origin='lower', cmap='jet', vmin=0, vmax=np.max(masked))
 
-    axs_wrapped.set_title("wrapped")
+    axs_wrapped.set_title("Wrapped")
     axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
 
     plt.show()
