@@ -9,11 +9,13 @@ import os
 from math   import ceil
 from typing import Any
 
+import wandb
 import numpy as np
 import tensorflow as tf
 from src.architectures.unet import create_unet
 from src.architectures.resnet import create_resnet
 from src.architectures.eventnet import create_eventnet
+from wandb.keras import WandbCallback
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import Sequence
 
@@ -130,6 +132,19 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
+    wandb.init(
+        project="InSAR Event Monitor",
+        config = {
+            "learning_rate": learning_rate,
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "filters": num_filters,
+            "tile_size": input_shape,
+            "dropout": dropout,
+            "dataset": dataset_path
+        }
+    )
+
     train_path = dataset_path + '/train'
     test_path  = dataset_path + '/validation'
 
@@ -146,7 +161,8 @@ def train(
         model_name    = model_name,
         tile_size     = input_shape,
         num_filters   = num_filters,
-        learning_rate = learning_rate
+        learning_rate = learning_rate,
+        dropout       = dropout
     )
 
     model.summary()
@@ -178,7 +194,7 @@ def train(
         batch_size       = batch_size,
         steps_per_epoch  = training_steps,
         validation_steps = validation_steps,
-        callbacks        = [checkpoint, early_stopping]
+        callbacks        = [checkpoint, early_stopping, WandbCallback()]
     )
 
     model.save("models/" + model_name)
