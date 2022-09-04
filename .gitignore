@@ -11,6 +11,7 @@ logs/
 data/
 models/
 tests/test_io/*
+wandb/
 
 # Pycharm
 .idea/
