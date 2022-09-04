@@ -28,6 +28,7 @@ learningrate_help  = "The rate which affects how much the model changes in respo
 learningrate_help += "0.0005 <= learning_rate <= 0.005"
 amplitude_help     = "Max amplitude of the gaussians (minimum is the negative of this)."
 usesim_help        = "Flag to use simulated interferograms rather than synthetic interferograms. Default is False."
+numtrials_help     = "Test the model over this many images. If 1, the images are plotted."
 
 
 # ------------------ #
@@ -259,7 +260,7 @@ def show_random_wrapper(seed, tile_size, crop_size):
 @click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
 @click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
 @click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
-@click.option  ('-d', '--dropout'      , type=float, default=0.2  , help=dropout_help     )
+@click.option  ('-d', '--dropout'      , type=float, default=0.0  , help=dropout_help     )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 def train_model_wrapper(
     model_name,
@@ -296,12 +297,13 @@ def train_model_wrapper(
 
 
 @cli.command   ('test-model')
-@click.argument('model_path'           , type=str                                    )
-@click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help  )
-@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help    )
-@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help)
-@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help)
-def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
+@click.argument('model_path'           , type=str                                     )
+@click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help   )
+@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help     )
+@click.option  ('-n', '--num_trials'   , type=int , default=0    , help=numtrials_help)
+@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help )
+@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help )
+def test_model_wrapper(model_path, use_simulated, seed, num_trials, tile_size, crop_size):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -316,7 +318,7 @@ def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
     
     from src.inference import test_model
 
-    test_model(model_path, seed, tile_size, crop_size, use_sim=use_simulated)
+    test_model(model_path, seed, tile_size, crop_size, use_sim=use_simulated, count=num_trials)
 
 
 @cli.command   ('model-summary')
