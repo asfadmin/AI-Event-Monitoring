@@ -261,7 +261,7 @@ def blur2d(
 
     size   = arr.shape[0]
     arr    = arr.reshape((1, size, size, 1)) 
-    tensor = constant(arr)
+    tensor = constant(arr, dtype=float32)
 
     kernel_array =  np.reshape(
         np.asarray(
@@ -279,6 +279,6 @@ def blur2d(
 
     convolved_tensor =  conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
     
-    convolved_array  = np.abs(np.reshape(convolved_tensor.numpy(), (size, size)))
+    convolved_array  = np.reshape(convolved_tensor.numpy(), (size, size))
 
     return convolved_array

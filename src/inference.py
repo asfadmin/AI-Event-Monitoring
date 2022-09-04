@@ -20,12 +20,31 @@ from tensorflow.keras.models import Model, load_model
 from PIL                     import Image
 
 
+def plot_imgs(x, y, y_conv, y_conv_r):
+
+    _, [[axs_wrapped, axs_mask], [axs_unwrapped, axs_mask_rounded]] = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=True)
+
+    axs_wrapped.set_title("Wrapped")
+    axs_wrapped.imshow(x, origin='lower', cmap='jet')
+
+    axs_unwrapped.set_title("True Mask")
+    axs_unwrapped.imshow(y, origin='lower', cmap='jet')
+
+    axs_mask.set_title("Mask w/o Rounding")
+    axs_mask.imshow(y_conv, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+
+    axs_mask_rounded.set_title("Mask w/ Rounding")
+    axs_mask_rounded.imshow(y_conv_r, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+
+    plt.show()
+
+
 def test_model(
     model_path: str,
     seed:       int,
     tile_size:  int,
     crop_size:  int  = 0,
-    count:      int  = 1,
+    count:      int  = 0,
     use_sim:    bool = False,
 ) -> None:
 
@@ -84,14 +103,17 @@ def test_model(
         x  = x.reshape ((tile_size, tile_size))
         y  = y.reshape ((crop_size, crop_size))
         yp = yp.reshape((crop_size, crop_size))
+        yp = np.abs(yp)
+
+        y_conv = np.copy(yp)
 
         y_conv = blur2d(yp)
-        for _ in range(64):
+        for _ in range(32):
             y_conv = blur2d(y_conv)
 
         y_conv_r = np.zeros((tile_size, tile_size))
 
-        tolerance2  = 0.4
+        tolerance2  = 0.1
         round_up2   = y_conv >= tolerance2
         round_down2 = y_conv <  tolerance2
 
@@ -99,16 +121,19 @@ def test_model(
         y_conv_r[round_down2] = 0
 
         zeros           = x == 0
+        y[zeros]        = 0
         y_conv[zeros]   = 0
         y_conv_r[zeros] = 0
 
-        curr_mae    = np.mean(np.absolute(y_conv_r - y))
-        total_mae  += curr_mae
-        average_val = np.mean(y_conv_r)
+        # y_conv = np.abs(y_conv) / np.max(np.abs(yp))
 
-        guess  = "Positive"   if average_val >= 2.25e-2 else "Negative"
-        actual = "Positive"   if presence[0] == 1       else "Negative"
-        result = "CORRECT!  " if guess == actual        else "INCORRECT!"
+        curr_mae    = np.mean(np.absolute(y_conv - y))
+        total_mae  += curr_mae
+        average_val = np.mean(y_conv)
+
+        guess  = "Positive"   if average_val >= 1e-2 else "Negative"
+        actual = "Positive"   if presence[0] == 1    else "Negative"
+        result = "CORRECT!  " if guess == actual     else "INCORRECT!"
 
         print(f'{result} Guess: {guess}   Actual: {actual}   Count: {i}')
 
@@ -118,13 +143,19 @@ def test_model(
             total_correct += int(correctness)
             
             total_pos  += presence[0]
-            total_pos_incorrect += 1 if     presence[0] and not correctness else 0
-            total_neg_incorrect += 1 if not presence[0] and not correctness else 0
+            
+            if not correctness:
+                if presence[0]:
+                    total_pos_incorrect += 1
+                else:
+                    total_neg_incorrect += 1
+                plot_imgs(x, y, y_conv, y_conv_r)
+                print("\nAverage Val: ", average_val, "\n")
 
     if count > 1:
 
         avg_mae = total_mae / count
-        avg_cor = total_correct / count
+        avg_cor = (total_correct / count) * 100.0
 
         print("")
         print("Mean Absolute Error ", avg_mae)
@@ -144,23 +175,7 @@ def test_model(
         print("Mean Absolute Error  ", curr_mae)
         print("_______\n")
 
-        y[zeros] = 0
-
-        _, [[axs_wrapped, axs_mask], [axs_unwrapped, axs_mask_rounded]] = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=True)
-
-        axs_wrapped.set_title("Wrapped")
-        axs_wrapped.imshow(x, origin='lower', cmap='jet')
-
-        axs_unwrapped.set_title("True Mask")
-        axs_unwrapped.imshow(y, origin='lower', cmap='jet')
-
-        axs_mask.set_title("Mask w/o Rounding")
-        axs_mask.imshow(y_conv, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
-
-        axs_mask_rounded.set_title("Mask w/ Rounding")
-        axs_mask_rounded.imshow(y_conv_r, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
-
-        plt.show()
+        plot_imgs(x, y, y_conv, y_conv_r)
 
 
 def test_model_eval(
@@ -249,6 +264,7 @@ def mask(
         The array containing the event-mask array as predicted by the model.
     """
 
+    from tensorflow import float32
 
     tiled_arr_w, w_rows, w_cols = tile(
         arr_w,
@@ -269,11 +285,14 @@ def mask(
     count = 0
     for x in tiled_arr_w:
 
-        yp = model.predict(x.reshape((1, tile_size, tile_size, 1))).reshape((crop_size, crop_size))
+        for _ in range(1):
+            x = blur2d(x)
 
-        y_conv = blur2d(yp)
-        for _ in range(64):
-            y_conv = blur2d(y_conv)
+        yp = model.predict(x.reshape((1, tile_size, tile_size, 1))).reshape((crop_size, crop_size))
+        yp = np.abs(yp)
+
+        for _ in range(1):
+            y_conv = blur2d(yp)
 
         tile_predictions[count] = y_conv
         count += 1
@@ -321,12 +340,12 @@ def mask_and_plot(
 
     arr_w, arr_uw, coherence = get_product_arrays(product_path)
 
-    zeros        = (arr_uw == 0)
-    arr_w[zeros] = 0
+    zeros        = (arr_w == 0)
 
     if mask_coh:
         bad_coherence = coherence < 0.3
-        arr_w[bad_coherence] = 0
+        # arr_w [bad_coherence] = 0
+        arr_uw[bad_coherence] = 0
 
     prediction = mask(
         model_path = model_path,
@@ -338,13 +357,30 @@ def mask_and_plot(
     prediction[zeros] = 0
 
     if mask_coh:
-        arr_uw[bad_coherence] = 0
+        prediction[bad_coherence] = 0
+
+    max_px_val = np.max(np.abs(prediction))
+    prediction = np.abs(prediction) / 0.5
+    print("max_px_val: ", max_px_val)
+
+    old_shape  = prediction.shape
+    pad_amount = np.abs(prediction.shape[1] - prediction.shape[0])
+    prediction = np.pad(prediction, ((0, pad_amount), (0, 0)))
+    for _ in range(512):
+        prediction = blur2d(prediction)
+    prediction = prediction[0:old_shape[0], 0:old_shape[1]]
+
+    prediction = np.abs(prediction) / 0.25
+
+    prediction[zeros] = 0
+
+    if mask_coh:
         prediction[bad_coherence] = 0
 
     prediction_rounded = np.copy(prediction)
     if round_pred:
 
-        tolerance1  = 0.4
+        tolerance1  = 0.1
         round_up1   = prediction_rounded >= tolerance1
         round_down1 = prediction_rounded <  tolerance1
 
@@ -368,7 +404,7 @@ def mask_and_plot(
     axs_unwrapped.imshow(np.abs(arr_uw), origin='lower', cmap='jet')
 
     axs_mask.set_title("mask_unrounded")
-    axs_mask.imshow(prediction, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+    axs_mask.imshow(prediction, origin='lower', cmap='jet', vmin=0, vmax=1)
 
     axs_mask_rounded.set_title("mask_rounded")
     axs_mask_rounded.imshow(prediction_rounded, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
