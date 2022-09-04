@@ -825,7 +825,7 @@ def gen_simulated_deformation(
                             [-0.08150437],
                             [ 0.92050485]])
 
-    img_composition_choice = np.random.randint(0, 10)
+    img_composition_choice = np.random.randint(0, 11)
 
     if img_composition_choice < 5:
 
@@ -899,6 +899,10 @@ def gen_simulated_deformation(
 
         masked_grid  = np.zeros((tile_size, tile_size))
         wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
+        
+        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+        coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0        
+        wrapped_grid[coh_indices] = 0
 
         return masked_grid, wrapped_grid, presence
 
