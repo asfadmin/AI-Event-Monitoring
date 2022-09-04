@@ -7,7 +7,7 @@
 
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Conv2DTranspose, MaxPooling2D, Input, concatenate
+from tensorflow.keras.layers     import Conv2D, Conv2DTranspose, BatchNormalization, Input, concatenate, MaxPooling2D, Dropout
 from tensorflow.keras.models     import Model
 from tensorflow.keras.optimizers import Adam 
 
@@ -68,7 +68,8 @@ def create_unet(
     model_name:    str   = 'model',
     tile_size:     int   = 512    ,
     num_filters:   int   = 32     ,
-    learning_rate: float = 1e-4
+    learning_rate: float = 1e-4   ,
+    dropout:       float = 0.0
 ) -> Model:
 
     """
@@ -91,6 +92,7 @@ def create_unet(
     c4 = conv2d_block(m3   , num_filters *  8)
     m4 = MaxPooling2D((2, 2), strides=2)  (c4)
     c5 = conv2d_block(m4   , num_filters * 16)
+    c5 = Dropout(dropout)(c5)
 
 
     # --------------------------------- #
@@ -128,7 +130,7 @@ def create_unet(
 
     model.compile(
         loss      = 'mean_squared_error',
-        metrics   = ['mean_squared_error'],
+        metrics   = ['mean_absolute_percentage_error'],
         optimizer = Adam(learning_rate = learning_rate)
     )
 
