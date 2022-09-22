@@ -11,7 +11,6 @@ from typing import Any
 
 import wandb
 import numpy as np
-import tensorflow as tf
 from src.architectures.unet import create_unet
 from src.architectures.resnet import create_resnet
 from src.architectures.eventnet import create_eventnet

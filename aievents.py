@@ -584,12 +584,12 @@ def mask(
     """
 
     from os import environ
-    
+
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-    
+
     from src.inference import mask_and_plot
 
-    mask = mask_and_plot(
+    mask, _ = mask_and_plot(
         model_path,
         pres_model_path,
         image_path,

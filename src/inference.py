@@ -63,9 +63,6 @@ def test_masking(
     crop_size : int, Optional
         If the models output shape is different than the input shape, this value needs to be
         equal to the output shape.
-    count : int, Optional
-        Predict on [count] simulated or synthetic interferograms and log the results. The
-        default value of 1 simply plots the single prediction.
     use_sim : bool, Optional
         Use simulated interferograms rather than synthetic interferograms
 
@@ -149,8 +146,6 @@ def test_binary_choice(
     count : int, Optional
         Predict on [count] simulated or synthetic interferograms and log the results. The
         default value of 1 simply plots the single prediction.
-    use_sim : bool, Optional
-        Use simulated interferograms rather than synthetic interferograms
     plot : bool, Optional
         Plot the incorrect guesses during testing.
 
@@ -267,6 +262,8 @@ def mask(
     -----------
     model_path : str
         The path to the model to use for masking.
+    pres_model_path : str
+        The path to the model that predicts the presence of an event in a mask.
     arr_w : np.ndarray
         The wrapped interferogram array.
     tile_size : int
@@ -274,12 +271,15 @@ def mask(
         to match the input shape of the model.
     crop_size : int, Optional
         If the models output shape is different than the input shape, this value needs to be
-        equal to the output shape.
+        equal to the output shape of the masking model and input shape of the presence model.
 
     Returns:
     --------
-    prediction : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
+    mask : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
         The array containing the event-mask array as predicted by the model.
+    pres_mask : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
+        An array containing tiles where the tile is all 1s if there is an event else 0s.
+        If even a single tile has 1s that means an event has been identified.
     """
 
     tiled_arr_w, w_rows, w_cols = tile(
@@ -318,12 +318,12 @@ def mask(
         y_pred_rounded[round_up ]  = 1
         y_pred_rounded[round_down] = 0
 
-        presence = pres_model.predict(y_pred_rounded.reshape(1, tile_size, tile_size, 1))
+        presence = pres_model.predict(y_pred_rounded.reshape(1, crop_size, crop_size, 1))
 
         if presence[0] >= 0.99:
-            pres_mask = np.ones((tile_size, tile_size))
+            pres_mask = np.ones((crop_size, crop_size))
         else:
-            pres_mask = np.zeros((tile_size, tile_size))
+            pres_mask = np.zeros((crop_size, crop_size))
 
         pres_tiles[count] = pres_mask
         mask_tiles[count] = y_pred_rounded
@@ -361,6 +361,8 @@ def mask_and_plot(
     -----------
     model_path : str
         The path to the model to use for generating the event-mask.
+    pres_model_path : str
+        The path to the model that predicts the presence of an event in a mask.
     product_path : str
         The path to the InSAR product from ASF that should be masked.
     tile_size : int
@@ -368,12 +370,14 @@ def mask_and_plot(
         to match the input shape of the model.
     crop_size : int, Optional
         If the models output shape is different than the input shape, this value needs to be
-        equal to the output shape.
+        equal to the output shape of the masking model and input shape of the presence model.
 
     Returns:
     --------
-    prediction : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
+    mask_pred : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
         The array containing the event-mask array as predicted by the model.
+    presence_guess : bool
+        True if there is an event else False.
     """
 
     arr_w, arr_uw, coherence = get_product_arrays(product_path)
@@ -404,7 +408,7 @@ def mask_and_plot(
 
     plot_imgs(arr_w, arr_uw, mask_pred, pres_mask)
 
-    return mask_pred
+    return mask_pred, presence_guess
 
 
 def visualize_layers(

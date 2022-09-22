@@ -7,13 +7,14 @@
 
 import random
 import sys
+
 from os import rename, walk
 from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 from PIL import Image
-from osgeo import gdal
+
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
@@ -52,6 +53,8 @@ def load_dataset(
         The array of the event-mask loaded from the .npz.
     wrapped : np.ndarray
         The array of the wrapped interferogram loaded from the .npz.
+    presence : [0] or [1]
+        [1] if the image contains an event else [0]
     """
 
     dataset_file = np.load(load_path)
@@ -212,6 +215,7 @@ def dataset_from_pngs(
 
     """
     Creates a dataset from a folder containing real interferogram products.
+    FOR TESTING ONLY
 
     Parameters:
     -----------
@@ -373,6 +377,7 @@ def make_synthetic_dataset(
 
     """
     Generate a dataset containing pairs of synthetic wrapped interferograms along with their event-masks
+    FOR TESTING ONLY, please use make_simulated_dataset().
 
     Parameters:
     -----------

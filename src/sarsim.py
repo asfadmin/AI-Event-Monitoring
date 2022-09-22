@@ -436,9 +436,7 @@ def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):
     return U
 
 
-def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
-                    water_mask = None, difference = False, verbose = False,
-                    cov_interpolate_threshold = 1e4, cov_Lc = 2000):
+def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, difference = False):
     
     """ A function to create synthetic turbulent atmospheres based on the  methods in Lohman Simons 2005, or using Andy Hooper and Lin Shen's fft method.  
     Note that due to memory issues, when using the covariance (Lohman) method, largers ones are made by interpolateing smaller ones.  
@@ -470,9 +468,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
     """
     
     import numpy as np
-    import numpy.ma as ma
-    from scipy.spatial import distance as sp_distance                                                # geopy also has a distance function.  Rename for safety.  
-    from scipy import interpolate as scipy_interpolate
+
     
     def lon_lat_to_ijk(lons_mg, lats_mg):
         
@@ -502,7 +498,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02,
         ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))                                                                 # xy and 0 depth, as 3xlots
         
         return ijk, pixel_spacing
-    
+
 
     def generate_correlated_noise_fft(nx, ny, std_long, sp):
         
@@ -812,6 +808,8 @@ def gen_simulated_deformation(
         An array representing a mask over the simulated deformation which simulates masking an event.
     wrapped_grid : np.ndarray(shape=(tile_size, tile_size)
         The wrapped interferogram.
+    presence : [1] or [0]
+        [1] if the image contains an event else [0]
     """
 
     if seed != 0: np.random.seed(seed)
