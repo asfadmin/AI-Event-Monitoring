@@ -504,8 +504,8 @@ def make_simulated_dataset(
     if not save_directory.is_dir():
         save_directory.mkdir()
 
-    count = 1
-    while count != amount:
+    count = 0
+    while count < amount:
 
         current_seed = new_seed()
 
@@ -517,12 +517,118 @@ def make_simulated_dataset(
         if crop_size < tile_size:
             masked = simulate_unet_cropping(masked, (crop_size, crop_size))
 
-        if count % 10 == 0:
+        if count % 10 == 0 and count != 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
 
         current_name = f"sim_seed{current_seed}_{count}"
         save_path = save_directory / current_name
         save_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
+
+        count += 1
+
+    return seed, count, dir_name
+
+
+def make_simulated_binary_dataset(
+    name:         str,
+    model_path:   str,
+    output_dir:   str,
+    amount:       int,
+    seed:         int,
+    tile_size:    int,
+    crop_size:    int
+):
+
+    """
+    Generate a dataset containing pairs of predicted event masks with their binary truths (has/doesn't have an event.)
+
+    Parameters:
+    -----------
+    name : str
+        The name of the dataset to be generate. The saved name will be formatted
+        like <name>_amount<amount>_seed<seed>.
+    model_path : str
+        The path to the model that should be used to generate the masks.
+    output_dir : str
+        The directory to save the generated dataset to.
+    amount : int
+        The amount of simulated interferogram pairs to be generated.
+    seed : int
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        a seed will be generated and the results will be different every time.
+    tile_size : int
+        The size of the simulated interferograms, which should match the desired tile sizes of
+        of the real interferograms. This also needs to match the input shape of the model.
+    crop_size : int
+        If the model's output shape does not match its input shape, this should be set to match
+        the output shape. The unwrapped interferogram will be cropped to this.
+
+    Returns:
+    --------
+    seed : int
+        The generated or inputed seed.
+    count : int
+        The number of samples that were generated.
+    dir_name : str
+        The generated name of the dataset directory.
+    """
+
+    import sys
+    import random
+
+    from tensorflow.keras.models import load_model
+
+    from src.io import save_dataset
+
+    def new_seed():
+        seed_value = random.randrange(sys.maxsize)
+        random.seed = seed_value
+        return random.randint(100000, 999999)
+
+    if not seed:
+        seed = random.randint(100000, 999999)
+
+    model = load_model(model_path)
+
+    dir_name = f"{name}_amount{amount}_seed{seed}"
+
+    save_directory = Path(output_dir) / dir_name
+    if not save_directory.is_dir():
+        save_directory.mkdir()
+
+    count = 1
+    while count != amount:
+
+        current_seed = new_seed()
+
+        _, wrapped, presence = gen_simulated_deformation(
+            seed      = current_seed,
+            tile_size = tile_size
+        )
+
+        wrapped  = wrapped.reshape((1, tile_size, tile_size, 1))
+        masked_pred = model.predict(wrapped)
+
+        wrapped  = wrapped.reshape ((tile_size, tile_size))
+        masked_pred = np.abs(masked_pred.reshape((crop_size, crop_size)))
+
+        tolerance  = 0.1
+        round_up   = masked_pred >= tolerance
+        round_down = masked_pred <  tolerance
+
+        masked_pred[round_up  ] = 1
+        masked_pred[round_down] = 0
+
+        zeros              = wrapped == 0
+        masked_pred[zeros] = 0
+
+        if count % 10 == 0:
+            print(f"Generated {count} of {amount} simulated interferogram pairs.")
+
+        current_name = f"sim_seed{current_seed}_{count}"
+        save_path = save_directory / current_name
+        save_dataset(save_path, mask=masked_pred, wrapped=wrapped, presence=presence)
 
         count += 1
 
