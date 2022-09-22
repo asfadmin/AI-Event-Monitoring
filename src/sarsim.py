@@ -864,7 +864,7 @@ def gen_simulated_deformation(
         masked_indices = np.abs(los_grid) >= np.pi * 2  # Num of fringes to say yes to.
         masked_grid[masked_indices] = np.abs(los_grid[masked_indices]) / (np.max(np.abs(los_grid[masked_indices])))
 
-        atmosphere_phase = aps_simulate(tile_size) * np.abs(atmosphere_scalar)
+        atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
         interferogram    = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
         wrapped_grid     = wrap_interferogram(interferogram, noise = 0.0)
 
@@ -899,8 +899,9 @@ def gen_simulated_deformation(
 
         masked_grid  = np.zeros((tile_size, tile_size))
         wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
-        
-        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+
+        threshold      = random.random() / 2
+        coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
         coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0        
         wrapped_grid[coh_indices] = 0
 
@@ -911,7 +912,7 @@ def gen_simulated_deformation(
         topo_phase = 0
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar
 
-        topo_phase_roll = np.random.randint(0, 1)
+        topo_phase_roll = np.random.randint(0, 2)
         if topo_phase_roll == 1:
 
             simulated_topography = gen_fake_topo(
@@ -922,7 +923,8 @@ def gen_simulated_deformation(
 
             topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * 10
 
-        coherence_mask = coherence_mask_simulate(tile_size, 0.3)
+        threshold      = random.random() / 2
+        coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
         coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
         
         wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
