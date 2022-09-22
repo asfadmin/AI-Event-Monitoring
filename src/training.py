@@ -9,13 +9,13 @@ import os
 from math   import ceil
 from typing import Any
 
-# import wandb
+import wandb
 import numpy as np
 import tensorflow as tf
 from src.architectures.unet import create_unet
 from src.architectures.resnet import create_resnet
 from src.architectures.eventnet import create_eventnet
-# from wandb.keras import WandbCallback
+from wandb.keras import WandbCallback
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import Sequence
 
@@ -95,6 +95,7 @@ def train(
     num_filters:   int   = 16,
     batch_size:    int   = 64,
     learning_rate: float = 0.001,
+    use_wandb:     bool  = False
 ) -> Any:
 
     """
@@ -131,18 +132,18 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
-    # wandb.init(
-    #     project="InSAR Event Monitor",
-    #     config = {
-    #         "learning_rate": learning_rate,
-    #         "epochs": num_epochs,
-    #         "batch_size": batch_size,
-    #         "filters": num_filters,
-    #         "tile_size": input_shape,
-    #         "dropout": dropout,
-    #         "dataset": dataset_path
-    #     }
-    # )
+    if use_wandb:
+        wandb.init(
+            project="InSAR Event Monitor",
+            config = {
+                "learning_rate": learning_rate,
+                "epochs": num_epochs,
+                "batch_size": batch_size,
+                "filters": num_filters,
+                "tile_size": input_shape,
+                "dataset": dataset_path
+            }
+        )
 
     train_feature = 'mask' if model_type == 'eventnet' else 'wrapped'
     output_feature = 'presence' if model_type == 'eventnet' else 'mask'
@@ -191,7 +192,7 @@ def train(
         patience = 2,
         verbose  = 1
     )
-    
+
     checkpoint = ModelCheckpoint(
         filepath       = 'models/checkpoints/' + model_name,
         monitor        = 'val_loss',
@@ -206,16 +207,28 @@ def train(
     training_steps     = ceil(training_samples / batch_size)
     validation_steps   = ceil(validation_samples / batch_size)
 
-    history = model.fit(
-        training_generator,
-        epochs           = num_epochs,
-        validation_data  = val_generator,
-        batch_size       = batch_size,
-        steps_per_epoch  = training_steps,
-        validation_steps = validation_steps,
-        callbacks        = [checkpoint, early_stopping] # [checkpoint, early_stopping, WandbCallback()]
-    )
+    if use_wandb:
+        history = model.fit(
+            training_generator,
+            epochs           = num_epochs,
+            validation_data  = val_generator,
+            batch_size       = batch_size,
+            steps_per_epoch  = training_steps,
+            validation_steps = validation_steps,
+            callbacks        = [checkpoint, early_stopping, WandbCallback()]
+        )
+
+    else:
+        history = model.fit(
+            training_generator,
+            epochs           = num_epochs,
+            validation_data  = val_generator,
+            batch_size       = batch_size,
+            steps_per_epoch  = training_steps,
+            validation_steps = validation_steps,
+            callbacks        = [checkpoint, early_stopping]
+        )
 
     model.save("models/" + model_name)
-    
+
     return history
