@@ -730,7 +730,7 @@ def aps_simulate(
     """
 
     pixel_size_degs = 1/3600
-    
+
     scaled_size = pixel_size_degs * size
 
     lons    = np.arange(0.0, 0.0 + scaled_size, pixel_size_degs)
@@ -738,7 +738,7 @@ def aps_simulate(
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
-    ph_turb = atmosphere_turb(1, lons_mg, lats_mg, verbose=True, mean_m = 0.02,
+    ph_turb = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.02,
                                  method = 'fft')
 
     return ph_turb[0,]
@@ -772,7 +772,7 @@ def coherence_mask_simulate(
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
-    mask_coh_values = atmosphere_turb(1, lons_mg, lats_mg, verbose=True, mean_m = 0.01,
+    mask_coh_values = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.01,
                                  method = 'fft')
 
     mask_coh_values = (mask_coh_values - np.min(mask_coh_values)) / np.max(mask_coh_values - np.min(mask_coh_values))
