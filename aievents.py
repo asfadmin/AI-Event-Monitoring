@@ -439,7 +439,7 @@ def train_model_wrapper(
         pres_dataset_name,
         mask_model_path,
         SYNTHETIC_DIR,
-        2000,
+        2 * dataset_size,
         0,
         input_shape,
         input_shape
