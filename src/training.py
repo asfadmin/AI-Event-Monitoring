@@ -6,17 +6,18 @@
 """
 
 import os
+
 from math   import ceil
 from typing import Any
 
-import wandb
 import numpy as np
-from src.architectures.unet import create_unet
-from src.architectures.resnet import create_resnet
+
+from src.architectures.unet     import create_unet
+from src.architectures.resnet   import create_resnet
 from src.architectures.eventnet import create_eventnet
-from wandb.keras import WandbCallback
+
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.utils import Sequence
+from tensorflow.keras.utils     import Sequence
 
 
 class DataGenerator(Sequence):
@@ -132,6 +133,10 @@ def train(
     """
 
     if use_wandb:
+
+        import wandb
+        from wandb.keras import WandbCallback
+
         wandb.init(
             project="InSAR Event Monitor",
             config = {
