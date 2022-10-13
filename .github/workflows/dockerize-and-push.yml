@@ -45,7 +45,7 @@ jobs:
           export CI_JOB_TIMESTAMP=$(date --utc --rfc-3339=seconds)
           echo "Building ${AIEVENTS_REGISTRY}/${GITHUB_REPOSITORY##*/}"
           docker build --no-cache \
-                -t ${AIEVENTS_REGISTRY}/aieventmonitoring \
+                -t ${AIEVENTS_REGISTRY} \
                 --label org.opencontainers.image.created="${CI_JOB_TIMESTAMP}" \
                 --label org.opencontainers.image.revision="${GITHUB_SHA}" \
           docker push ${AIEVENTS_REGISTRY}/${GITHUB_REPOSITORY##*/}
