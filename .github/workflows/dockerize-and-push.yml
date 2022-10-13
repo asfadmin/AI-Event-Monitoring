@@ -43,12 +43,12 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         run: |
           export CI_JOB_TIMESTAMP=$(date --utc --rfc-3339=seconds)
-          echo "Building ${AIEVENTS_REGISTRY}/${GITHUB_REPOSITORY##*/}"
+          echo "Building ${AIEVENTS_REGISTRY}"
           docker build --no-cache \
-                -t ${AIEVENTS_REGISTRY}/aieventmonitoring \
+                -t ${AIEVENTS_REGISTRY} \
                 --label org.opencontainers.image.created="${CI_JOB_TIMESTAMP}" \
                 --label org.opencontainers.image.revision="${GITHUB_SHA}" .
-          docker push ${AIEVENTS_REGISTRY}/aieventmonitoring
+          docker push ${AIEVENTS_REGISTRY}
 
       - name: Logout of Amazon ECR
         if: always()
