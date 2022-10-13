@@ -48,7 +48,7 @@ jobs:
                 -t ${AIEVENTS_REGISTRY}/aieventmonitoring \
                 --label org.opencontainers.image.created="${CI_JOB_TIMESTAMP}" \
                 --label org.opencontainers.image.revision="${GITHUB_SHA}" .
-          docker push ${AIEVENTS_REGISTRY}/${GITHUB_REPOSITORY##*/}
+          docker push ${AIEVENTS_REGISTRY}/aieventmonitoring
 
       - name: Logout of Amazon ECR
         if: always()
