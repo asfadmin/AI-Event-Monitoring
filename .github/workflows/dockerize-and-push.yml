@@ -21,7 +21,6 @@ env:
 jobs:
   dockerize:
     runs-on: ubuntu-latest
-    needs: package
     steps:
       - uses: actions/checkout@v2
 
