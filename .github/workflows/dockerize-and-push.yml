@@ -47,7 +47,7 @@ jobs:
           docker build --no-cache \
                 -t ${AIEVENTS_REGISTRY}/aieventmonitoring \
                 --label org.opencontainers.image.created="${CI_JOB_TIMESTAMP}" \
-                --label org.opencontainers.image.revision="${GITHUB_SHA}" \ .
+                --label org.opencontainers.image.revision="${GITHUB_SHA}" .
           docker push ${AIEVENTS_REGISTRY}/${GITHUB_REPOSITORY##*/}
 
       - name: Logout of Amazon ECR
