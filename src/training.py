@@ -6,20 +6,18 @@
 """
 
 import os
+
 from math   import ceil
 from typing import Any
 
 import numpy as np
-import tensorflow as tf
-from src.architectures.unet import create_unet
-from src.architectures.resnet import create_resnet
-from src.architectures.eventnet import create_eventnet
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.utils import Sequence
 
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
+from src.architectures.unet     import create_unet
+from src.architectures.resnet   import create_resnet
+from src.architectures.eventnet import create_eventnet
+
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.utils     import Sequence
 
 
 class DataGenerator(Sequence):
@@ -28,12 +26,15 @@ class DataGenerator(Sequence):
     Dataset Generator for sequencially passing files from storange into the model.
     """
 
-    def __init__(self, file_list, path, tile_size, crop_size):
+    def __init__(self, file_list, path, tile_size, crop_size, train_feature, output_feature):
         
         self.file_list = file_list
         self.path = path
         self.tile_size = tile_size
         self.crop_size = crop_size
+        self.train_feature = train_feature
+        self.output_feature = output_feature
+        self.output_shape = (1, 1) if train_feature == 'mask' else (1, crop_size, crop_size, 1)
         self.on_epoch_end()
 
 
@@ -79,8 +80,8 @@ class DataGenerator(Sequence):
         for ID in file_list_temp:
             data_loc = os.path.join(self.path, ID)
             X = np.load(data_loc)
-            x = X['wrapped'].reshape((1, self.tile_size, self.tile_size, 1))
-            y = X['mask'].reshape((1, self.tile_size, self.tile_size, 1))
+            x = X[self.train_feature].reshape((1, self.tile_size, self.tile_size, 1))
+            y = X[self.output_feature].reshape(self.output_shape)
 
         return x, y
 
@@ -88,12 +89,13 @@ class DataGenerator(Sequence):
 def train(
     model_name:    str,
     dataset_path:  str,
+    model_type:    str,
     input_shape:   int   = 1024,
     num_epochs:    int   = 10,
     num_filters:   int   = 16,
     batch_size:    int   = 64,
     learning_rate: float = 0.001,
-    dropout:       float = 0.2
+    use_wandb:     bool  = False
 ) -> Any:
 
     """
@@ -130,6 +132,26 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
+    if use_wandb:
+
+        import wandb
+        from wandb.keras import WandbCallback
+
+        wandb.init(
+            project="InSAR Event Monitor",
+            config = {
+                "learning_rate": learning_rate,
+                "epochs": num_epochs,
+                "batch_size": batch_size,
+                "filters": num_filters,
+                "tile_size": input_shape,
+                "dataset": dataset_path
+            }
+        )
+
+    train_feature = 'mask' if model_type == 'eventnet' else 'wrapped'
+    output_feature = 'presence' if model_type == 'eventnet' else 'mask'
+
     train_path = dataset_path + '/train'
     test_path  = dataset_path + '/validation'
 
@@ -139,15 +161,33 @@ def train(
     training_partition   = [item for item in all_training_files   if "synth" in item or "sim" in item or "real" in item]
     validation_partition = [item for item in all_validation_files if "synth" in item or "sim" in item or "real" in item]
 
-    training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape)
-    val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape)
+    training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape, train_feature, output_feature)
+    val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape, train_feature, output_feature)
 
-    model = create_unet(
-        model_name    = model_name,
-        tile_size     = input_shape,
-        num_filters   = num_filters,
-        learning_rate = learning_rate
-    )
+    if model_type == 'eventnet':
+        model = create_eventnet(
+            model_name  = model_name,
+            tile_size   = input_shape,
+            num_filters = num_filters,
+            label_count = 1
+        )
+    elif model_type == 'unet':
+        model = create_unet(
+            model_name    = model_name,
+            tile_size     = input_shape,
+            num_filters   = num_filters,
+            learning_rate = learning_rate
+        )
+    elif model_type == 'resnet':
+        model = create_resnet(
+            model_name    = model_name,
+            tile_size     = input_shape,
+            num_filters   = num_filters,
+            learning_rate = learning_rate
+        )
+    else:
+        print("Invalid Model Type!")
+        return
 
     model.summary()
 
@@ -156,7 +196,7 @@ def train(
         patience = 2,
         verbose  = 1
     )
-    
+
     checkpoint = ModelCheckpoint(
         filepath       = 'models/checkpoints/' + model_name,
         monitor        = 'val_loss',
@@ -171,16 +211,28 @@ def train(
     training_steps     = ceil(training_samples / batch_size)
     validation_steps   = ceil(validation_samples / batch_size)
 
-    history = model.fit(
-        training_generator,
-        epochs           = num_epochs,
-        validation_data  = val_generator,
-        batch_size       = batch_size,
-        steps_per_epoch  = training_steps,
-        validation_steps = validation_steps,
-        callbacks        = [checkpoint, early_stopping]
-    )
+    if use_wandb:
+        history = model.fit(
+            training_generator,
+            epochs           = num_epochs,
+            validation_data  = val_generator,
+            batch_size       = batch_size,
+            steps_per_epoch  = training_steps,
+            validation_steps = validation_steps,
+            callbacks        = [checkpoint, early_stopping, WandbCallback()]
+        )
+
+    else:
+        history = model.fit(
+            training_generator,
+            epochs           = num_epochs,
+            validation_data  = val_generator,
+            batch_size       = batch_size,
+            steps_per_epoch  = training_steps,
+            validation_steps = validation_steps,
+            callbacks        = [checkpoint, early_stopping]
+        )
 
     model.save("models/" + model_name)
-    
+
     return history

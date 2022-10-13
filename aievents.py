@@ -28,6 +28,7 @@ learningrate_help  = "The rate which affects how much the model changes in respo
 learningrate_help += "0.0005 <= learning_rate <= 0.005"
 amplitude_help     = "Max amplitude of the gaussians (minimum is the negative of this)."
 usesim_help        = "Flag to use simulated interferograms rather than synthetic interferograms. Default is False."
+numtrials_help     = "Test the model over this many images. If 1, the images are plotted."
 
 
 # ------------------ #
@@ -132,10 +133,11 @@ def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, cr
 @click.argument('name'              , type=str                                                                    )
 @click.argument('amount'            , type=int                        , default=1                                 )
 @click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=1024         , help=cropsize_help )
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
-def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, split):
+def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_dir, seed, split):
 
     """
     Create a randomly generated simulated dataset of wrapped interferograms and their corresponding event-masks.
@@ -146,14 +148,58 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, output_dir, seed, sp
     amount      Number of simulated interferograms created.\n
     """
 
-    from src.io import make_simulated_dataset, split_dataset
+    from src.io import split_dataset, make_simulated_dataset
 
     name, count, dir_name = make_simulated_dataset(
         name,
         output_dir,
         amount,
         seed,
-        tile_size
+        tile_size,
+        crop_size
+    )
+
+    num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
+
+    print(f"\nCreated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}\n")
+    print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
+
+
+@cli.command   ('make-simulated-binary-dataset')
+@click.argument('name'              , type=str                                                                    )
+@click.argument('model_path'        , type=str                                                                    )
+@click.argument('amount'            , type=int                        , default=1                                 )
+@click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=1024         , help=cropsize_help )
+@click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
+@click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
+@click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
+def make_simulated_dataset_wrapper(name, model_path, amount, tile_size, crop_size, output_dir, seed, split):
+
+    """
+    Create a randomly generated simulated dataset of wrapped interferograms and their corresponding event-masks.
+
+    ARGS:\n
+    name             Name of dataset. Seed is appended.\n
+                     <name>_seed<seed>\n
+    pres_model_path  path to model that predicts whether there is an event.\n
+    amount           Number of simulated interferograms created.\n
+    """
+
+    from os import environ
+
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+    from src.io import split_dataset, make_simulated_binary_dataset
+
+    name, count, dir_name = make_simulated_binary_dataset(
+        name,
+        model_path,
+        output_dir,
+        amount,
+        seed,
+        tile_size,
+        crop_size
     )
 
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
@@ -229,7 +275,7 @@ def show_dataset_wrapper(file_path):
     from src.gui import show_dataset
     from src.io import load_dataset
 
-    mask, wrapped = load_dataset(file_path)
+    mask, wrapped, _ = load_dataset(file_path)
     show_dataset(mask, wrapped)
 
 
@@ -252,15 +298,17 @@ def show_random_wrapper(seed, tile_size, crop_size):
 
 @cli.command   ('train-model')
 @click.argument('model_name'           , type=str                                         )
+@click.argument('model_type'           , type=str                                         )
 @click.argument('dataset_path'         , type=str                                         )
 @click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
 @click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
 @click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
 @click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
-@click.option  ('-d', '--dropout'      , type=float, default=0.2  , help=dropout_help     )
+@click.option  ('-d', '--dropout'      , type=float, default=0.0  , help=dropout_help     )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 def train_model_wrapper(
     model_name,
+    model_type,
     dataset_path,
     epochs,
     input_shape,
@@ -275,30 +323,175 @@ def train_model_wrapper(
 
     ARGS:\n
     model_name      name of the model to be trained.\n
+    model_type      type of model to train: eventnet, unet, or resnet.\n
     train_path      path to training data.\n
     test_path       path to validation data.\n
     """
 
+    from os import environ
+
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
     from src.training import train
+
+    if model_type not in ['eventnet', 'unet', 'resnet']:
+        print("\nBad model type. Should be \'eventnet\', \'unet\', or \'resnet\'.")
+        return
 
     train(
         model_name,
         dataset_path,
+        model_type,
         input_shape,
         epochs,
         filters,
         batch_size,
-        learning_rate,
-        dropout
+        learning_rate
     )
 
 
-@cli.command   ('test-model')
-@click.argument('model_path'           , type=str                                    )
-@click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help  )
-@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help    )
-@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help)
-@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help)
+@cli.command   ('create-model')
+@click.argument('model_name'           , type=str                                         )
+@click.argument('dataset_size'         , type=int                                         )
+@click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
+@click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
+@click.option  ('-s', '--val_split'    , type=float, default=0.1  , help=split_help       )
+@click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+@click.option  ('-v', '--eval_samples' , type=int  , default=0    , help=""               )
+@click.option  ('-p', '--plot'         , type=bool , default=False, help=""               )
+def train_model_wrapper(
+    model_name,
+    dataset_size,
+    epochs,
+    input_shape,
+    filters,
+    batch_size,
+    val_split,
+    learning_rate,
+    eval_samples,
+    plot
+):
+
+    """
+    Batteries-Included EventNet Creation
+
+    ARGS:\n
+    model_name      name to give the model.\n
+    dataset_size    number of samples in dataset.\n
+    """
+
+    import time
+
+    from os import environ
+
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+    from src.training import train
+    from src.inference import test_binary_choice
+    from src.io import split_dataset, make_simulated_dataset, make_simulated_binary_dataset
+
+    print("\nCreating Mask Model Dataset")
+    print("____________________________\n")
+
+    mask_dataset_name = 'tmp_dataset_masking_' + str(time.time()).strip('.')[0]
+
+    _, count, dir_name = make_simulated_dataset(
+        mask_dataset_name,
+        SYNTHETIC_DIR,
+        dataset_size,
+        0,
+        input_shape,
+        input_shape
+    )
+
+    dataset_path = 'data/working/synthetic/' + dir_name
+
+    num_train, num_validation = split_dataset(dataset_path, val_split)
+
+    print(f"\nCreated temporary dataset with {count} samples. Saved to {dir_name}")
+    print(f"The dataset was split into train and validation sets of size {num_train} and {num_validation}.")
+    print("____________________________ ")
+
+    print("\nTraining Masking Model")
+    print("____________________________ ") 
+    train(
+        model_name + "_masking",
+        dataset_path,
+        'unet',
+        input_shape,
+        epochs,
+        filters,
+        batch_size,
+        learning_rate
+    )
+    print("____________________________ ") 
+
+    print("\nCreating Presence Prediction Model Dataset")
+    print("____________________________\n") 
+
+    pres_dataset_name = 'tmp_dataset_presence_' + str(time.time()).strip('.')[0]
+
+    mask_model_path = 'models/checkpoints/' + model_name + '_masking'
+
+    _, count, dir_name = make_simulated_binary_dataset(
+        pres_dataset_name,
+        mask_model_path,
+        SYNTHETIC_DIR,
+        2 * dataset_size,
+        0,
+        input_shape,
+        input_shape
+    )
+
+    dataset_path = 'data/working/synthetic/' + dir_name
+
+    num_train, num_validation = split_dataset(dataset_path, val_split)
+
+    print(f"\nCreated temporary dataset with {count} samples. Saved to {dir_name}")
+    print(f"The dataset was split into train and validation sets of size {num_train} and {num_validation}.")
+    print("____________________________ ")
+
+    print("\nTraining EventNet")
+    print("____________________________ ") 
+    train(
+        model_name + "_presence",
+        dataset_path,
+        'eventnet',
+        input_shape,
+        10,
+        32,
+        1
+    )
+    print("____________________________ ") 
+
+    if eval_samples > 0:
+
+        print("\nEvaluating EventNet Model")
+        print("____________________________\n")
+
+        pres_model_path = 'models/checkpoints/' + model_name + '_presence'
+
+        test_binary_choice(
+            mask_model_path,
+            pres_model_path,
+            0,
+            input_shape,
+            input_shape,
+            eval_samples,
+            plot
+        )
+
+    print("\nDone...\n")
+
+
+@cli.command   ('test-masking')
+@click.argument('model_path'           , type=str                                     )
+@click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help   )
+@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help     )
+@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help )
+@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help )
 def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
 
     """
@@ -312,9 +505,35 @@ def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
     
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
     
-    from src.inference import test_model
+    from src.inference import test_masking
 
-    test_model(model_path, seed, tile_size, crop_size)
+    test_masking(model_path, seed, tile_size, crop_size, use_sim=use_simulated)
+
+
+@cli.command   ('test-binary-choice')
+@click.argument('model_path'           , type=str                                     )
+@click.argument('pres_model_path'      , type=str                                     )
+@click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help     )
+@click.option  ('-n', '--num_trials'   , type=int , default=0    , help=numtrials_help)
+@click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help )
+@click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help )
+def test_model_wrapper(model_path, pres_model_path, seed, num_trials, tile_size, crop_size):
+
+    """
+    Predicts on a wrapped interferogram & event-mask pair and plots the results
+
+    ARGS:\n
+    model_path       path to model that does the masking.\n
+    pres_model_path  path to model that predicts whether there is an event.\n
+    """
+
+    from os import environ
+    
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+    
+    from src.inference import test_binary_choice
+
+    test_binary_choice(model_path, pres_model_path, seed, tile_size, crop_size, count=num_trials)
 
 
 @cli.command   ('model-summary')
@@ -341,12 +560,14 @@ def model_summary_wrapper(model_path):
 
 @cli.command   ('mask')
 @click.argument('model_path'          , type=str                                    )
+@click.argument('pres_model_path'     , type=str                                    )
 @click.argument('image_path'          , type=str                                    )
 @click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
 @click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
 @click.option  ('-d', '--dest_path'   , type=str  , default="" , help=outputdir_help)
 def mask(
     model_path,
+    pres_model_path,
     image_path, 
     crop_size, 
     tile_size,
@@ -357,18 +578,20 @@ def mask(
     Masks events in the given wrapped interferogram using a tensorflow model and plots it, with the option to save.
 
     ARGS:\n
-    model_path      path to model to mask with.\n
-    image_path      path to wrapped interferogram to mask.\n
+    model_path       path to model to mask with.\n
+    pres_model_path  path to model that predicts whether there is an event.\n
+    image_path       path to wrapped interferogram to mask.\n
     """
 
     from os import environ
-    
+
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-    
+
     from src.inference import mask_and_plot
 
-    mask = mask_and_plot(
+    mask, _ = mask_and_plot(
         model_path,
+        pres_model_path,
         image_path,
         tile_size,
         crop_size
@@ -426,8 +649,9 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 @cli.command ('simulate')
 @click.option('-s', '--seed'     , type=int , default=0    , help=seed_help    )
 @click.option('-t', '--tile_size', type=int , default=1024 , help=tilesize_help)
+@click.option('-t', '--crop_size', type=int , default=1024 , help=cropsize_help)
 @click.option('-v', '--verbose'  , type=bool, default=False, help=""           )
-def simulate_wrapper(seed, tile_size, verbose):
+def simulate_wrapper(seed, tile_size, crop_size, verbose):
 
     """
     Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
@@ -435,6 +659,8 @@ def simulate_wrapper(seed, tile_size, verbose):
 
     from src.gui    import show_dataset
     from src.sarsim import gen_simulated_deformation
+    from src.processing import simulate_unet_cropping
+
 
     masked, wrapped, event_is_present = gen_simulated_deformation(
         seed,
@@ -442,10 +668,17 @@ def simulate_wrapper(seed, tile_size, verbose):
         verbose
     )
 
+    if crop_size < tile_size:
+        masked = simulate_unet_cropping(masked, (crop_size, crop_size))
+
     if event_is_present[0]:
+        print("_______\n")
         print("This interferogram contains deformation.")
+        print("_______\n")
     else:
+        print("_______\n")
         print("This interferogram does not contain deformation.")
+        print("_______\n")
 
     show_dataset(masked, wrapped)
 

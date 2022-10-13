@@ -138,21 +138,19 @@ def wrap_interferogram(
 
 def make_random_dataset(
     size:           int,
-    seed:           int   = 0,
-    min_g2d:        int   = 1,
-    max_g2d:        int   = 1,
-    crop_size:      int   = 0,
-    max_noise:      float = 0.0,
+    seed:           int   =  0,
+    crop_size:      int   =  0,
+    max_noise:      float =  0.0,
     min_amp:        float = -300.0,
-    max_amp:        float = 300.0,
-    min_x_mean:     float = 64,
-    max_x_mean:     float = 448,
-    min_y_mean:     float = 64,
-    max_y_mean:     float = 448,
-    min_x_stddev:   float = 16,
-    max_x_stddev:   float = 64,
-    min_y_stddev:   float = 16,
-    max_y_stddev:   float = 64,
+    max_amp:        float =  300.0,
+    min_x_mean:     float =  64,
+    max_x_mean:     float =  448,
+    min_y_mean:     float =  64,
+    max_y_mean:     float =  448,
+    min_x_stddev:   float =  16,
+    max_x_stddev:   float =  64,
+    min_y_stddev:   float =  16,
+    max_y_stddev:   float =  64,
 ) -> Tuple[np.ndarray, np.ndarray]:
 
     """

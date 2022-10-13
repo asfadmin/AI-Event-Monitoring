@@ -7,7 +7,7 @@
 
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Conv2DTranspose, MaxPooling2D, Input, concatenate
+from tensorflow.keras.layers     import Conv2D, Conv2DTranspose, Input, concatenate, MaxPooling2D
 from tensorflow.keras.models     import Model
 from tensorflow.keras.optimizers import Adam 
 
@@ -56,9 +56,9 @@ def transpose_block(
         strides      = (2, 2),
         padding      = 'same'
     )(input_tensor)
-    
+
     x = concatenate([x, concat_tensor])
-    
+
     y = conv2d_block(x, num_filters)
 
     return y
@@ -66,10 +66,9 @@ def transpose_block(
 
 def create_unet(
     model_name:    str   = 'model',
-    tile_size:     int   = 1024   ,
-    num_filters:   int   = 16     ,
-    dropout:       float = 0.2    ,
-    learning_rate: float = 1e-4
+    tile_size:     int   = 512    ,
+    num_filters:   int   = 32     ,
+    learning_rate: float = 1e-4   ,
 ) -> Model:
 
     """
@@ -129,7 +128,7 @@ def create_unet(
 
     model.compile(
         loss      = 'mean_squared_error',
-        metrics   = ['mean_squared_error'],
+        metrics   = ['mean_absolute_error'],
         optimizer = Adam(learning_rate = learning_rate)
     )
 

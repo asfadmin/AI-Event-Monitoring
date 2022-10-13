@@ -186,7 +186,7 @@ def tiles_to_image(
 
     """
     Stich an array of 2-dimensional tiles into a single 2-dimensional array.
-s
+
     Parameters:
     -----------
     arr : np.ndarray(shape=(rows*cols, tile_size, tile_size))
@@ -236,3 +236,49 @@ s
     rebuilt_arr = rebuilt_arr[start_row:end_row, start_col:end_col]
 
     return rebuilt_arr
+
+
+def blur2d(
+    arr: np.ndarray
+):
+
+    """
+    Apply a 5x5 Gaussian Blur/Smoothing filter with a 2D keras convolution.
+
+    Parameters:
+    -----------
+    arr : np.ndarray(shape=(rows*cols, tile_size, tile_size))
+        The array containing the image data that should be blurred/smoothed.
+
+    Returns:
+    --------
+    convolved_array : np.ndarray(shape=arr.shape)
+        The array containing the blurred image data.
+    """
+
+    from tensorflow import constant, float32
+    from tensorflow.keras.backend import conv2d
+
+    size   = arr.shape[0]
+    arr    = arr.reshape((1, size, size, 1)) 
+    tensor = constant(arr, dtype=float32)
+
+    kernel_array =  np.reshape(
+        np.asarray(
+            [
+                [1,  4,  7,  4, 1],
+                [4, 16, 26, 16, 4],
+                [7, 26, 41, 26, 7],
+                [4, 16, 26, 16, 4],
+                [1,  4,  7,  4, 1]
+            ]
+        ) / 273, 
+        (5, 5, 1, 1)
+    )
+    kernel_tensor = constant(kernel_array, dtype=float32)
+
+    convolved_tensor =  conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
+    
+    convolved_array  = np.reshape(convolved_tensor.numpy(), (size, size))
+
+    return convolved_array

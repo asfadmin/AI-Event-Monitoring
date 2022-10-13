@@ -1,0 +1,9 @@
+tensorflow
+matplotlib
+scipy
+click
+astropy
+hyp3-sdk
+pytest
+gdal
+geopy
