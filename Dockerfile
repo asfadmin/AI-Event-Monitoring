@@ -17,4 +17,4 @@ COPY --chown=user . /home/user/AI-Event-Monitoring
 WORKDIR /home/user/AI-Event-Monitoring
 
 RUN pip3 install -r requirements.txt
-RUN pip3 install ./perlin-numpy
+RUN pip3 install git+https://github.com/pvigier/perlin-numpy
