@@ -306,6 +306,7 @@ def show_random_wrapper(seed, tile_size, crop_size):
 @click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
 @click.option  ('-d', '--dropout'      , type=float, default=0.0  , help=dropout_help     )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+@click.option  ('-a', '--using_aws'    , type=bool , default=False, help=""               )
 def train_model_wrapper(
     model_name,
     model_type,
@@ -314,8 +315,8 @@ def train_model_wrapper(
     input_shape,
     filters,
     batch_size,
-    dropout,
-    learning_rate
+    learning_rate,
+    using_aws
 ):
 
     """
@@ -346,7 +347,8 @@ def train_model_wrapper(
         epochs,
         filters,
         batch_size,
-        learning_rate
+        learning_rate,
+        using_aws
     )
 
 
@@ -361,6 +363,7 @@ def train_model_wrapper(
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 @click.option  ('-v', '--eval_samples' , type=int  , default=0    , help=""               )
 @click.option  ('-p', '--plot'         , type=bool , default=False, help=""               )
+@click.option  ('-a', '--using_aws'    , type=bool , default=False, help=""               )
 def train_model_wrapper(
     model_name,
     dataset_size,
@@ -371,7 +374,8 @@ def train_model_wrapper(
     val_split,
     learning_rate,
     eval_samples,
-    plot
+    plot,
+    using_aws
 ):
 
     """
@@ -424,7 +428,8 @@ def train_model_wrapper(
         epochs,
         filters,
         batch_size,
-        learning_rate
+        learning_rate,
+        using_aws
     )
     print("____________________________ ") 
 
@@ -462,7 +467,8 @@ def train_model_wrapper(
         input_shape,
         10,
         32,
-        1
+        1,
+        using_aws
     )
     print("____________________________ ") 
 
@@ -589,7 +595,7 @@ def mask(
 
     from src.inference import mask_and_plot
 
-    mask, _ = mask_and_plot(
+    mask_and_plot(
         model_path,
         pres_model_path,
         image_path,
@@ -598,9 +604,9 @@ def mask(
     )
 
     if dest_path != "":
-        
+
         from PIL import Image
-        
+
         out = Image.fromarray(mask)
         out.save(dest_path)        
 
@@ -681,6 +687,100 @@ def simulate_wrapper(seed, tile_size, crop_size, verbose):
         print("_______\n")
 
     show_dataset(masked, wrapped)
+
+
+# COMMANDS FOR AWS SAGEMAKER SUPPORT
+
+@cli.command   ('train')
+@click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
+@click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
+@click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+def train_wrapper(
+    epochs,
+    input_shape,
+    filters,
+    batch_size,
+    learning_rate
+):
+
+    """
+    Train a U-Net or ResNet style model.
+
+    ARGS:\n
+    model_name      name of the model to be trained.\n
+    model_type      type of model to train: eventnet, unet, or resnet.\n
+    train_path      path to training data.\n
+    test_path       path to validation data.\n
+    """
+
+    from os import environ
+
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+    from src.training import train
+
+    model_name   = "aws_model"
+    model_type   = "unet"
+    dataset_path = "/opt/ml/input/data"
+
+    train(
+        model_name,
+        dataset_path,
+        model_type,
+        input_shape,
+        epochs,
+        filters,
+        batch_size,
+        learning_rate,
+        using_aws = True
+    )
+
+
+@cli.command   ('serve')
+@click.argument('image_path'          , type=str                                    )
+@click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
+@click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
+@click.option  ('-d', '--dest_path'   , type=str  , default="" , help=outputdir_help)
+def mask(
+    model_path,
+    pres_model_path,
+    image_path, 
+    crop_size, 
+    tile_size,
+    dest_path
+):
+
+    """
+    Masks events in the given wrapped interferogram using a tensorflow model and plots it, with the option to save.
+
+    ARGS:\n
+    model_path       path to model to mask with.\n
+    pres_model_path  path to model that predicts whether there is an event.\n
+    image_path       path to wrapped interferogram to mask.\n
+    """
+
+    from os import environ
+
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+    from src.inference import mask_and_plot
+
+    mask_and_plot(
+        model_path,
+        pres_model_path,
+        image_path,
+        tile_size,
+        crop_size
+    )
+
+    if dest_path != "":
+
+        from PIL import Image
+
+        out = Image.fromarray(mask)
+        out.save(dest_path)      
 
 
 if __name__ == '__main__':
