@@ -95,7 +95,8 @@ def train(
     num_filters:   int   = 16,
     batch_size:    int   = 64,
     learning_rate: float = 0.001,
-    use_wandb:     bool  = False
+    use_wandb:     bool  = False,
+    using_aws:     bool  = False 
 ) -> Any:
 
     """
@@ -132,107 +133,119 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
-    if use_wandb:
+    try:
+        if use_wandb:
 
-        import wandb
-        from wandb.keras import WandbCallback
+            import wandb
+            from wandb.keras import WandbCallback
 
-        wandb.init(
-            project="InSAR Event Monitor",
-            config = {
-                "learning_rate": learning_rate,
-                "epochs": num_epochs,
-                "batch_size": batch_size,
-                "filters": num_filters,
-                "tile_size": input_shape,
-                "dataset": dataset_path
-            }
+            wandb.init(
+                project="InSAR Event Monitor",
+                config = {
+                    "learning_rate": learning_rate,
+                    "epochs": num_epochs,
+                    "batch_size": batch_size,
+                    "filters": num_filters,
+                    "tile_size": input_shape,
+                    "dataset": dataset_path
+                }
+            )
+
+        train_feature = 'mask' if model_type == 'eventnet' else 'wrapped'
+        output_feature = 'presence' if model_type == 'eventnet' else 'mask'
+
+        train_path = dataset_path + '/train'
+        test_path  = dataset_path + '/validation'
+
+        all_training_files   = os.listdir(train_path)
+        all_validation_files = os.listdir(test_path)
+
+        training_partition   = [item for item in all_training_files   if "synth" in item or "sim" in item or "real" in item]
+        validation_partition = [item for item in all_validation_files if "synth" in item or "sim" in item or "real" in item]
+
+        training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape, train_feature, output_feature)
+        val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape, train_feature, output_feature)
+
+        if model_type == 'eventnet':
+            model = create_eventnet(
+                model_name  = model_name,
+                tile_size   = input_shape,
+                num_filters = num_filters,
+                label_count = 1
+            )
+        elif model_type == 'unet':
+            model = create_unet(
+                model_name    = model_name,
+                tile_size     = input_shape,
+                num_filters   = num_filters,
+                learning_rate = learning_rate
+            )
+        elif model_type == 'resnet':
+            model = create_resnet(
+                model_name    = model_name,
+                tile_size     = input_shape,
+                num_filters   = num_filters,
+                learning_rate = learning_rate
+            )
+        else:
+            print("Invalid Model Type!")
+            return
+
+        model.summary()
+
+        early_stopping = EarlyStopping(
+            monitor  = 'loss',
+            patience = 2,
+            verbose  = 1
         )
 
-    train_feature = 'mask' if model_type == 'eventnet' else 'wrapped'
-    output_feature = 'presence' if model_type == 'eventnet' else 'mask'
-
-    train_path = dataset_path + '/train'
-    test_path  = dataset_path + '/validation'
-
-    all_training_files   = os.listdir(train_path)
-    all_validation_files = os.listdir(test_path)
-
-    training_partition   = [item for item in all_training_files   if "synth" in item or "sim" in item or "real" in item]
-    validation_partition = [item for item in all_validation_files if "synth" in item or "sim" in item or "real" in item]
-
-    training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape, train_feature, output_feature)
-    val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape, train_feature, output_feature)
-
-    if model_type == 'eventnet':
-        model = create_eventnet(
-            model_name  = model_name,
-            tile_size   = input_shape,
-            num_filters = num_filters,
-            label_count = 1
-        )
-    elif model_type == 'unet':
-        model = create_unet(
-            model_name    = model_name,
-            tile_size     = input_shape,
-            num_filters   = num_filters,
-            learning_rate = learning_rate
-        )
-    elif model_type == 'resnet':
-        model = create_resnet(
-            model_name    = model_name,
-            tile_size     = input_shape,
-            num_filters   = num_filters,
-            learning_rate = learning_rate
-        )
-    else:
-        print("Invalid Model Type!")
-        return
-
-    model.summary()
-
-    early_stopping = EarlyStopping(
-        monitor  = 'loss',
-        patience = 2,
-        verbose  = 1
-    )
-
-    checkpoint = ModelCheckpoint(
-        filepath       = 'models/checkpoints/' + model_name,
-        monitor        = 'val_loss',
-        mode           = 'min',
-        verbose        = 1,
-        save_best_only = True
-    )
-
-    training_samples   = len(training_partition)
-    validation_samples = len(validation_partition)
-
-    training_steps     = ceil(training_samples / batch_size)
-    validation_steps   = ceil(validation_samples / batch_size)
-
-    if use_wandb:
-        history = model.fit(
-            training_generator,
-            epochs           = num_epochs,
-            validation_data  = val_generator,
-            batch_size       = batch_size,
-            steps_per_epoch  = training_steps,
-            validation_steps = validation_steps,
-            callbacks        = [checkpoint, early_stopping, WandbCallback()]
+        checkpoint = ModelCheckpoint(
+            filepath       = 'models/checkpoints/' + model_name,
+            monitor        = 'val_loss',
+            mode           = 'min',
+            verbose        = 1,
+            save_best_only = True
         )
 
-    else:
-        history = model.fit(
-            training_generator,
-            epochs           = num_epochs,
-            validation_data  = val_generator,
-            batch_size       = batch_size,
-            steps_per_epoch  = training_steps,
-            validation_steps = validation_steps,
-            callbacks        = [checkpoint, early_stopping]
-        )
+        training_samples   = len(training_partition)
+        validation_samples = len(validation_partition)
 
-    model.save("models/" + model_name)
+        training_steps     = ceil(training_samples / batch_size)
+        validation_steps   = ceil(validation_samples / batch_size)
 
-    return history
+        if use_wandb:
+            history = model.fit(
+                training_generator,
+                epochs           = num_epochs,
+                validation_data  = val_generator,
+                batch_size       = batch_size,
+                steps_per_epoch  = training_steps,
+                validation_steps = validation_steps,
+                callbacks        = [checkpoint, early_stopping, WandbCallback()]
+            )
+
+        else:
+            history = model.fit(
+                training_generator,
+                epochs           = num_epochs,
+                validation_data  = val_generator,
+                batch_size       = batch_size,
+                steps_per_epoch  = training_steps,
+                validation_steps = validation_steps,
+                callbacks        = [checkpoint, early_stopping]
+            )
+
+        if using_aws:
+            model.save("/opt/ml/model")       
+        else:
+            model.save("models/" + model_name)
+
+        return history
+
+
+    except:
+        
+        from os import sys
+        
+        # AWS SageMaker expects this.
+        sys.exit(1)    
