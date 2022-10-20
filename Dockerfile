@@ -18,3 +18,5 @@ WORKDIR /home/user/AI-Event-Monitoring
 
 RUN pip3 install -r requirements.txt
 RUN pip3 install git+https://github.com/pvigier/perlin-numpy
+
+ENTRYPOINT ["python3", "aievents.py"]
