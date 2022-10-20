@@ -693,9 +693,9 @@ def simulate_wrapper(seed, tile_size, crop_size, verbose):
 
 @cli.command   ('train')
 @click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
-@click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
-@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
-@click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
+@click.option  ('-t', '--input_shape'  , type=int  , default=512  , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=64   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=1    , help=batchsize_help   )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 def train_wrapper(
     epochs,
