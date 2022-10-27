@@ -6,6 +6,7 @@
 """
 
 import os
+import sys
 
 from math   import ceil
 from typing import Any
@@ -133,7 +134,15 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
+    if using_aws:
+        log_file = open("/opt/ml/output/failure", "w")
+    else:
+        log_file = open("training.log", "w")
+    
+    sys.stdout = log_file
+
     try:
+
         if use_wandb:
 
             import wandb
@@ -151,7 +160,7 @@ def train(
                 }
             )
 
-        train_feature = 'mask' if model_type == 'eventnet' else 'wrapped'
+        train_feature  = 'mask'     if model_type == 'eventnet' else 'wrapped'
         output_feature = 'presence' if model_type == 'eventnet' else 'mask'
 
         train_path = dataset_path + '/train'
@@ -240,12 +249,12 @@ def train(
         else:
             model.save("models/" + model_name)
 
+        log_file.close()
+    
         return history
-
-
+    
     except:
+
+        log_file.close()
         
-        from os import sys
-        
-        # AWS SageMaker expects this.
-        sys.exit(1)    
+        sys.exit(1)

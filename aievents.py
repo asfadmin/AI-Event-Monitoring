@@ -715,10 +715,6 @@ def train_wrapper(
     test_path       path to validation data.\n
     """
 
-    from os import environ
-
-    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-
     from src.training import train
 
     model_name   = "aws_model"
