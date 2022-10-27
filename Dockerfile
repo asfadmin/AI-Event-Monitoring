@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 
 RUN useradd -ms /bin/bash user
 
+RUN chown -R user /opt/
+
 USER user
 SHELL ["/bin/bash", "-l", "-c"]
 
