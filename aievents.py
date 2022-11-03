@@ -150,7 +150,9 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
 
     from src.io import split_dataset, make_simulated_dataset
 
-    name, count, dir_name = make_simulated_dataset(
+    print("")
+
+    name, count, dir_name, distribution, dataset_info = make_simulated_dataset(
         name,
         output_dir,
         amount,
@@ -161,7 +163,15 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
 
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
 
-    print(f"\nCreated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}\n")
+    try:
+        log_file = open(output_dir.__str__() + '/' + dir_name + '/parameters.txt', 'w')
+        log_file.write(dataset_info)
+    except Exception as e:
+        print(f'{type(e)}: {e}')
+
+    print(f"\nDataset has distribution: {distribution}\n")
+
+    print(f"Created dataset with seed: {seed}, and {count} entries. Saved to {dir_name}")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
@@ -174,7 +184,7 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
-def make_simulated_dataset_wrapper(name, model_path, amount, tile_size, crop_size, output_dir, seed, split):
+def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, crop_size, output_dir, seed, split):
 
     """
     Create a randomly generated simulated dataset of wrapped interferograms and their corresponding event-masks.
@@ -205,7 +215,7 @@ def make_simulated_dataset_wrapper(name, model_path, amount, tile_size, crop_siz
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
 
     print(f"\nCreated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}\n")
-    print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
+    print(f"\nDataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
 @cli.command   ('make-real-dataset')
@@ -692,10 +702,10 @@ def simulate_wrapper(seed, tile_size, crop_size, verbose):
 # COMMANDS FOR AWS SAGEMAKER SUPPORT
 
 @cli.command   ('train')
-@click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
+@click.option  ('-e', '--epochs'       , type=int  , default=1    , help=epochs_help      )
 @click.option  ('-t', '--input_shape'  , type=int  , default=512  , help=inputshape_help  )
-@click.option  ('-f', '--filters'      , type=int  , default=64   , help=filters_help     )
-@click.option  ('-b', '--batch_size'   , type=int  , default=1    , help=batchsize_help   )
+@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=8    , help=batchsize_help   )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 def train_wrapper(
     epochs,
@@ -715,24 +725,58 @@ def train_wrapper(
     test_path       path to validation data.\n
     """
 
+    import json
+
+    from os import system
+
     from src.training import train
 
-    model_name   = "aws_model"
-    model_type   = "unet"
-    dataset_path = "/opt/ml/input/data"
+    model_name = "aws_model"
+    model_type = "unet"
+
+    root_dir    = "/opt/ml"                         # SageMaker expects things to happen here.
+
+    input_dir   = root_dir   + "/input"             # SageMaker uploads things here.
+    dataset_dir = input_dir  + "/data/training"
+    config_dir  = input_dir  + "/config"
+
+    output_dir     = root_dir   + "/output/data"    # SageMaker takes optional extras from here.
+    logs_dir       = output_dir + "/logs"           # A file called failure must hold failing errors in /output
+    checkpoint_dir = output_dir + "/best_checkpoint"
+
+    try:
+        system(f'mkdir {output_dir} {checkpoint_dir} {logs_dir}')
+    except Exception as e: 
+        print(f'Caught {type(e)}: {e}. Continuing Anyway...')
+
+    try:
+        json_file = open(config_dir + "/hyperparameters.json", "r")
+        hyperparameters = json.load(json_file)
+
+        print(f'Read hyperparameters: {hyperparameters}')
+
+        epochs        = int(hyperparameters['epochs'])
+        filters       = int(hyperparameters['filters'])
+        batch_size    = int(hyperparameters['batch_size'])
+        learning_rate = float(hyperparameters['learning_rate'])
+
+        system(f'cp -r {config_dir} {output_dir}')
+
+    except Exception as e:
+        print(f'Caught {type(e)}: {e}\n Using default hyperparameters.')
 
     train(
         model_name,
-        dataset_path,
+        dataset_dir,
         model_type,
         input_shape,
         epochs,
         filters,
         batch_size,
         learning_rate,
-        using_aws = True
+        using_aws = True,
+        logs_dir  = logs_dir 
     )
-
 
 @cli.command   ('serve')
 @click.argument('image_path'          , type=str                                    )
