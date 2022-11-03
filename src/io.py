@@ -11,6 +11,7 @@ import sys
 from os import rename, walk
 from pathlib import Path
 from typing import Tuple
+from datetime import datetime
 
 import numpy as np
 from PIL import Image
@@ -18,7 +19,7 @@ from PIL import Image
 from src.config import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing import tile
 from src.synthetic_interferogram import make_random_dataset, simulate_unet_cropping
-from src.sarsim import gen_simulated_deformation
+from src.sarsim import gen_simulated_deformation, gen_sim_noise
 
 
 def save_dataset(
@@ -495,13 +496,12 @@ def make_simulated_dataset(
         The generated name of the dataset directory.
     """
 
-    def new_seed():
-        seed_value = random.randrange(sys.maxsize)
-        random.seed = seed_value
-        return random.randint(100000, 999999)
-
     if not seed:
-        seed = random.randint(100000, 999999)
+        seed = np.random.randint(100000, 999999)
+
+    np.random.seed(seed)
+
+    seeds = np.random.randint(100000, 999999, size=amount)
 
     dir_name = f"{name}_amount{amount}_seed{seed}"
 
@@ -509,15 +509,39 @@ def make_simulated_dataset(
     if not save_directory.is_dir():
         save_directory.mkdir()
 
+    distribution = {
+        "deformation": 0,
+        "gaussian_noise": 0,
+        "mixed_noise": 0
+    }
+
+    deformation = np.ceil(0.2 * amount)
+    mixed_noise_only = deformation + np.floor(0.6 * amount)
+
     count = 0
     while count < amount:
 
-        current_seed = new_seed()
+        current_seed = seeds[count]
 
-        masked, wrapped, presence = gen_simulated_deformation(
-            seed      = current_seed,
-            tile_size = tile_size
-        )
+        if count < deformation:
+            masked, wrapped, presence = gen_simulated_deformation(
+                seed      = current_seed,
+                tile_size = tile_size
+            )
+            distribution['deformation'] += 1
+        elif count < mixed_noise_only:
+            masked, wrapped, presence = gen_sim_noise(
+                seed      = current_seed,
+                tile_size = tile_size
+            )
+            distribution['mixed_noise'] += 1
+        else:
+            masked, wrapped, presence = gen_sim_noise(
+                seed          = current_seed,
+                tile_size     = tile_size,
+                gaussian_only = True
+            )
+            distribution['gaussian_noise'] += 1
 
         if crop_size < tile_size:
             masked = simulate_unet_cropping(masked, (crop_size, crop_size))
@@ -531,7 +555,19 @@ def make_simulated_dataset(
 
         count += 1
 
-    return seed, count, dir_name
+    dataset_info = (
+        f'Name: {name}\n' +
+        f'Size: {amount}\n' +
+        f'Date: {datetime.utcnow()}\n' +
+        f'Seed: {seed}\n' +
+        f'Tile: {tile_size}\n' + 
+        f'Crop: {crop_size}\n' +
+        f'\nDistribution:\n{distribution}\n' +
+        f'\nSeed List:\n{seeds}\n'
+    )
+
+    print(f"Generated {count} of {amount} simulated interferogram pairs.")
+    return seed, count, dir_name, distribution, dataset_info
 
 
 def make_simulated_binary_dataset(
