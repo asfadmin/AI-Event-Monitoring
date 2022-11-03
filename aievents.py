@@ -276,17 +276,24 @@ def split_dataset_wrapper(dataset_path, split):
 def show_dataset_wrapper(file_path):
 
     """
-    Show the wrapped interferogram and event-mask from a given dataset file (.npz).
+    Show the wrapped interferograms and event-masks from a given dataset directory.
 
     ARGS:\n
-    file_path       path to the .npz file to show.\n
+    file_path       path to the .npz files to show.\n
     """
+
+    from os import listdir
 
     from src.gui import show_dataset
     from src.io import load_dataset
 
-    mask, wrapped, _ = load_dataset(file_path)
-    show_dataset(mask, wrapped)
+    filenames      = listdir(file_path)
+    filename_check = lambda x: "synth" in x or "sim" in x or "real" in x
+    data_filenames = [item for item in filenames if filename_check(item)]
+
+    for filename in filenames:
+        mask, wrapped, _ = load_dataset(file_path + "/" + filename)
+        show_dataset(mask, wrapped)
 
 
 @cli.command ('show-random')
@@ -314,7 +321,6 @@ def show_random_wrapper(seed, tile_size, crop_size):
 @click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
 @click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
 @click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
-@click.option  ('-d', '--dropout'      , type=float, default=0.0  , help=dropout_help     )
 @click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
 @click.option  ('-a', '--using_aws'    , type=bool , default=False, help=""               )
 def train_model_wrapper(
@@ -663,26 +669,34 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 
 
 @cli.command ('simulate')
-@click.option('-s', '--seed'     , type=int , default=0    , help=seed_help    )
-@click.option('-t', '--tile_size', type=int , default=1024 , help=tilesize_help)
-@click.option('-t', '--crop_size', type=int , default=1024 , help=cropsize_help)
-@click.option('-v', '--verbose'  , type=bool, default=False, help=""           )
-def simulate_wrapper(seed, tile_size, crop_size, verbose):
+@click.option('-s', '--seed'      , type=int , default=0    , help=seed_help    )
+@click.option('-t', '--tile_size' , type=int , default=1024 , help=tilesize_help)
+@click.option('-t', '--crop_size' , type=int , default=1024 , help=cropsize_help)
+@click.option('-n', '--noise_only', type=bool, default=False, help=""           )
+@click.option('-v', '--verbose'   , type=bool, default=False, help=""           )
+def simulate_wrapper(seed, tile_size, crop_size, noise_only, verbose):
 
     """
     Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
     from src.gui    import show_dataset
-    from src.sarsim import gen_simulated_deformation
+    from src.sarsim import gen_simulated_deformation, gen_sim_noise
     from src.processing import simulate_unet_cropping
 
 
-    masked, wrapped, event_is_present = gen_simulated_deformation(
-        seed,
-        tile_size,
-        verbose
-    )
+    if not noise_only:
+        masked, wrapped, event_is_present = gen_simulated_deformation(
+            seed,
+            tile_size,
+            verbose
+        )
+    else:
+        masked, wrapped, event_is_present = gen_sim_noise(
+            seed,
+            tile_size,
+            False
+        )        
 
     if crop_size < tile_size:
         masked = simulate_unet_cropping(masked, (crop_size, crop_size))
