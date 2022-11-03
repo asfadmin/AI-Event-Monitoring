@@ -10,6 +10,8 @@ import sys
 
 from math   import ceil
 from typing import Any
+from time import time
+from datetime import datetime
 
 import numpy as np
 
@@ -87,6 +89,56 @@ class DataGenerator(Sequence):
         return x, y
 
 
+def print_model_info(
+    model_name,
+    model,
+    history,
+    input_shape,
+    model_type,
+    num_epochs,
+    num_filters,
+    batch_size,
+    learning_rate
+):
+    
+    losses     = history.history['loss']
+    val_losses = history.history['val_loss']
+
+    min_loss     = min(losses)
+    min_val_loss = min(val_losses)
+
+    min_loss_at     = losses.index(min_loss)
+    min_val_loss_at = val_losses.index(min_val_loss)
+
+    summary_list = []
+    model.summary(print_fn = lambda x: summary_list.append(' ' + x)) 
+    summary_string = '\n'.join(summary_list[1:])
+
+    print(
+        f'\n',
+        f'Model Name:    {model_name}\n',
+        f'Model Type:    {model_type}\n',
+        f'Date and Time: {datetime.utcnow()}\n',
+        f'\n',
+        f'Input Shape:   {input_shape}\n',
+        f'Epochs:        {num_epochs}\n',
+        f'Filters:       {num_filters}\n',
+        f'Batch Size:    {batch_size}\n',
+        f'Learning Rate: {learning_rate}\n',
+        f'\n',
+        f'Minimum Training Loss:   {min_loss: 0.15f} at epoch {min_loss_at}.\n',
+        f'Minimum Validation Loss: {min_val_loss: 0.15f} at epoch {min_val_loss_at}.\n'
+        f'\n',
+        f'All Training Losses:\n {losses}\n',
+        f'\n',
+        f'All Validation Losses:\n {val_losses}\n',
+        f'\n',
+        f'Model Parameters from History:\n {history.params}\n',
+        f'\n',
+        f'Model Summary:\n{summary_string}\n'
+    )
+
+
 def train(
     model_name:    str,
     dataset_path:  str,
@@ -97,7 +149,8 @@ def train(
     batch_size:    int   = 64,
     learning_rate: float = 0.001,
     use_wandb:     bool  = False,
-    using_aws:     bool  = False 
+    using_aws:     bool  = False ,
+    logs_dir:      str   = ""
 ) -> Any:
 
     """
@@ -134,125 +187,151 @@ def train(
         A history object containing the loss at each epoch of training.
     """
 
+    failure_file = "failure"
     if using_aws:
-        log_file = "/opt/ml/output/failure"
+        losses_file     = logs_dir + "/losses.npz" 
+        failure_file    = "/opt/ml/output/" + failure_file
+        model_path      = "/opt/ml/model"
+        checkpoint_path = "/opt/ml/output/data/best_checkpoint/" + model_name + "_best"
     else:
-        log_file = "training_output.txt"
+        model_path      = "./data/output/models/" + model_name
+        checkpoint_path = "./data/output/models/checkpoints/" + model_name
 
-    with open(log_file, "w") as sys.stdout:
+    results_file = model_name + "_results.txt"
+    if logs_dir != "":
+        results_file = logs_dir + "/" + results_file
 
-        try:
+    try:
 
-            if use_wandb:
+        if use_wandb:
 
-                import wandb
-                from wandb.keras import WandbCallback
+            import wandb
+            from wandb.keras import WandbCallback
 
-                wandb.init(
-                    project="InSAR Event Monitor",
-                    config = {
-                        "learning_rate": learning_rate,
-                        "epochs": num_epochs,
-                        "batch_size": batch_size,
-                        "filters": num_filters,
-                        "tile_size": input_shape,
-                        "dataset": dataset_path
-                    }
-                )
-
-            train_feature  = 'mask'     if model_type == 'eventnet' else 'wrapped'
-            output_feature = 'presence' if model_type == 'eventnet' else 'mask'
-
-            train_path = dataset_path + '/train'
-            test_path  = dataset_path + '/validation'
-
-            all_training_files   = os.listdir(train_path)
-            all_validation_files = os.listdir(test_path)
-
-            training_partition   = [item for item in all_training_files   if "synth" in item or "sim" in item or "real" in item]
-            validation_partition = [item for item in all_validation_files if "synth" in item or "sim" in item or "real" in item]
-
-            training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape, train_feature, output_feature)
-            val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape, train_feature, output_feature)
-
-            if model_type == 'eventnet':
-                model = create_eventnet(
-                    model_name  = model_name,
-                    tile_size   = input_shape,
-                    num_filters = num_filters,
-                    label_count = 1
-                )
-            elif model_type == 'unet':
-                model = create_unet(
-                    model_name    = model_name,
-                    tile_size     = input_shape,
-                    num_filters   = num_filters,
-                    learning_rate = learning_rate
-                )
-            elif model_type == 'resnet':
-                model = create_resnet(
-                    model_name    = model_name,
-                    tile_size     = input_shape,
-                    num_filters   = num_filters,
-                    learning_rate = learning_rate
-                )
-            else:
-                print("Invalid Model Type!")
-                return
-
-            model.summary()
-
-            early_stopping = EarlyStopping(
-                monitor  = 'loss',
-                patience = 2,
-                verbose  = 1
+            wandb.init(
+                project="InSAR Event Monitor",
+                config = {
+                    "learning_rate": learning_rate,
+                    "epochs": num_epochs,
+                    "batch_size": batch_size,
+                    "filters": num_filters,
+                    "tile_size": input_shape,
+                    "dataset": dataset_path
+                }
             )
 
-            checkpoint = ModelCheckpoint(
-                filepath       = 'models/checkpoints/' + model_name,
-                monitor        = 'val_loss',
-                mode           = 'min',
-                verbose        = 1,
-                save_best_only = True
+        train_feature  = 'mask'     if model_type == 'eventnet' else 'wrapped'
+        output_feature = 'presence' if model_type == 'eventnet' else 'mask'
+
+        train_path = dataset_path + '/train'
+        test_path  = dataset_path + '/validation'
+
+        all_training_files   = os.listdir(train_path)
+        all_validation_files = os.listdir(test_path)
+
+        filename_check = lambda x: "synth" in x or "sim" in x or "real" in x
+        training_partition   = [item for item in all_training_files   if filename_check(item)]
+        validation_partition = [item for item in all_validation_files if filename_check(item)]
+
+        training_samples   = len(training_partition)
+        validation_samples = len(validation_partition)
+
+        training_steps     = ceil(training_samples   / batch_size)
+        validation_steps   = ceil(validation_samples / batch_size)
+
+        training_generator = DataGenerator(training_partition, train_path, input_shape, input_shape, train_feature, output_feature)
+        val_generator      = DataGenerator(validation_partition, test_path, input_shape, input_shape, train_feature, output_feature)
+
+        if model_type == 'eventnet':
+            model = create_eventnet(
+                model_name  = model_name,
+                tile_size   = input_shape,
+                num_filters = num_filters,
+                label_count = 1
+            )
+        elif model_type == 'unet':
+            model = create_unet(
+                model_name    = model_name,
+                tile_size     = input_shape,
+                num_filters   = num_filters,
+                learning_rate = learning_rate
+            )
+        elif model_type == 'resnet':
+            model = create_resnet(
+                model_name    = model_name,
+                tile_size     = input_shape,
+                num_filters   = num_filters,
+                learning_rate = learning_rate
+            )
+        else:
+            raise(f'Invalid model type! Expected \"unet\", \"resnet\", or \"eventnet\" but got {model_type}.')
+
+        model.summary()
+
+        early_stopping = EarlyStopping(
+            monitor  = 'loss',
+            patience = 2,
+            verbose  = 1
+        )
+
+        best_checkpoint = ModelCheckpoint(
+            filepath       = checkpoint_path,
+            monitor        = 'val_loss',
+            mode           = 'min',
+            verbose        = 1,
+            save_best_only = True
+        )
+
+        callbacks = [best_checkpoint, early_stopping]
+
+        if use_wandb: callbacks.append(WandbCallback())
+
+        history = model.fit(
+            training_generator,
+            epochs           = num_epochs,
+            validation_data  = val_generator,
+            batch_size       = batch_size,
+            steps_per_epoch  = training_steps,
+            validation_steps = validation_steps,
+            callbacks        = callbacks
+        )
+
+        if using_aws:
+            np.savez(
+                losses_file,
+                loss     = history.history['loss'],
+                val_loss = history.history['val_loss']
             )
 
-            training_samples   = len(training_partition)
-            validation_samples = len(validation_partition)
+        model.save(model_path)
 
-            training_steps     = ceil(training_samples / batch_size)
-            validation_steps   = ceil(validation_samples / batch_size)
+    except Exception as e:
 
-            if use_wandb:
-                history = model.fit(
-                    training_generator,
-                    epochs           = num_epochs,
-                    validation_data  = val_generator,
-                    batch_size       = batch_size,
-                    steps_per_epoch  = training_steps,
-                    validation_steps = validation_steps,
-                    callbacks        = [checkpoint, early_stopping, WandbCallback()]
-                )
+        with open(failure_file, "w") as sys.stdout:
 
-            else:
-                history = model.fit(
-                    training_generator,
-                    epochs           = num_epochs,
-                    validation_data  = val_generator,
-                    batch_size       = batch_size,
-                    steps_per_epoch  = training_steps,
-                    validation_steps = validation_steps,
-                    callbacks        = [checkpoint, early_stopping]
-                )
-
-            if using_aws:
-                model.save("/opt/ml/model")       
-            else:
-                model.save("models/" + model_name)
-
-            return history
-
-        except Exception as e:
-            
             print(f'Caught {type(e)}: {e}')
-            
-            sys.exit(1)
+
+        sys.exit(1)
+
+    try:
+        
+        with open(results_file, "w") as sys.stdout:
+
+            print_model_info(
+                model_name,
+                model,
+                history,
+                input_shape,
+                model_type,
+                num_epochs,
+                num_filters,
+                batch_size,
+                learning_rate
+            )
+    
+    except Exception as e:
+
+        print(f'Error creating results log file:\nCaught {type(e)}: {e}')
+
+
+    return history
