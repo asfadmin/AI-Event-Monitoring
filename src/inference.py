@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, load_model
 
 from src.io                      import get_product_arrays
 from src.processing              import tile, tiles_to_image
-from src.sarsim                  import gen_simulated_deformation
+from src.sarsim                  import gen_simulated_deformation, gen_sim_noise
 from src.synthetic_interferogram import make_random_dataset
 
 from PIL                     import Image
@@ -79,7 +79,7 @@ def test_masking(
         crop_size = tile_size
 
     if use_sim:
-        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=False)
+        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size)
     else:
         y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
@@ -89,7 +89,7 @@ def test_masking(
 
     y_pred_rounded = np.zeros(y_pred.shape)
 
-    tolerance  = 0.1
+    tolerance  = 0.5
     round_up   = y_pred >= tolerance
 
     y_pred_rounded[round_up  ] = 1
@@ -170,7 +170,7 @@ def test_binary_choice(
 
     for i in range(count):
 
-        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, log=False)
+        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size)
 
         x  = x.reshape((1, tile_size, tile_size, 1))
 
@@ -311,7 +311,7 @@ def mask(
 
         y_pred_rounded = np.copy(y_pred)
 
-        tolerance  = 0.1
+        tolerance  = 0.5
         round_up   = y_pred_rounded >= tolerance
         round_down = y_pred_rounded <  tolerance
 

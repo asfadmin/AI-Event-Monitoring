@@ -515,8 +515,8 @@ def make_simulated_dataset(
         "mixed_noise": 0
     }
 
-    deformation = np.ceil(0.2 * amount)
-    mixed_noise_only = deformation + np.floor(0.6 * amount)
+    deformation = np.ceil(0.6 * amount)
+    mixed_noise_only = deformation + np.floor(0.3 * amount)
 
     count = 0
     while count < amount:
@@ -529,19 +529,14 @@ def make_simulated_dataset(
                 tile_size = tile_size
             )
             distribution['deformation'] += 1
-        elif count < mixed_noise_only:
-            masked, wrapped, presence = gen_sim_noise(
-                seed      = current_seed,
-                tile_size = tile_size
-            )
-            distribution['mixed_noise'] += 1
         else:
             masked, wrapped, presence = gen_sim_noise(
                 seed          = current_seed,
                 tile_size     = tile_size,
-                gaussian_only = True
+                gaussian_only = count >= mixed_noise_only
             )
-            distribution['gaussian_noise'] += 1
+            if count < mixed_noise_only: distribution['mixed_noise']         += 1 
+            else:                        distribution['gaussian_noise'] += 1
 
         if crop_size < tile_size:
             masked = simulate_unet_cropping(masked, (crop_size, crop_size))
@@ -622,13 +617,12 @@ def make_simulated_binary_dataset(
 
     from src.io import save_dataset
 
-    def new_seed():
-        seed_value = random.randrange(sys.maxsize)
-        random.seed = seed_value
-        return random.randint(100000, 999999)
-
     if not seed:
-        seed = random.randint(100000, 999999)
+        seed = np.random.randint(100000, 999999)
+
+    np.random.seed(seed)
+
+    seeds = np.random.randint(100000, 999999, size=amount)
 
     model = load_model(model_path)
 
@@ -638,15 +632,34 @@ def make_simulated_binary_dataset(
     if not save_directory.is_dir():
         save_directory.mkdir()
 
-    count = 1
-    while count != amount:
+    distribution = {
+        "deformation": 0,
+        "gaussian_noise": 0,
+        "mixed_noise": 0
+    }
 
-        current_seed = new_seed()
+    deformation = np.ceil(0.6 * amount)
+    mixed_noise_only = deformation + np.floor(0.3 * amount)
 
-        _, wrapped, presence = gen_simulated_deformation(
-            seed      = current_seed,
-            tile_size = tile_size
-        )
+    count = 0
+    while count < amount:
+
+        current_seed = seeds[count]
+
+        if count < deformation:
+            masked, wrapped, presence = gen_simulated_deformation(
+                seed      = current_seed,
+                tile_size = tile_size
+            )
+            distribution['deformation'] += 1
+        else:
+            masked, wrapped, presence = gen_sim_noise(
+                seed          = current_seed,
+                tile_size     = tile_size,
+                gaussian_only = count >= mixed_noise_only
+            )
+            if count < mixed_noise_only: distribution['mixed_noise']    += 1 
+            else:                        distribution['gaussian_noise'] += 1
 
         wrapped  = wrapped.reshape((1, tile_size, tile_size, 1))
         masked_pred = model.predict(wrapped)
@@ -654,7 +667,7 @@ def make_simulated_binary_dataset(
         wrapped  = wrapped.reshape ((tile_size, tile_size))
         masked_pred = np.abs(masked_pred.reshape((crop_size, crop_size)))
 
-        tolerance  = 0.1
+        tolerance  = 0.5
         round_up   = masked_pred >= tolerance
         round_down = masked_pred <  tolerance
 
@@ -673,7 +686,19 @@ def make_simulated_binary_dataset(
 
         count += 1
 
-    return seed, count, dir_name
+    dataset_info = (
+        f'Name:  {name}\n' +
+        f'Size:  {amount}\n' +
+        f'Date:  {datetime.utcnow()}\n' +
+        f'Model: {model_path}\n' +
+        f'Seed:  {seed}\n' +
+        f'Tile:  {tile_size}\n' + 
+        f'Crop:  {crop_size}\n' +
+        f'\nDistribution:\n{distribution}\n' +
+        f'\nSeed List:\n{seeds}\n'
+    )
+
+    return seed, count, dir_name, distribution
 
 
 def split_dataset(

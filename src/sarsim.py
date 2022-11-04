@@ -863,9 +863,9 @@ def gen_simulated_deformation(
 
     los_grid = (x_grid + y_grid + z_grid) * amplitude_scalar
 
-    masked_indices = np.abs(los_grid) >= np.pi # Num of fringes to say yes to.
+    masked_indices = np.abs(los_grid) >= np.pi * 2 # Num of fringes to say yes to.
     fringes = np.floor(np.abs(los_grid[masked_indices]) / np.pi)
-    masked_grid[masked_indices] = fringes / np.max(fringes)
+    masked_grid[masked_indices] = 1
 
     atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
     interferogram    = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
@@ -896,6 +896,33 @@ def gen_simulated_deformation(
 
     return masked_grid, wrapped_grid, presence
 
+
+def gen_gaussian_noise(
+    seed:        int   = 0,
+    tile_size:   int   = 512,
+    noise_level: float = 90 * np.pi
+):
+
+    if seed != 0: np.random.seed(seed)
+
+    masked_grid  = np.zeros((tile_size, tile_size))
+
+    noise_grid1                 = np.random.uniform(-noise_level, noise_level, size=(tile_size, tile_size))
+    inconsistancy1              = np.abs(noise_grid1) <  noise_level / 2
+    noise_grid1[inconsistancy1] = 0
+
+    noise_grid2                 = np.random.uniform(-noise_level, noise_level, size=(tile_size, tile_size))
+    inconsistancy2              = np.abs(noise_grid2) >= noise_level / 2
+    noise_grid2[inconsistancy2] = 0
+
+    wrapped_grid = wrap_interferogram(noise_grid1 + noise_grid2, noise=0)
+
+    threshold      = np.random.random() / 2
+    coherence_mask = coherence_mask_simulate(tile_size, threshold=np.random.random() / 2)
+    coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0        
+    wrapped_grid[coh_indices] = 0
+
+    return masked_grid, wrapped_grid
 
 def gen_sim_noise(
     seed:              int   = 0,
@@ -937,15 +964,7 @@ def gen_sim_noise(
 
     if gaussian_only:
 
-        masked_grid  = np.zeros((tile_size, tile_size))
-        wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
-
-        threshold      = np.random.random() / 2
-        coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
-        coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0        
-        wrapped_grid[coh_indices] = 0
-
-        return masked_grid, wrapped_grid, presence
+        masked_grid, wrapped_grid = gen_gaussian_noise(seed, tile_size)
 
     else:
 
@@ -956,7 +975,7 @@ def gen_sim_noise(
         )
 
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar
-        topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * 10
+        topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi
 
         threshold      = np.random.random() / 2
         coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
@@ -967,4 +986,4 @@ def gen_sim_noise(
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-        return masked_grid, wrapped_grid, presence
+    return masked_grid, wrapped_grid, presence
