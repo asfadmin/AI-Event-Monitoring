@@ -56,7 +56,7 @@ def create_eventnet(
     # # --------------------------------- #
 
     f0 = Flatten()(c2)
-    d0 = Dense(1024, activation='relu')(f0)
+    d0 = Dense(512, activation='relu')(f0)
 
     # --------------------------------- #
     # Output Layer                      #
