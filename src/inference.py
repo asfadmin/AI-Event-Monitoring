@@ -6,7 +6,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+ 
+from PIL     import Image
 from pathlib import Path
 
 from tensorflow.keras.models import Model, load_model
@@ -15,8 +16,6 @@ from src.io                      import get_product_arrays
 from src.processing              import tile, tiles_to_image
 from src.sarsim                  import gen_simulated_deformation, gen_sim_noise
 from src.synthetic_interferogram import make_random_dataset
-
-from PIL                     import Image
 
 
 def plot_imgs(x, y, y_conv, y_conv_r):
@@ -44,6 +43,8 @@ def test_masking(
     tile_size:  int,
     crop_size:  int  = 0,
     use_sim:    bool = False,
+    noise_only: bool = False,
+    event_type: str  = 'quake'
 ) -> None:
 
     """
@@ -79,7 +80,10 @@ def test_masking(
         crop_size = tile_size
 
     if use_sim:
-        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size)
+        if not noise_only:
+            _, y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size, event_type=event_type)
+        else:
+            _, y, x, presence = gen_sim_noise(seed=seed, tile_size=tile_size)
     else:
         y, x = make_random_dataset(size=tile_size, crop_size=crop_size, seed=seed)
 
@@ -170,7 +174,7 @@ def test_binary_choice(
 
     for i in range(count):
 
-        y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size)
+        _, y, x, presence = gen_simulated_deformation(seed=seed, tile_size=tile_size)
 
         x  = x.reshape((1, tile_size, tile_size, 1))
 
@@ -180,7 +184,7 @@ def test_binary_choice(
 
         y_pred_rounded = np.zeros((tile_size, tile_size))
 
-        tolerance = 0.1
+        tolerance = 0.5
         round_up  = y_pred >= tolerance
 
         y_pred_rounded[round_up] = 1
@@ -252,7 +256,7 @@ def mask(
     pres_model_path: str,
     arr_w:           np.ndarray,
     tile_size:       int,
-    crop_size:       int   = 0,
+    crop_size:       int   = 0
 ) -> np.ndarray:
 
     """
@@ -380,11 +384,11 @@ def mask_and_plot(
         True if there is an event else False.
     """
 
-    arr_w, arr_uw, coherence = get_product_arrays(product_path)
+    arr_w, arr_uw, corr = get_product_arrays(product_path)
 
-    zeros = arr_uw == 0
-    bad_coherence = coherence < 0.3
-    
+    zeros = arr_w == 0
+    bad_coherence = corr < 0.3
+
     arr_w[zeros] = 0
     arr_w[bad_coherence] = 0
 
@@ -398,7 +402,9 @@ def mask_and_plot(
 
     presence_guess = np.mean(pres_mask) > 0
 
-    mask_pred[zeros] = 0
+    arr_uw[zeros]            = 0
+    arr_uw[bad_coherence]    = 0
+    mask_pred[zeros]         = 0
     mask_pred[bad_coherence] = 0
 
     if presence_guess:
@@ -409,6 +415,65 @@ def mask_and_plot(
     plot_imgs(arr_w, arr_uw, mask_pred, pres_mask)
 
     return mask_pred, presence_guess
+
+
+def test_model(model_path, pres_model_path, product_dir, tile_size, crop_size):
+    
+    from os import listdir
+    
+    from src.io import get_image_array
+
+    try:
+        mask_model = load_model(model_path)
+        pres_model = load_model(pres_model_path)
+    except Exception as e:
+        print(f'Caught {type(e)}: {e}')
+        return
+
+    positives = 0
+    negatives = 0
+
+    for dir in listdir(product_dir):
+        
+        unw_path  = ""
+        corr_path = ""
+        
+        for filename in listdir(product_dir + "/" + dir):
+            if filename[-8:] == "corr.tif": corr_path = product_dir + "/" + dir + "/" + filename
+            elif filename[-13:] == "unw_phase.tif": unw_path = product_dir + "/" + dir + "/" + filename
+        
+        try:
+            corr   = get_image_array(corr_path)
+            arr_uw = get_image_array(unw_path)
+        except Exception as e:
+            print(f'Caught {type(e)}: {e}\n Could not open images for {dir}.')
+
+        bad_correlation = corr < 0.3
+
+        arr_w = np.angle(np.exp(1j * (arr_uw)))
+
+        mask_pred, pres_mask = mask(
+            mask_model = mask_model,
+            pres_model = pres_model,
+            arr_w      = arr_w,
+            tile_size  = tile_size,
+            crop_size  = crop_size
+        )
+
+        presence_guess = np.mean(pres_mask) > 0
+
+        mask_pred[bad_correlation] = 0
+
+        if presence_guess:
+            positives += 1
+            print("Positive")
+        else:
+            negatives += 1
+            plot_imgs(arr_w, arr_uw, mask_pred, pres_mask)
+            print("Negative") 
+
+    print(f'Num Positives: {positives}')
+    print(f'Num Negatives: {negatives}')
 
 
 def visualize_layers(
@@ -447,7 +512,7 @@ def visualize_layers(
     print(f"\nModel Input Shape: {input_shape}")
     print(f"Model Output Shape: {output_shape}")
 
-    masked, wrapped, _ = gen_simulated_deformation(tile_size=tile_size, seed=seed, log=True)
+    _, masked, wrapped, _ = gen_simulated_deformation(tile_size=tile_size, seed=seed, log=True)
 
     masked  = masked.reshape(output_shape)
     wrapped = wrapped.reshape(input_shape)
