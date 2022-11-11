@@ -35,7 +35,7 @@ def show_dataset(
     _, [axs_masked, axs_wrapped] = plt.subplots(1, 2)
 
     axs_masked.set_title("Masked")
-    axs_masked.imshow(masked, origin='lower', cmap='jet', vmin=0, vmax=np.max(masked))
+    axs_masked.imshow(masked, origin='lower', cmap='jet')
 
     axs_wrapped.set_title("Wrapped")
     axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
@@ -106,5 +106,124 @@ def show_product(
     if crop_size:
         axs_tiled_unwrapped.set_title("tiled_unwrapped")
         axs_tiled_unwrapped.imshow(rebuilt_arr_uw, origin='lower', cmap='jet')
+
+    plt.show()
+
+
+def interactive_interferogram(event_type: str = "quake") -> None:
+
+    """
+    GUI interface for interactive interferogram simulation.
+    """
+
+    from matplotlib.widgets import Slider
+
+    from src.sarsim import gen_simulated_deformation
+
+    kwargs = {
+        'source_x'    : 22000,
+        'source_y'    : 22000,
+        'strike'      : 180,
+        'dip'         : 45,
+        'length'      : 1000,
+        'rake'        : 90,
+        'slip'        : 1,
+        'top_depth'   : 3000,
+        'bottom_depth': 6000,
+        'width'       : 3000,
+        'depth'       : 3000,
+        'opening'     : 0.5
+    }
+
+    fig, [axs_unwrapped, axs_wrapped] = plt.subplots(1, 2, sharex=True, sharey=True, tight_layout=True)
+
+    axs_unwrapped.set_title("unwrapped")
+    axs_unwrapped.set_position([0.05, 0.45, 0.5, 0.5])
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.set_position([0.5, 0.45, 0.5, 0.5])
+
+    axs_slip            = plt.axes([0.375, 0.36, 0.25, 0.02])
+    slider_slip         = Slider(axs_slip, 'slip', 0.0, 10.0, valinit=kwargs['slip'])
+
+    axs_strike          = plt.axes([0.375, 0.33, 0.25, 0.02])
+    slider_strike       = Slider(axs_strike, 'strike', 0.0, 180.0, valinit=kwargs['strike'])
+
+    axs_dip             = plt.axes([0.375, 0.30, 0.25, 0.02])
+    slider_dip          = Slider(axs_dip, 'dip', 0.0, 90.0, valinit=kwargs['dip'])
+
+    axs_rake            = plt.axes([0.375, 0.27, 0.25, 0.02])
+    slider_rake         = Slider(axs_rake, 'rake', -180.0, 180.0, valinit=kwargs['rake'])
+
+    axs_opening         = plt.axes([0.375, 0.24, 0.25, 0.02])
+    slider_opening      = Slider(axs_opening, 'opening', 0.0, 10.0, valinit=kwargs['opening'])
+
+    axs_top_depth       = plt.axes([0.375, 0.21, 0.25, 0.02])
+    slider_top_depth    = Slider(axs_top_depth, 'top_depth', 0.0, 45000.0, valinit=kwargs['top_depth'])
+
+    axs_bottom_depth    = plt.axes([0.375, 0.18, 0.25, 0.02])
+    slider_bottom_depth = Slider(axs_bottom_depth, 'bottom_depth', 0.0, 45000.0, valinit=kwargs['bottom_depth'])
+
+    axs_width           = plt.axes([0.375, 0.15, 0.25, 0.02])
+    slider_width        = Slider(axs_width, 'width', 100.0, 10000.0, valinit=kwargs['width'])
+
+    axs_length          = plt.axes([0.375, 0.12, 0.25, 0.02])
+    slider_length       = Slider(axs_length, 'length', 100.0, 10000.0, valinit=kwargs['length'])
+
+    axs_source_x        = plt.axes([0.375, 0.09, 0.25, 0.02])
+    slider_source_x     = Slider(axs_source_x, 'source_x', 0.0, 45000.0, valinit=kwargs['source_x'])
+
+    axs_source_y        = plt.axes([0.375, 0.06, 0.25, 0.02])
+    slider_source_y     = Slider(axs_source_y, 'source_y', 0.0, 45000.0, valinit=kwargs['source_y'])
+
+    unwrapped, masked, wrapped, presence = gen_simulated_deformation(
+        seed       = 100000,
+        tile_size  = 512,
+        event_type = event_type,
+        **kwargs
+    )
+
+    axs_unwrapped.imshow(unwrapped, origin='lower', cmap='jet')
+    axs_wrapped.imshow(wrapped, origin='lower', cmap='jet', vmin=-np.pi, vmax=np.pi)
+
+    def update(val):
+
+        kwargs = {
+            'source_x'    : slider_source_x.val,
+            'source_y'    : slider_source_y.val,
+            'strike'      : slider_strike.val,
+            'dip'         : slider_dip.val,
+            'length'      : slider_length.val,
+            'rake'        : slider_rake.val,
+            'slip'        : slider_slip.val,
+            'top_depth'   : slider_top_depth.val,
+            'bottom_depth': slider_bottom_depth.val,
+            'width'       : slider_width.val,
+            'depth'       : slider_top_depth.val,
+            'opening'     : slider_opening.val        
+        }
+
+        unwrapped, masked, wrapped, presence = gen_simulated_deformation(
+            seed       = 100000,
+            tile_size  = 512,
+            event_type = event_type,
+            **kwargs
+        )
+
+        axs_unwrapped.imshow(unwrapped, origin='lower', cmap='jet')
+        axs_wrapped.imshow(wrapped, origin='lower', cmap='jet', vmin=-np.pi, vmax=np.pi)
+
+        fig.canvas.draw()
+
+    slider_source_x.on_changed(update)
+    slider_source_y.on_changed(update)
+    slider_strike.on_changed(update)
+    slider_dip.on_changed(update)
+    slider_length.on_changed(update)
+    slider_rake.on_changed(update)
+    slider_slip.on_changed(update)
+    slider_top_depth.on_changed(update)
+    slider_bottom_depth.on_changed(update)
+    slider_width.on_changed(update)
+    slider_opening.on_changed(update)
 
     plt.show()
