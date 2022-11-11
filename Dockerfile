@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 && apt-get clean \
 && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /opt/ml /opt/ml/input /opt/ml/input/data /opt/ml/output /opt/ml/input/config
+RUN mkdir /opt/ml /opt/ml/input /opt/ml/input/data /opt/ml/output /opt/ml/input/config /opt/ml/models
 
 COPY . /opt/ml/code
 
