@@ -838,13 +838,8 @@ def train_wrapper(
 
 
 # TODO: Will require implementing a basic server to SageMaker's spec
-@cli.command   ('serve')
-@click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
-@click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
-def mask(
-    tile_size, 
-    crop_size
-):
+@cli.command('serve')
+def sagemaker_server_wrapper():
 
     """
     Masks events in the given wrapped interferogram using a tensorflow model and plots it, with the option to save.
@@ -855,26 +850,90 @@ def mask(
     image_path       path to wrapped interferogram to mask.\n
     """
 
-    from os import environ
+    import os
+    import json
 
-    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+    from io import BytesIO
 
-    from src.inference import mask_and_plot
+    import numpy as np
+    import flask
+    from   flask import request
 
-    mask_and_plot(
-        "model_path",
-        "pres_model_path",
-        "image_path",
-        tile_size,
-        crop_size
-    )
+    from src.inference import mask
+    from src.io import get_image_array
 
-    if "dest_path" != "":
+    ping_test_image = 'tests/test_image.tif'
+    mask_model_path = '/opt/ml/models/mask_model'
+    pres_model_path = '/opt/ml/models/pres_model'
 
-        from PIL import Image
+    app = flask.Flask(__name__)
 
-        out = Image.fromarray(mask)
-        out.save("dest_path")      
+
+    @app.route('/ping', methods=['GET'])
+    def ping():    
+
+        image = get_image_array(ping_test_image)
+
+        masked, pres_mask = mask(mask_model_path, pres_model_path, image, tile_size=512)
+
+        if np.mean(pres_mask) > 0.0:
+            presense = True
+        else:
+            presense = False
+
+        response = {
+            "presense": presense,
+        }
+
+        return flask.Response(response=json.dumps(response), status=200, mimetype='application/json')
+
+
+    @app.route('/invocations', methods=['POST'])
+    def invocations():
+
+
+        """
+        Main function to run inference on the image
+        :return:
+        """
+
+        status = 200
+
+        try:
+
+            byteImg = BytesIO(request.get_data())
+            with open("image.tif", "wb") as f:
+                f.write(byteImg.getbuffer())
+
+            image = get_image_array("image.tif")
+
+            _, presence_mask = mask(mask_model_path, pres_model_path, image, tile_size=512)
+
+            if np.mean(presence_mask) > 0.0:
+                presense = True
+            else:
+                presense = False
+
+            result = {
+                "presense": presense,
+            }
+            
+        except Exception as err:
+
+            status = 500
+
+            result = {
+                "error": str(err),
+                "presense": 2
+            }
+                    
+            print("invocations() err: {}".format(err))
+
+        return flask.Response(response=json.dumps(result), status=status, mimetype='application/json')
+
+
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)     
 
 
 if __name__ == '__main__':
