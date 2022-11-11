@@ -73,7 +73,7 @@ def setup():
 @cli.command   ('make-synthetic-dataset')
 @click.argument('name'              , type=str                                                                    )
 @click.argument('amount'            , type=int                        , default=1                                 )
-@click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
+@click.option  ('-t', '--tile_size' , type=int                        , default=512          , help=tilesize_help )
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-c', '--crop_size' , type=int                        , default=0            , help=cropsize_help )
@@ -129,11 +129,71 @@ def make_synthetic_dataset_wrapper(name, amount, tile_size, output_dir, seed, cr
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
+@cli.command ('simulate')
+@click.option('-s', '--seed'      , type=int , default=0      , help=seed_help    )
+@click.option('-t', '--tile_size' , type=int , default=512    , help=tilesize_help)
+@click.option('-t', '--crop_size' , type=int , default=512    , help=cropsize_help)
+@click.option('-e', '--event_type', type=str , default="quake", help=""           )
+@click.option('-n', '--noise_only', type=bool, default=False  , help=""           )
+@click.option('-v', '--verbose'   , type=bool, default=False  , help=""           )
+def simulate_wrapper(seed, tile_size, crop_size, event_type, noise_only, verbose):
+
+    """
+    Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
+    """
+
+    
+    from src.gui import show_dataset
+    from src.sarsim import gen_simulated_deformation, gen_sim_noise
+    from src.processing import simulate_unet_cropping
+
+    if not noise_only:
+        unwrapped, masked, wrapped, event_is_present = gen_simulated_deformation(
+            seed,
+            tile_size,
+            verbose,
+            event_type = event_type
+        )
+    else:
+        unwrapped, masked, wrapped, event_is_present = gen_sim_noise(
+            seed,
+            tile_size,
+            False
+        )        
+
+    if crop_size < tile_size:
+        masked = simulate_unet_cropping(masked, (crop_size, crop_size))
+
+    if event_is_present[0]:
+        print("_______\n")
+        print("This interferogram contains deformation.")
+        print("_______\n")
+    else:
+        print("_______\n")
+        print("This interferogram does not contain deformation.")
+        print("_______\n")
+
+    show_dataset(masked, wrapped)
+
+
+@cli.command ('interactive')
+@click.option('-e', '--event_type', type=str, default="quake", help="")
+def interactive_wrapper(event_type):
+
+    """
+    Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
+    """
+
+    from src.gui import interactive_interferogram
+
+    interactive_interferogram(event_type)
+
+
 @cli.command   ('make-simulated-dataset')
 @click.argument('name'              , type=str                                                                    )
 @click.argument('amount'            , type=int                        , default=1                                 )
-@click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
-@click.option  ('-c', '--crop_size' , type=int                        , default=1024         , help=cropsize_help )
+@click.option  ('-t', '--tile_size' , type=int                        , default=512          , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=512          , help=cropsize_help )
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
@@ -179,8 +239,8 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
 @click.argument('name'              , type=str                                                                    )
 @click.argument('model_path'        , type=str                                                                    )
 @click.argument('amount'            , type=int                        , default=1                                 )
-@click.option  ('-t', '--tile_size' , type=int                        , default=1024         , help=tilesize_help )
-@click.option  ('-c', '--crop_size' , type=int                        , default=1024         , help=cropsize_help )
+@click.option  ('-t', '--tile_size' , type=int                        , default=512          , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=512          , help=cropsize_help )
 @click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
 @click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
 @click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
@@ -200,16 +260,16 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
 
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    from src.io import split_dataset, make_simulated_binary_dataset
+    from src.io import split_dataset, make_simulated_dataset
 
-    name, count, dir_name = make_simulated_binary_dataset(
+    name, count, dir_name, _, _ = make_simulated_dataset(
         name,
-        model_path,
         output_dir,
         amount,
         seed,
         tile_size,
-        crop_size
+        crop_size,
+        model_path = model_path
     )
 
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
@@ -221,7 +281,7 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
 @cli.command   ('make-real-dataset')
 @click.argument('name'               , type=str                                         )
 @click.argument('dataset-path'       , type=str                                         )
-@click.option  ('-t', '--tile_size'  , type=int  , default=1024    , help=tilesize_help )
+@click.option  ('-t', '--tile_size'  , type=int  , default=512     , help=tilesize_help )
 @click.option  ('-c', '--crop_size'  , type=int  , default=0       , help=cropsize_help )
 @click.option  ('-d', '--output_dir' , type=str  , default=REAL_DIR, help=outputdir_help)
 @click.option  ('-s', '--split'      , type=float, default=0.0     , help=split_help    )
@@ -298,7 +358,7 @@ def show_dataset_wrapper(file_path):
 
 @cli.command ('show-random')
 @click.option('-s', '--seed'     , type=int, default=0   , help=seed_help    )
-@click.option('-t', '--tile_size', type=int, default=1024, help=tilesize_help)
+@click.option('-t', '--tile_size', type=int, default=512 , help=tilesize_help)
 @click.option('-c', '--crop_size', type=int, default=0   , help=cropsize_help)
 def show_random_wrapper(seed, tile_size, crop_size):
 
@@ -318,10 +378,10 @@ def show_random_wrapper(seed, tile_size, crop_size):
 @click.argument('model_type'           , type=str                                         )
 @click.argument('dataset_path'         , type=str                                         )
 @click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
-@click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
-@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
-@click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
-@click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+@click.option  ('-t', '--input_shape'  , type=int  , default=512  , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=64   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=1    , help=batchsize_help   )
+@click.option  ('-l', '--learning_rate', type=float, default=1e-4 , help=learningrate_help)
 @click.option  ('-a', '--using_aws'    , type=bool , default=False, help=""               )
 def train_model_wrapper(
     model_name,
@@ -372,14 +432,15 @@ def train_model_wrapper(
 @click.argument('model_name'           , type=str                                         )
 @click.argument('dataset_size'         , type=int                                         )
 @click.option  ('-e', '--epochs'       , type=int  , default=10   , help=epochs_help      )
-@click.option  ('-t', '--input_shape'  , type=int  , default=1024 , help=inputshape_help  )
-@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
-@click.option  ('-b', '--batch_size'   , type=int  , default=32   , help=batchsize_help   )
+@click.option  ('-t', '--input_shape'  , type=int  , default=512  , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=64   , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=1    , help=batchsize_help   )
 @click.option  ('-s', '--val_split'    , type=float, default=0.1  , help=split_help       )
-@click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+@click.option  ('-l', '--learning_rate', type=float, default=1e-4 , help=learningrate_help)
 @click.option  ('-v', '--eval_samples' , type=int  , default=0    , help=""               )
 @click.option  ('-p', '--plot'         , type=bool , default=False, help=""               )
 @click.option  ('-a', '--using_aws'    , type=bool , default=False, help=""               )
+@click.option  ('-r', '--seed'         , type=int  , default=0    , help=seed_help        )
 def train_model_wrapper(
     model_name,
     dataset_size,
@@ -391,7 +452,8 @@ def train_model_wrapper(
     learning_rate,
     eval_samples,
     plot,
-    using_aws
+    using_aws,
+    seed
 ):
 
     """
@@ -421,7 +483,7 @@ def train_model_wrapper(
         mask_dataset_name,
         SYNTHETIC_DIR,
         dataset_size,
-        0,
+        seed,
         input_shape,
         input_shape
     )
@@ -445,6 +507,7 @@ def train_model_wrapper(
         filters,
         batch_size,
         learning_rate,
+        False,
         using_aws
     )
     print("____________________________ ") 
@@ -458,12 +521,12 @@ def train_model_wrapper(
 
     _, count, dir_name = make_simulated_binary_dataset(
         pres_dataset_name,
-        mask_model_path,
         SYNTHETIC_DIR,
-        2 * dataset_size,
-        0,
+        dataset_size,
+        seed,
         input_shape,
-        input_shape
+        input_shape,
+        model_path = mask_model_path
     )
 
     dataset_path = 'data/working/synthetic/' + dir_name
@@ -481,9 +544,11 @@ def train_model_wrapper(
         dataset_path,
         'eventnet',
         input_shape,
-        10,
+        5,
         32,
         1,
+        0.005,
+        False,
         using_aws
     )
     print("____________________________ ") 
@@ -511,10 +576,12 @@ def train_model_wrapper(
 @cli.command   ('test-masking')
 @click.argument('model_path'           , type=str                                     )
 @click.option  ('-d', '--use_simulated', type=bool, default=False, help=usesim_help   )
+@click.option  ('-n', '--noise_only'   , type=bool, default=False, help=""            )
 @click.option  ('-s', '--seed'         , type=int , default=0    , help=seed_help     )
 @click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help )
 @click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help )
-def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
+@click.option  ('-e', '--event_type'   , type=str , default=""   , help=""            )
+def test_masking_wrapper(model_path, use_simulated, noise_only, seed, tile_size, crop_size, event_type):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -529,7 +596,7 @@ def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
     
     from src.inference import test_masking
 
-    test_masking(model_path, seed, tile_size, crop_size, use_sim=use_simulated)
+    test_masking(model_path, seed, tile_size, crop_size, use_sim=use_simulated, noise_only=noise_only, event_type=event_type)
 
 
 @cli.command   ('test-binary-choice')
@@ -539,7 +606,7 @@ def test_model_wrapper(model_path, use_simulated, seed, tile_size, crop_size):
 @click.option  ('-n', '--num_trials'   , type=int , default=0    , help=numtrials_help)
 @click.option  ('-t', '--tile_size'    , type=int , default=1024 , help=tilesize_help )
 @click.option  ('-c', '--crop_size'    , type=int , default=0    , help=cropsize_help )
-def test_model_wrapper(model_path, pres_model_path, seed, num_trials, tile_size, crop_size):
+def test_binary_choice_wrapper(model_path, pres_model_path, seed, num_trials, tile_size, crop_size):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -556,6 +623,32 @@ def test_model_wrapper(model_path, pres_model_path, seed, num_trials, tile_size,
     from src.inference import test_binary_choice
 
     test_binary_choice(model_path, pres_model_path, seed, tile_size, crop_size, count=num_trials)
+
+
+@cli.command   ('test-model')
+@click.argument('model_path'           , type=str                                  )
+@click.argument('pres_model_path'      , type=str                                  )
+@click.argument('product_dir'          , type=str                                  )
+@click.option  ('-t', '--tile_size'    , type=int , default=512, help=tilesize_help)
+@click.option  ('-c', '--crop_size'    , type=int , default=0  , help=cropsize_help)
+def test_model_wrapper(model_path, pres_model_path, product_dir, tile_size, crop_size):
+
+    """
+    Predicts on a wrapped interferogram & event-mask pair and plots the results
+
+    ARGS:\n
+    model_path       path to model that does the masking.\n
+    pres_model_path  path to model that predicts whether there is an event.\n
+    product_dir      path to directory containing products\n
+    """
+
+    from os import environ
+    
+    environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+    
+    from src.inference import test_model
+
+    test_model(model_path, pres_model_path, product_dir, tile_size, crop_size)
 
 
 @cli.command   ('model-summary')
@@ -668,60 +761,19 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     show_product(product_path, crop_size, tile_size)
 
 
-@cli.command ('simulate')
-@click.option('-s', '--seed'      , type=int , default=0    , help=seed_help    )
-@click.option('-t', '--tile_size' , type=int , default=1024 , help=tilesize_help)
-@click.option('-t', '--crop_size' , type=int , default=1024 , help=cropsize_help)
-@click.option('-n', '--noise_only', type=bool, default=False, help=""           )
-@click.option('-v', '--verbose'   , type=bool, default=False, help=""           )
-def simulate_wrapper(seed, tile_size, crop_size, noise_only, verbose):
-
-    """
-    Show a randomly generated wrapped interferogram with simulated deformation, atmospheric turbulence, atmospheric topographic error, and incoherence masking.
-    """
-
-    from src.gui    import show_dataset
-    from src.sarsim import gen_simulated_deformation, gen_sim_noise
-    from src.processing import simulate_unet_cropping
-
-
-    if not noise_only:
-        masked, wrapped, event_is_present = gen_simulated_deformation(
-            seed,
-            tile_size,
-            verbose
-        )
-    else:
-        masked, wrapped, event_is_present = gen_sim_noise(
-            seed,
-            tile_size,
-            False
-        )        
-
-    if crop_size < tile_size:
-        masked = simulate_unet_cropping(masked, (crop_size, crop_size))
-
-    if event_is_present[0]:
-        print("_______\n")
-        print("This interferogram contains deformation.")
-        print("_______\n")
-    else:
-        print("_______\n")
-        print("This interferogram does not contain deformation.")
-        print("_______\n")
-
-    show_dataset(masked, wrapped)
-
-
 # COMMANDS FOR AWS SAGEMAKER SUPPORT
 
 @cli.command   ('train')
-@click.option  ('-e', '--epochs'       , type=int  , default=1    , help=epochs_help      )
-@click.option  ('-t', '--input_shape'  , type=int  , default=512  , help=inputshape_help  )
-@click.option  ('-f', '--filters'      , type=int  , default=16   , help=filters_help     )
-@click.option  ('-b', '--batch_size'   , type=int  , default=8    , help=batchsize_help   )
-@click.option  ('-l', '--learning_rate', type=float, default=0.001, help=learningrate_help)
+@click.option  ('-n', '--model_name'   , type=str  , default="aws_model" , help="Name of model"  )
+@click.option  ('-t', '--model_type'   , type=str  , default="unet"      , help="Type of model"  )
+@click.option  ('-e', '--epochs'       , type=int  , default=1           , help=epochs_help      )
+@click.option  ('-t', '--input_shape'  , type=int  , default=512         , help=inputshape_help  )
+@click.option  ('-f', '--filters'      , type=int  , default=16          , help=filters_help     )
+@click.option  ('-b', '--batch_size'   , type=int  , default=8           , help=batchsize_help   )
+@click.option  ('-l', '--learning_rate', type=float, default=0.001       , help=learningrate_help)
 def train_wrapper(
+    model_name,
+    model_type,
     epochs,
     input_shape,
     filters,
@@ -730,13 +782,7 @@ def train_wrapper(
 ):
 
     """
-    Train a U-Net or ResNet style model.
-
-    ARGS:\n
-    model_name      name of the model to be trained.\n
-    model_type      type of model to train: eventnet, unet, or resnet.\n
-    train_path      path to training data.\n
-    test_path       path to validation data.\n
+    SageMaker compatible function to train a U-Net, ResNet, or Classification EventNet model.
     """
 
     import json
@@ -745,17 +791,14 @@ def train_wrapper(
 
     from src.training import train
 
-    model_name = "aws_model"
-    model_type = "unet"
+    root_dir    = "/opt/ml"                          # SageMaker expects things to happen here.
 
-    root_dir    = "/opt/ml"                         # SageMaker expects things to happen here.
-
-    input_dir   = root_dir   + "/input"             # SageMaker uploads things here.
+    input_dir   = root_dir   + "/input"              # SageMaker uploads things here.
     dataset_dir = input_dir  + "/data/training"
     config_dir  = input_dir  + "/config"
 
-    output_dir     = root_dir   + "/output/data"    # SageMaker takes optional extras from here.
-    logs_dir       = output_dir + "/logs"           # A file called failure must hold failing errors in /output
+    output_dir     = root_dir   + "/output/data"     # SageMaker takes optional extras from here.
+    logs_dir       = output_dir + "/logs"            # A file called failure must hold failing errors in /output
     checkpoint_dir = output_dir + "/best_checkpoint"
 
     try:
@@ -769,6 +812,7 @@ def train_wrapper(
 
         print(f'Read hyperparameters: {hyperparameters}')
 
+        model_type    = str(hyperparameters['model_type'])
         epochs        = int(hyperparameters['epochs'])
         filters       = int(hyperparameters['filters'])
         batch_size    = int(hyperparameters['batch_size'])
@@ -792,18 +836,14 @@ def train_wrapper(
         logs_dir  = logs_dir 
     )
 
+
+# TODO: Will require implementing a basic server to SageMaker's spec
 @cli.command   ('serve')
-@click.argument('image_path'          , type=str                                    )
-@click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
 @click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
-@click.option  ('-d', '--dest_path'   , type=str  , default="" , help=outputdir_help)
+@click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
 def mask(
-    model_path,
-    pres_model_path,
-    image_path, 
-    crop_size, 
-    tile_size,
-    dest_path
+    tile_size, 
+    crop_size
 ):
 
     """
@@ -822,20 +862,21 @@ def mask(
     from src.inference import mask_and_plot
 
     mask_and_plot(
-        model_path,
-        pres_model_path,
-        image_path,
+        "model_path",
+        "pres_model_path",
+        "image_path",
         tile_size,
         crop_size
     )
 
-    if dest_path != "":
+    if "dest_path" != "":
 
         from PIL import Image
 
         out = Image.fromarray(mask)
-        out.save(dest_path)      
+        out.save("dest_path")      
 
 
 if __name__ == '__main__':
     cli()
+
