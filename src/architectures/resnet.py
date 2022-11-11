@@ -7,12 +7,14 @@
 """
 
 
-from tensorflow import Tensor
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose, LeakyReLU
-from tensorflow.keras.layers import MaxPooling2D, Input, concatenate
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam 
+from tensorflow                   import Tensor
+from tensorflow.keras.layers      import Conv2D, Conv2DTranspose, LeakyReLU, MaxPooling2D, Input, concatenate
+from tensorflow.keras.models      import Model
+from tensorflow.keras.optimizers  import Adam 
+from tensorflow.keras             import mixed_precision
 
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_global_policy(policy)
 
 def res_block(
     input_tensor: Tensor, 

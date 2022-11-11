@@ -6,10 +6,14 @@
 """
 
 
-from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Conv2DTranspose, Input, concatenate, MaxPooling2D
-from tensorflow.keras.models     import Model
-from tensorflow.keras.optimizers import Adam 
+from tensorflow                   import Tensor
+from tensorflow.keras.layers      import Conv2D, Conv2DTranspose, Input, concatenate, MaxPooling2D, Activation
+from tensorflow.keras.models      import Model
+from tensorflow.keras.optimizers  import Adam
+from tensorflow.keras             import mixed_precision
+
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_global_policy(policy)
 
 
 def conv2d_block(
@@ -67,7 +71,7 @@ def transpose_block(
 def create_unet(
     model_name:    str   = 'model',
     tile_size:     int   = 512    ,
-    num_filters:   int   = 32     ,
+    num_filters:   int   = 64     ,
     learning_rate: float = 1e-4   ,
 ) -> Model:
 
@@ -76,7 +80,6 @@ def create_unet(
     """
 
     input = Input(shape = (tile_size, tile_size, 1))
-
 
     # --------------------------------- #
     # Feature Map Generation            #
@@ -111,10 +114,10 @@ def create_unet(
         name        = 'last_layer',
         kernel_size = (1, 1),
         filters     =  1    ,
-        activation  = 'linear',
         padding     = 'same'
     )(u11)
 
+    output = Activation('linear', dtype='float32')(output)
 
     # --------------------------------- #
     # Model Creation and Compilation    #
@@ -126,10 +129,13 @@ def create_unet(
         name    = model_name
     )
 
+    optimizer = Adam(learning_rate = learning_rate)
+
+    # TODO: Test huber loss, and maybe some others as well, and binary_crossentropy for the classifier. Maybe test with SGD instead of Adam, as well.
     model.compile(
         loss      = 'mean_squared_error',
         metrics   = ['mean_absolute_error'],
-        optimizer = Adam(learning_rate = learning_rate)
+        optimizer = optimizer
     )
 
     return model
