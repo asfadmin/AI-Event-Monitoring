@@ -8,7 +8,7 @@
 import random
 import sys
 
-from os import rename, walk
+from os import rename, listdir, walk
 from pathlib import Path
 from typing import Tuple
 from datetime import datetime
@@ -103,56 +103,6 @@ def get_image_array(
     return arr
 
 
-def get_dataset_arrays(
-    product_path: str
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-
-    """
-    Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
-
-    Parameters:
-    -----------
-    product_path : str
-        The path to the InSAR product folder containing the images.
-
-    Returns:
-    --------
-    wrapped : np.ndarray
-        The array of the wrapped interferogram loaded from the .tif.
-    unwrapped : np.ndarray
-        The array of the unwrapped interferogram loaded from the .tif.
-    correlation : np.ndarray
-        The correlation map array loaded from the .tif,
-    """
-
-    from osgeo import gdal
-    
-    wrapped_path = ""
-    masked_path = ""
-
-    for dir_path, _, filenames in walk(product_path):
-        for file in filenames:
-            f_len = len(file)
-            if file[f_len - 8:f_len] == 'sked.tif':
-                masked_path = dir_path + '/' + file
-            else:
-                wrapped_path = dir_path + '/' + file
-
-
-    wrapped_dataset = gdal.Open(wrapped_path, gdal.GA_ReadOnly)
-    band = wrapped_dataset.GetRasterBand(1)
-    wrapped = band.ReadAsArray()
-
-    masked_dataset = gdal.Open(masked_path, gdal.GA_ReadOnly)
-    band = masked_dataset.GetRasterBand(1)
-    masked = band.ReadAsArray()
-
-    unmasked_area = masked != 1
-    masked[unmasked_area] = 0
-
-    return wrapped, masked
-
-
 def get_product_arrays(
     product_path: str
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -175,108 +125,64 @@ def get_product_arrays(
         The correlation map array loaded from the .tif,
     """
 
-    from osgeo import gdal
-
-    wrapped_path = ""
+    wrapped_path     = ""
     correlation_path = ""
-    unwrapped_path = ""
+    unwrapped_path   = ""
 
-    for dir_path, _, filenames in walk(product_path):
-        for file in filenames:
-            f_len = len(file)
-            if file[f_len - 8:f_len] == 'corr.tif':
-                correlation_path = dir_path + '/' + file
-            elif file[f_len - 17:f_len] == 'wrapped_phase.tif':
-                wrapped_path = dir_path + '/' + file
-            elif file[f_len - 13:f_len] == 'unw_phase.tif':
-                unwrapped_path = dir_path + '/' + file
+    for filename in listdir(product_path):
+        if filename[-8:] == 'corr.tif':
+            correlation_path = product_path + '/' + filename
+        elif filename[-17:] == 'wrapped_phase.tif':
+            wrapped_path = product_path + '/' + filename
+        elif filename[-13:] == 'unw_phase.tif':
+            unwrapped_path = product_path + '/' + filename
 
-    dataset = gdal.Open(wrapped_path, gdal.GA_ReadOnly)
-    band = dataset.GetRasterBand(1)
-    wrapped = band.ReadAsArray()
-
-    coherence_image = gdal.Open(correlation_path, gdal.GA_ReadOnly)
-    band = coherence_image.GetRasterBand(1)
-    correlation = band.ReadAsArray()
-
-    dataset = gdal.Open(unwrapped_path, gdal.GA_ReadOnly)
-    band = dataset.GetRasterBand(1)
-    unwrapped = band.ReadAsArray()
+    wrapped     = get_image_array(wrapped_path)
+    correlation = get_image_array(correlation_path)
+    unwrapped   = get_image_array(unwrapped_path)
 
     return wrapped, unwrapped, correlation
 
 
-def dataset_from_pngs(
-    dataset_name: str,
-    dataset_path: str,
-    save_path: str,
-    tile_size: int,
-    crop_size: int,
-) -> int:
+def get_dataset_arrays(
+    product_path: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     """
-    Creates a dataset from a folder containing real interferogram products.
-    FOR TESTING ONLY
+    Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
 
     Parameters:
     -----------
-    dataset_name : str
-        The name for the folder that will contain the dataset.
     product_path : str
-        The path to the folder containing sar product folders
-    save_path : str
-        The path to the folder where the dataset should be saved.
-    tile_size : int
-        The width and height of the tiles that the image will be broken into, this needs
-        to match the input shape of the model.
-    crop_size : int
-        If the models output shape is different than the input shape, this value needs to be
-        equal to the output shape.
+        The path to the InSAR product folder containing the images.
 
     Returns:
     --------
-    dataset_size : int
-        The size of the dataset that was created.
+    wrapped : np.ndarray
+        The array of the wrapped interferogram loaded from the .tif.
+    unwrapped : np.ndarray
+        The array of the unwrapped interferogram loaded from the .tif.
+    correlation : np.ndarray
+        The correlation map array loaded from the .tif,
     """
 
-    save_directory = Path(save_path) / dataset_name
-    if not save_directory.is_dir():
-        save_directory.mkdir()
+    wrapped_path = ""
+    masked_path = ""
 
-    dataset_size = 0
-    for _, _, products in walk(dataset_path):
+    for filename in listdir(product_path):
+        f_len = len(filename)
+        if filename[f_len - 8:f_len] == 'sked.tif':
+            masked_path = product_path + '/' + filename
+        else:
+            wrapped_path = product_path + '/' + filename
 
-        progress = 0
-        
-        product_count = len(products)
+    masked  = get_image_array(masked_path)
+    wrapped = get_image_array(wrapped_path)
 
-        for product in products:
+    unmasked_area = masked != 1
+    masked[unmasked_area] = 0
 
-            progress += 1
-            print(f"{progress}/{product_count} | {dataset_path + '/' + product}")
-
-            wrapped = np.asarray(Image.open(dataset_path + '/' + product))
-
-            tiled_wrapped, w_rows, w_cols = tile(
-                wrapped,
-                (tile_size, tile_size),
-                even_pad  = True,
-                crop_size = crop_size
-            )
-
-            label = np.ones((tile_size, tile_size)) if product[-5:] == '1.png' else np.zeros((tile_size, tile_size))
-                
-            for index in range(w_rows * w_cols):
-
-                dataset_size += 1
-
-                product_id = product[-22:-17]
-                current_name = f"real_{product_id}_{index}"
-                save_path = save_directory / current_name
-
-                save_dataset(save_path, label=label, wrapped=tiled_wrapped[index])
-
-    return dataset_size
+    return wrapped, masked
 
 
 def dataset_from_products(
@@ -460,7 +366,8 @@ def make_simulated_dataset(
     amount:       int,
     seed:         int,
     tile_size:    int,
-    crop_size:    int
+    crop_size:    int,
+    model_path:   str  = ""
 ) -> Tuple[int, int, str]:
 
     """
@@ -505,38 +412,76 @@ def make_simulated_dataset(
 
     dir_name = f"{name}_amount{amount}_seed{seed}"
 
+    if model_path != "":
+        from tensorflow.keras.models import load_model      
+        model = load_model(model_path)
+
     save_directory = Path(output_dir) / dir_name
     if not save_directory.is_dir():
         save_directory.mkdir()
 
     distribution = {
-        "deformation": 0,
+        "quake": 0,
+        "dyke": 0,
+        "sill": 0,
         "gaussian_noise": 0,
         "mixed_noise": 0
     }
 
-    deformation = np.ceil(0.6 * amount)
-    mixed_noise_only = deformation + np.floor(0.3 * amount)
+    quake = np.ceil(0.2 * amount)
+    dyke = quake + np.ceil(0.2 * amount)
+    sill = dyke + np.ceil(0.2 * amount)
+    mixed_noise_only = sill + np.floor(0.3 * amount)
 
     count = 0
     while count < amount:
 
         current_seed = seeds[count]
 
-        if count < deformation:
-            masked, wrapped, presence = gen_simulated_deformation(
+        event_type = ''
+        gaussian_only = False
+
+        if count < quake: 
+            event_type = 'quake'
+        elif count < dyke: 
+            event_type = 'dyke'
+        elif count < sill: 
+            event_type = 'sill'
+        else: 
+            gaussian_only = count >= mixed_noise_only
+            event_type = 'gaussian_noise' if gaussian_only else 'mixed_noise'
+
+        if count < sill: 
+            unwrapped, masked, wrapped, presence = gen_simulated_deformation(
                 seed      = current_seed,
-                tile_size = tile_size
+                tile_size = tile_size,
+                event_type = event_type
             )
-            distribution['deformation'] += 1
         else:
-            masked, wrapped, presence = gen_sim_noise(
+            unwrapped, masked, wrapped, presence = gen_sim_noise(
                 seed          = current_seed,
                 tile_size     = tile_size,
-                gaussian_only = count >= mixed_noise_only
+                gaussian_only = gaussian_only
             )
-            if count < mixed_noise_only: distribution['mixed_noise']         += 1 
-            else:                        distribution['gaussian_noise'] += 1
+
+        distribution[event_type] += 1
+
+        if model_path != "":
+            wrapped  = wrapped.reshape((1, tile_size, tile_size, 1))
+            masked_pred = model.predict(wrapped)
+
+            wrapped  = wrapped.reshape ((tile_size, tile_size))
+            masked_pred = np.abs(masked_pred.reshape((crop_size, crop_size)))
+
+            tolerance  = 0.5
+            round_up   = masked_pred >= tolerance
+            round_down = masked_pred <  tolerance
+
+            masked_pred[round_up  ] = 1
+            masked_pred[round_down] = 0
+
+            zeros              = wrapped == 0
+            masked_pred[zeros] = 0
 
         if crop_size < tile_size:
             masked = simulate_unet_cropping(masked, (crop_size, crop_size))
@@ -544,7 +489,7 @@ def make_simulated_dataset(
         if count % 10 == 0 and count != 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
 
-        current_name = f"sim_seed{current_seed}_{count}"
+        current_name = f"sim_seed{current_seed}_{count}_{event_type}"
         save_path = save_directory / current_name
         save_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
 
@@ -633,33 +578,50 @@ def make_simulated_binary_dataset(
         save_directory.mkdir()
 
     distribution = {
-        "deformation": 0,
+        "quake": 0,
+        "dyke": 0,
+        "sill": 0,
         "gaussian_noise": 0,
         "mixed_noise": 0
     }
 
-    deformation = np.ceil(0.6 * amount)
-    mixed_noise_only = deformation + np.floor(0.3 * amount)
+    quake = np.ceil(0.2 * amount)
+    dyke = quake + np.ceil(0.2 * amount)
+    sill = dyke + np.ceil(0.2 * amount)
+    mixed_noise_only = sill + np.floor(0.3 * amount)
 
     count = 0
     while count < amount:
 
         current_seed = seeds[count]
 
-        if count < deformation:
-            masked, wrapped, presence = gen_simulated_deformation(
+        event_type = ''
+        gaussian_only = False
+
+        if count < quake: 
+            event_type = 'quake'
+        elif count < dyke: 
+            event_type = 'dyke'
+        elif count < sill: 
+            event_type = 'sill'
+        else: 
+            gaussian_only = count >= mixed_noise_only
+            event_type = 'gaussian_noise' if gaussian_only else 'mixed_noise'
+
+        if count < sill: 
+            unwrapped, masked, wrapped, presence = gen_simulated_deformation(
                 seed      = current_seed,
-                tile_size = tile_size
+                tile_size = tile_size,
+                event_type = event_type
             )
-            distribution['deformation'] += 1
         else:
-            masked, wrapped, presence = gen_sim_noise(
+            unwrapped, masked, wrapped, presence = gen_sim_noise(
                 seed          = current_seed,
                 tile_size     = tile_size,
-                gaussian_only = count >= mixed_noise_only
+                gaussian_only = gaussian_only
             )
-            if count < mixed_noise_only: distribution['mixed_noise']    += 1 
-            else:                        distribution['gaussian_noise'] += 1
+
+        distribution[event_type] += 1
 
         wrapped  = wrapped.reshape((1, tile_size, tile_size, 1))
         masked_pred = model.predict(wrapped)
@@ -680,7 +642,7 @@ def make_simulated_binary_dataset(
         if count % 10 == 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
 
-        current_name = f"sim_seed{current_seed}_{count}"
+        current_name = f"sim_seed{current_seed}_{count}_{event_type}"
         save_path = save_directory / current_name
         save_dataset(save_path, mask=masked_pred, wrapped=wrapped, presence=presence)
 
