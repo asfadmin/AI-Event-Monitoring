@@ -112,9 +112,17 @@ class Okada():
         Compute the displacements in all directions from all of the sources and combine them.
         """        
 
-        U_1 = (self.U1 / (2*np.pi)) * self.chinnery(self.strike_slip_displacement)
-        U_2 = (self.U2 / (2*np.pi)) * self.chinnery(self.dip_slip_displacement)
-        U_3 = (self.U3 / (2*np.pi)) * self.chinnery(self.tensile_displacement)
+        if self.source_type == 'quake':
+            U_1 = (self.U1 / (2*np.pi)) * self.chinnery(self.strike_slip_displacement)
+            U_2 = (self.U2 / (2*np.pi)) * self.chinnery(self.dip_slip_displacement)
+        else:
+            U_1 = 0
+            U_2 = 0
+
+        if (self.source_type == 'sill' or self.source_type == 'dyke'):
+            U_3 = (self.U3 / (2*np.pi)) * self.chinnery(self.tensile_displacement)
+        else:
+            U_3 = 0
 
         okada_array = - U_1 - U_2 + U_3
 
@@ -124,7 +132,7 @@ class Okada():
         displacement_array[1] = np.cos(self.strike) * okada_array[0] + np.sin(self.strike) * okada_array[1]
         displacement_array[2] = okada_array[2]
 
-        self.displacement = okada_array
+        self.displacement = displacement_array
 
 
     def update_params_WL(self, W, L):
@@ -563,7 +571,15 @@ def gen_fake_topo(
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
-    dem = generate_perlin(dem.shape[0]) * np.random.randint(alt_scale_min, alt_scale_max)
+    dem = generate_perlin(dem.shape[0]) * 200
+    
+    neg_indices = dem < np.max(dem) / 1.75
+    
+    dem[neg_indices] = 0
+
+    non_zero_indices = dem > 0
+
+    dem[non_zero_indices] = dem[non_zero_indices] - np.min(dem[non_zero_indices])
 
     return dem
 
@@ -689,7 +705,7 @@ def gen_simulated_deformation(
     seed:              int   = 0,
     tile_size:         int   = 512,
     log:               bool  = False,
-    atmosphere_scalar: float = 90 * np.pi,
+    atmosphere_scalar: float = 120 * np.pi,
     amplitude_scalar:  float = 1000 * np.pi,
     event_type:        str   = 'quake',
     **kwargs
@@ -742,6 +758,8 @@ def gen_simulated_deformation(
 
     random_nums = np.random.rand(13)
 
+    dip = np.random.randint(75, 90)
+
     X, Y = np.meshgrid(np.arange(0, tile_size) * 90, np.arange(0, tile_size) * 90)
     Y    = np.flipud(Y)
 
@@ -753,27 +771,26 @@ def gen_simulated_deformation(
         source_x = np.max(X) // ((random_nums[0] * 10) + 1)
         source_y = np.max(Y) // ((random_nums[1] * 10) + 1)
 
-        length    = 500  + ((1 + np.max(X) // 16) * random_nums[2])
-        top_depth = 2000 + ((1 + np.max(X) // 8 ) * random_nums[3])
-
-        depth     = 2000 + ((1 + np.max(X) // 8 ) * random_nums[4])
-        width     = 500  + ((1 + np.max(X) // 16) * random_nums[5])
+        length    = 1000 + 2000 * random_nums[2]
+        top_depth = length + 2000 + ((np.max(X) // 8 ) * random_nums[3])
+        depth     = 2000 + ((np.max(X) // 16 ) * random_nums[4])
+        width     = 500  + 500 + 1000 * random_nums[5]
 
         kwargs = {
             'strike'      : 180 * random_nums[6],
-            'dip'         : 90  * random_nums[7],
+            'dip'         : [45, dip][random_nums[7] < 0.5],
             'length'      : length,
             'rake'        : [-90, 90][random_nums[8] < 0.5],
             'slip'        : 1,
             'top_depth'   : top_depth,
-            'bottom_depth': top_depth * (1.1 + (3 * random_nums[10])),
+            'bottom_depth': top_depth * (2 + 4 * random_nums[10]),
             'width'       : width,
             'depth'       : depth,
-            'opening'     : (2 * random_nums[11])
+            'opening'     : 0.5
         }
 
     else:
-        
+
         top_depth = kwargs['top_depth']
         source_x  = kwargs['source_x']
         source_y  = kwargs['source_y']
@@ -787,19 +804,24 @@ def gen_simulated_deformation(
 
     los_grid = (x_grid + y_grid + z_grid) * amplitude_scalar
 
-    masked_indices = np.abs(los_grid) >= np.pi # Num of fringes to say yes to.
+    masked_indices   = np.abs(los_grid) >= np.pi * 2
+    n_masked_indices = np.abs(los_grid) <  np.pi * 2
+
+    los_grid[n_masked_indices]  = 0
     masked_grid[masked_indices] = 1
 
     atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
 
-    interferogram    = los_grid + np.abs(atmosphere_phase[0:tile_size, 0:tile_size])
+    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.4)
+    coh_masked_indices = coherence_mask[0,0:tile_size, 0:tile_size] == 0
 
-    coherence_mask                   = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.25)
-    coh_masked_indices               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-
+    interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
+ 
+    n_masked_indices = np.abs(interferogram) <  np.pi * 5
+    masked_grid[n_masked_indices]     = 0
     interferogram[coh_masked_indices] = 0
 
-    wrapped_grid     = wrap_interferogram(interferogram)
+    wrapped_grid = wrap_interferogram(interferogram)
 
     if log:
         print("_______\n")
@@ -823,7 +845,7 @@ def gen_simulated_deformation(
         print("Maximum Phase Value: ", np.max(np.abs(interferogram)))
         print("_______\n")
 
-    return los_grid, masked_grid, wrapped_grid, presence
+    return interferogram, masked_grid, wrapped_grid, presence
 
 
 def gen_gaussian_noise(
@@ -854,7 +876,7 @@ def gen_sim_noise(
     seed:              int   = 0,
     tile_size:         int   = 512,
     gaussian_only:     bool  = False,
-    atmosphere_scalar: float = 90 * np.pi,
+    atmosphere_scalar: float = 200 * np.pi,
 ):
 
     """
@@ -904,7 +926,7 @@ def gen_sim_noise(
         )
 
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar
-        topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi
+        topo_phase = aps_simulate(tile_size) * atmosphere_scalar + np.abs(atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi)
 
         threshold       = np.random.random() / 2
         coherence_mask  = coherence_mask_simulate(tile_size, threshold=threshold)
@@ -916,5 +938,7 @@ def gen_sim_noise(
         wrapped_grid[coh_indices] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
+
+        phase[coh_indices] = 0
 
     return masked_grid, masked_grid, wrapped_grid, presence
