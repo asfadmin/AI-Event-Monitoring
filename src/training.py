@@ -149,7 +149,8 @@ def train(
     batch_size:    int   = 64,
     learning_rate: float = 0.001,
     use_wandb:     bool  = False,
-    using_aws:     bool  = False ,
+    using_aws:     bool  = False,
+    using_jupyter: bool  = False,     
     logs_dir:      str   = ""
 ) -> Any:
 
@@ -229,7 +230,7 @@ def train(
         all_training_files   = os.listdir(train_path)
         all_validation_files = os.listdir(test_path)
 
-        filename_check = lambda x: "synth" in x or "sim" in x or "real" in x
+        filename_check       = lambda x: "synth" in x or "sim" in x or "real" in x
         training_partition   = [item for item in all_training_files   if filename_check(item)]
         validation_partition = [item for item in all_validation_files if filename_check(item)]
 
@@ -265,8 +266,6 @@ def train(
             )
         else:
             raise(f'Invalid model type! Expected \"unet\", \"resnet\", or \"eventnet\" but got {model_type}.')
-
-        model.summary()
 
         early_stopping = EarlyStopping(
             monitor  = 'loss',
@@ -307,31 +306,35 @@ def train(
 
     except Exception as e:
 
-        with open(failure_file, "w") as sys.stdout:
+        if not using_jupyter:
 
-            print(f'Caught {type(e)}: {e}')
+            with open(failure_file, "w") as sys.stdout:
 
-        sys.exit(1)
+                print(f'Caught {type(e)}: {e}')
 
-    try:
+            sys.exit(1)
+
+    if not using_jupyter:
+
+        try:
+            
+            with open(results_file, "w") as sys.stdout:
+
+                print_model_info(
+                    model_name,
+                    model,
+                    history,
+                    input_shape,
+                    model_type,
+                    num_epochs,
+                    num_filters,
+                    batch_size,
+                    learning_rate
+                )
         
-        with open(results_file, "w") as sys.stdout:
+        except Exception as e:
 
-            print_model_info(
-                model_name,
-                model,
-                history,
-                input_shape,
-                model_type,
-                num_epochs,
-                num_filters,
-                batch_size,
-                learning_rate
-            )
-    
-    except Exception as e:
-
-        print(f'Error creating results log file:\nCaught {type(e)}: {e}')
+            print(f'Error creating results log file:\nCaught {type(e)}: {e}')
 
 
-    return history
+    return model, history
