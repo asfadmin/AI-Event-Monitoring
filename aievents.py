@@ -788,16 +788,19 @@ def sagemaker_server_wrapper():
     import numpy as np
     import flask
     from   flask import request
+    from tensorflow.keras.models import load_model
 
-    from src.inference import mask
+    from src.inference import mask_with_model
     from src.io import get_image_array
 
     ping_test_image = 'tests/test_image.tif'
     mask_model_path = '/opt/ml/models/mask_model'
     pres_model_path = '/opt/ml/models/pres_model'
+            
+    mask_model = load_model(mask_model_path)
+    pres_model = load_model(pres_model_path)
 
     app = flask.Flask(__name__)
-
 
     @app.route('/ping', methods=['GET'])
     def ping():    
@@ -808,11 +811,12 @@ def sagemaker_server_wrapper():
         """
 
         try:
+            
             image = get_image_array(ping_test_image)
 
-            masked, pres_mask = mask(mask_model_path, pres_model_path, image, tile_size=512)
+            masked, presence_mask, pres_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
 
-            if np.mean(pres_mask) > 0.0:
+            if np.mean(presence_mask) > 0.0:
                 presense = True
             else:
                 presense = False
@@ -839,14 +843,13 @@ def sagemaker_server_wrapper():
         status = 200
 
         try:
-
             byteImg = BytesIO(request.get_data())
             with open("image.tif", "wb") as f:
                 f.write(byteImg.getbuffer())
 
             image = get_image_array("image.tif")
 
-            _, presence_mask = mask(mask_model_path, pres_model_path, image, tile_size=512)
+            masked, presence_mask, presence_vals = mask_with_model(mask_model_path, pres_model_path, image, tile_size=512)
 
             if np.mean(presence_mask) > 0.0:
                 presense = True
