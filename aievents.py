@@ -396,7 +396,7 @@ def visualize_layers_wrapper(model_path, save_path, seed):
 @click.option  ('-c', '--crop_size'   , type=int  , default=0  , help=cropsize_help )
 @click.option  ('-t', '--tile_size'   , type=int  , default=512, help=tilesize_help )
 @click.option  ('-d', '--dest_path'   , type=str  , default="" , help=outputdir_help)
-def mask(
+def mask_wrapper(
     model_path,
     pres_model_path,
     image_path, 
@@ -420,7 +420,7 @@ def mask(
 
     from src.inference import mask_and_plot
 
-    mask_and_plot(
+    mask_pred, _ = mask_and_plot(
         model_path,
         pres_model_path,
         image_path,
@@ -432,8 +432,8 @@ def mask(
 
         from PIL import Image
 
-        out = Image.fromarray(mask)
-        out.save(dest_path)        
+        out = Image.fromarray(mask_pred)
+        out.save(dest_path)
 
 
 @cli.command ('interactive')
