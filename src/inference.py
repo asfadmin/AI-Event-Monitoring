@@ -15,7 +15,6 @@ from tensorflow.keras.models import Model, load_model
 from src.io                      import get_product_arrays
 from src.processing              import tile, tiles_to_image
 from src.sarsim                  import gen_simulated_deformation, gen_sim_noise
-from src.synthetic_interferogram import make_random_dataset
 
 
 def mask_and_plot(
@@ -174,19 +173,39 @@ def mask_with_model(
     return mask, pres_mask, pres_vals
 
 
-def test_model(model_path, pres_model_path, images_dir, tile_size, crop_size):
-    
+def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_size):
+
+    """
+    Evaluate EventNet Models over a directory of real interferograms.
+
+    Parameters:
+    -----------
+    model_path : str
+        The path to the model to use for masking.
+    pres_model_path : str
+        The path to the model that predicts the presence of an event in a mask.
+    images_dir : str
+        A directory containing Positives and Negatives directories which have their respective tifs.
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs to be
+        equal to the output shape of the masking model and input shape of the presence model.
+
+    Returns:
+    --------
+    None
+    """
+
     from os import path
 
     try:
-        mask_model = load_model(model_path)
+        mask_model = load_model(mask_model_path)
         pres_model = load_model(pres_model_path)
     except Exception as e:
         print(f'Caught {type(e)}: {e}')
         return
-
-    positives = 0
-    negatives = 0
 
     positive_dir = path.join(images_dir, 'Positives')
     negative_dir = path.join(images_dir, 'Negatives')
@@ -208,8 +227,30 @@ def test_model(model_path, pres_model_path, images_dir, tile_size, crop_size):
 
 def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
 
-    from os import listdir, path
+    """
+    Helper for test_model(). Evaluates EventNet Models over a directory of real interferograms.
 
+    Parameters:
+    -----------
+    mask_model : Keras Model
+        The model for masking
+    pres_model : Keras Model
+        The model for binary classification.
+    directory : str
+        A directory containing interferogram tifs.
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs to be
+        equal to the output shape of the masking model and input shape of the presence model.
+
+    Returns:
+    --------
+    None
+    """
+
+    from os     import listdir, path
     from src.io import get_image_array
 
     positives = 0
@@ -338,7 +379,7 @@ def test_binary_choice(
 ) -> None:
 
     """
-    Predicts the event-mask on a synthetic wrapped interferogram and plots the results.
+    Evaluats a mask+binary model on the presence of events in simulated interferograms.
 
     Parameters:
     -----------
@@ -361,6 +402,10 @@ def test_binary_choice(
         default value of 1 simply plots the single prediction.
     plot : bool, Optional
         Plot the incorrect guesses during testing.
+    use_rounded_mask : bool, Optional
+        Run binary model on the rounded mask or the raw mask.
+    positive_thresh : bool, Optional
+        Threshold for the binary model to consider an image positive.
 
     Returns:
     --------
