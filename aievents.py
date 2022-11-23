@@ -258,11 +258,11 @@ def test_masking_wrapper(mask_model_path, event_type, noise_only, gaussian_only,
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
     from tensorflow.keras.models import load_model
-    from src.inference           import test_masking, plot_imgs
+    from src.inference           import mask_simulated, plot_imgs
 
     mask_model = load_model(mask_model_path)
 
-    wrapped, mask, mask_pred, mask_pred_rounded, presence = test_masking(
+    wrapped, mask, mask_pred, mask_pred_rounded, presence = mask_simulated(
         mask_model,
         seed,
         tile_size,
@@ -597,7 +597,7 @@ def create_model_wrapper(
     environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
     from src.training import train
-    from src.io       import split_dataset, make_simulated_dataset, make_simulated_binary_dataset
+    from src.io       import split_dataset, make_simulated_dataset
 
 
     print("___________________________\n")
@@ -653,7 +653,7 @@ def create_model_wrapper(
     pres_dataset_name = 'tmp_dataset_presence_' + str(time.time()).strip('.')[0]
     mask_model_path = 'models/checkpoints/' + model_name + '_masking'
 
-    _, count, dir_name = make_simulated_binary_dataset(
+    _, count, dir_name = make_simulated_dataset(
         pres_dataset_name,
         output_dir,
         dataset_size,
