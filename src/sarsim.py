@@ -27,16 +27,25 @@ class Okada():
     Bulletin of the Seismological Society of America (1985): 1135-1154
     """
 
-    def __init__(self, source, source_xy_m, xyz_m, **kwargs):
+    def __init__(self, source, source_xy_m, tile_size, **kwargs):
         
         np.seterr(divide='ignore')
-        
+
         self.source_type = source
         self.source_x    = source_xy_m[0]
         self.source_y    = source_xy_m[1]
-        self.grid_x      = xyz_m[0, ]
-        self.grid_y      = xyz_m[1,:]
+        self.tile_size   = tile_size
         self.params      = kwargs
+
+        self.gen_coordiantes()
+
+        self.los_vector  = np.array(
+            [
+                [ 0.38213591],
+                [-0.08150437],
+                [ 0.92050485]
+            ]
+        )
 
         # Lames Constants and Poisson Ratio
         self.lames_mu     = 2.3e10 # μ
@@ -94,8 +103,31 @@ class Okada():
         self.U2 = np.sin(self.rake) * self.slip
         self.U3 = self.opening
 
-        self.compute_deformation()
+        self.compute_displacement()
 
+    def gen_coordiantes(self):
+
+        x_axis, y_axis = np.meshgrid(          # Coordinate Axes
+            np.arange(0, self.tile_size) * 90, # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)), # 90m/pixel in x direction
+            np.arange(0, self.tile_size) * 90  # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)) # 90m/pixel in y direction
+        )
+
+        y_axis    = np.flipud(y_axis)
+
+        ij_bases  = np.vstack(             # Coordinate System Basis i and j
+            (np.ravel(x_axis)[np.newaxis],
+             np.ravel(y_axis)[np.newaxis])
+        )
+
+        ijk_bases = np.vstack(             # Coordinate System Basis i, j, and k
+            (ij_bases,
+            np.zeros((1, ij_bases.shape[1])))
+        )
+
+        self.x_axis_shape = x_axis.shape
+        self.y_axis_shape = y_axis.shape
+        self.grid_x = ijk_bases[0, ]
+        self.grid_y = ijk_bases[1,:]
 
     def chinnery(self, f):
         
@@ -106,7 +138,7 @@ class Okada():
         return f(0, 0) - f(self.width, 0) - f(0, self.length) + f(self.width, self.length)
 
 
-    def compute_deformation(self):
+    def compute_displacement(self):
 
         """
         Compute the displacements in all directions from all of the sources and combine them.
@@ -126,7 +158,7 @@ class Okada():
 
         okada_array = - U_1 - U_2 + U_3
 
-        displacement_array  = np.zeros((3, 512 * 512))
+        displacement_array  = np.zeros((3, self.tile_size * self.tile_size))
 
         displacement_array[0] = np.sin(self.strike) * okada_array[0] - np.cos(self.strike) * okada_array[1]
         displacement_array[1] = np.cos(self.strike) * okada_array[0] + np.sin(self.strike) * okada_array[1]
@@ -134,6 +166,12 @@ class Okada():
 
         self.displacement = displacement_array
 
+        shapes   = (self.x_axis_shape[0], self.x_axis_shape[1])
+        x_grid   = np.reshape(self.displacement[0,], shapes) * self.los_vector[0,0]
+        y_grid   = np.reshape(self.displacement[1,], shapes) * self.los_vector[1,0]
+        z_grid   = np.reshape(self.displacement[2,], shapes) * self.los_vector[2,0]
+
+        self.los_displacement = (x_grid + y_grid + z_grid)
 
     def update_params_WL(self, W, L):
         
@@ -705,7 +743,7 @@ def gen_simulated_deformation(
     seed:              int   = 0,
     tile_size:         int   = 512,
     log:               bool  = False,
-    atmosphere_scalar: float = 120 * np.pi,
+    atmosphere_scalar: float = 100 * np.pi,
     amplitude_scalar:  float = 1000 * np.pi,
     event_type:        str   = 'quake',
     **kwargs
@@ -758,22 +796,18 @@ def gen_simulated_deformation(
 
     random_nums = np.random.rand(13)
 
-    dip = np.random.randint(75, 90)
-
-    X, Y = np.meshgrid(np.arange(0, tile_size) * 90, np.arange(0, tile_size) * 90)
-    Y    = np.flipud(Y)
-
-    ij  = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))
-    ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
+    dip = np.random.randint(75, 90) 
 
     if not kwargs:
 
-        source_x = np.max(X) // ((random_nums[0] * 10) + 1)
-        source_y = np.max(Y) // ((random_nums[1] * 10) + 1)
+        axes_max = (tile_size) * 90
 
-        length    = 1000 + 2000 * random_nums[2]
-        top_depth = length + 2000 + ((np.max(X) // 8 ) * random_nums[3])
-        depth     = 2000 + ((np.max(X) // 16 ) * random_nums[4])
+        source_x = axes_max // ((random_nums[0] * 10) + 1)
+        source_y = axes_max // ((random_nums[1] * 10) + 1)
+
+        length    = 500 + 2000 * random_nums[2]
+        top_depth = length + 2000 + ((axes_max // 8 ) * random_nums[3])
+        depth     = 2000 + ((axes_max // 16 ) * random_nums[4])
         width     = 500  + 500 + 1000 * random_nums[5]
 
         kwargs = {
@@ -796,13 +830,13 @@ def gen_simulated_deformation(
         source_y  = kwargs['source_y']
         length    = kwargs['length']
 
-    Event = Okada(event_type, (source_x, source_y), ijk, **kwargs)
+    from time import perf_counter
 
-    x_grid   = np.reshape(Event.displacement[0,], (X.shape[0], X.shape[1])) * los_vector[0,0]
-    y_grid   = np.reshape(Event.displacement[1,], (X.shape[0], X.shape[1])) * los_vector[1,0]
-    z_grid   = np.reshape(Event.displacement[2,], (X.shape[0], X.shape[1])) * los_vector[2,0]
+    start = perf_counter()
+    Event = Okada(event_type, (source_x, source_y), tile_size = tile_size, **kwargs)
+    end   = perf_counter()
 
-    los_grid = (x_grid + y_grid + z_grid) * amplitude_scalar
+    los_grid = Event.los_displacement * amplitude_scalar
 
     masked_indices   = np.abs(los_grid) >= np.pi * 2
     n_masked_indices = np.abs(los_grid) <  np.pi * 2
@@ -824,17 +858,13 @@ def gen_simulated_deformation(
     wrapped_grid = wrap_interferogram(interferogram)
 
     if log:
-        print("_______\n")
-        print("Type                     ", event_type)
+        print("__________\n")
+        print(event_type)
+        print("__________\n")
         print("Length         (meters)  ", length)
         print("Top Depth      (meters)  ", top_depth)
         print("Bottom Depth   (meters)  ", kwargs['bottom_depth'])
         print("Depth          (meters)  ", kwargs['depth'])
-        print("")
-        print("Max X Position (meters)  ", np.max(X))
-        print("Max Y Position (meters)  ", np.max(Y))
-        print("Src X Position (meters)  ", source_x)
-        print("Src Y Position (meters)  ", source_y)
         print("")
         print("Slip           (0  or 1) ", kwargs['slip'])
         print("Dip            (degrees) ", kwargs['dip'])
@@ -842,8 +872,15 @@ def gen_simulated_deformation(
         print("Strike         (degrees) ", kwargs['strike'])
         print("Opening:       (meters)  ", kwargs['opening'])
         print("")
-        print("Maximum Phase Value: ", np.max(np.abs(interferogram)))
-        print("_______\n")
+        print("Max X Position (meters)  ", axes_max)
+        print("Max Y Position (meters)  ", axes_max)
+        print("Src X Position (meters)  ", source_x)
+        print("Src Y Position (meters)  ", source_y)
+        print("")
+        print("Maximum Phase Value:     ", np.max(np.abs(interferogram)))
+        print("")
+        print("Compute Time   (seconds) ", end - start)
+        print("__________\n")
 
     return interferogram, masked_grid, wrapped_grid, presence
 
@@ -916,7 +953,8 @@ def gen_sim_noise(
         noise_grid = gen_gaussian_noise(seed, tile_size, threshold=threshold)
         wrapped_grid = wrap_interferogram(noise_grid)
         masked_grid = np.zeros((tile_size, tile_size))
-
+        phase = masked_grid
+        
     else:
 
         simulated_topography = gen_fake_topo(
@@ -941,4 +979,4 @@ def gen_sim_noise(
 
         phase[coh_indices] = 0
 
-    return masked_grid, masked_grid, wrapped_grid, presence
+    return phase, masked_grid, wrapped_grid, presence
