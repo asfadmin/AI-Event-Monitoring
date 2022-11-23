@@ -18,11 +18,13 @@ from src.sarsim                  import gen_simulated_deformation, gen_sim_noise
 
 
 def mask_and_plot(
-    model_path:   str,
+    mask_model_path: str,
     pres_model_path: str,
-    product_path: str,
-    tile_size:    int,
-    crop_size:    int  = 0
+    product_path:    str,
+    tile_size:       int   = 0,
+    crop_size:       int   = 0,
+    mask_model:      Model = None,
+    pres_model:      Model = None
 ) -> np.ndarray:
 
     """
@@ -51,7 +53,7 @@ def mask_and_plot(
         True if there is an event else False.
     """
 
-    mask_model = load_model(model_path)
+    mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
 
     arr_w, arr_uw, corr = get_product_arrays(product_path)
@@ -70,7 +72,7 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    presence_guess = np.mean(pres_mask) > 0
+    presence_guess = np.max(pres_vals) > 0.75
 
     arr_uw[zeros]            = 0
     arr_uw[bad_coherence]    = 0
@@ -137,7 +139,7 @@ def mask_with_model(
         crop_size = tile_size
     
     mask_tiles = mask_model.predict(tiled_arr_w, batch_size=8)
-    
+
     mask_tiles[zeros] = 0
 
     rnd  = mask_tiles >= 0.5
