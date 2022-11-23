@@ -16,6 +16,7 @@ from tensorflow.keras             import mixed_precision
 policy = mixed_precision.Policy('mixed_float16')
 mixed_precision.set_global_policy(policy)
 
+
 def res_block(
     input_tensor: Tensor, 
     num_filters:  int
@@ -245,6 +246,7 @@ def create_resnet(
         activation         = 'linear'   ,
         padding            = 'same'
     )(c10)
+
 
     # --------------------------------- #
     # Mode Creation and Compilation     #
