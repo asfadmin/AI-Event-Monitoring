@@ -250,10 +250,10 @@ def make_simulated_dataset(
         "mixed_noise": 0
     }
 
-    quake_count     = np.ceil(0.4 * count)
-    dyke_count      = quake_count + np.ceil(0.1 * count)
-    sill_count      = dyke_count  + np.ceil(0.1 * count)
-    mix_noise_count = sill_count  + np.floor(0.3 * count)
+    quake_count     = np.ceil(0.4 * amount)
+    dyke_count      = quake_count + np.ceil(0.1 * amount)
+    sill_count      = dyke_count  + np.ceil(0.1 * amount)
+    mix_noise_count = sill_count  + np.floor(0.3 * amount)
 
     count = 0
     while count < amount:
