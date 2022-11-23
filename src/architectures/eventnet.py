@@ -6,11 +6,11 @@
 """
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense, MaxPooling2D, Dropout, LayerNormalization, Conv2DTranspose, concatenate
+from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense
 from tensorflow.keras.models     import Model
-from tensorflow.keras.optimizers import SGD, Adam
-from tensorflow.keras.losses     import BinaryCrossentropy
+from tensorflow.keras.optimizers import SGD
 from tensorflow.keras            import mixed_precision
+
 
 policy = mixed_precision.Policy('mixed_float16')
 mixed_precision.set_global_policy(policy)
