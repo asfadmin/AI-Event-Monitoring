@@ -258,7 +258,7 @@ def make_simulated_dataset(
     count = 0
     while count < amount:
 
-        current_seed = seeds[seed]
+        current_seed = seeds[count]
 
         event_type    = ''
         noise_only    = False
