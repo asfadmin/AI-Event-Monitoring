@@ -7,7 +7,7 @@
 
 
 from tensorflow                   import Tensor
-from tensorflow.keras.layers      import Conv2D, Conv2DTranspose, Input, concatenate, MaxPooling2D, Activation
+from tensorflow.keras.layers      import Conv2D, Conv2DTranspose, Input, concatenate, MaxPooling2D, Activation, Dropout
 from tensorflow.keras.models      import Model
 from tensorflow.keras.optimizers  import Adam
 from tensorflow.keras             import mixed_precision
@@ -40,7 +40,7 @@ def conv2d_block(
         padding            = 'same',
         activation         = 'relu'
     )(x)
-
+    
     return x
 
 
@@ -94,6 +94,7 @@ def create_unet(
     c4 = conv2d_block(m3   , num_filters *  8)
     m4 = MaxPooling2D((2, 2), strides=2)  (c4)
     c5 = conv2d_block(m4   , num_filters * 16)
+    c5 = Dropout(0.2)(c5)
 
 
     # --------------------------------- #
@@ -129,13 +130,12 @@ def create_unet(
         name    = model_name
     )
 
-    optimizer = Adam(learning_rate = learning_rate)
 
     # TODO: Test huber loss, and maybe some others as well, and binary_crossentropy for the classifier. Maybe test with SGD instead of Adam, as well.
     model.compile(
-        loss      = 'mean_squared_error',
-        metrics   = ['mean_absolute_error'],
-        optimizer = optimizer
+        loss      = 'huber',
+        metrics   = ['mean_squared_error', 'mean_absolute_error'],
+        optimizer = Adam(learning_rate = learning_rate)
     )
 
     return model
