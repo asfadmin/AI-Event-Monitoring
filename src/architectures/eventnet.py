@@ -6,9 +6,10 @@
 """
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense
+from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense, MaxPooling2D, Dropout, LayerNormalization, Conv2DTranspose, concatenate
 from tensorflow.keras.models     import Model
-from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.losses     import BinaryCrossentropy
 from tensorflow.keras            import mixed_precision
 
 policy = mixed_precision.Policy('mixed_float16')
@@ -34,13 +35,14 @@ def conv2d_block(
     x = LeakyReLU()(x)
 
     return x
-
+ 
 
 def create_eventnet(
     model_name:    str   = 'model',
-    tile_size:     int   = 128    ,
+    tile_size:     int   = 512    ,
     num_filters:   int   = 32     ,
-    label_count:   int   = 1
+    label_count:   int   = 1      ,
+    learning_rate: float = 0.005
 ) -> Model:
 
     """
@@ -53,15 +55,15 @@ def create_eventnet(
     # # Feature Map Generation            #
     # # --------------------------------- #
 
-    c1 = conv2d_block(input, num_filters * 1)
-    c2 = conv2d_block(c1, 1)
+    c1  = conv2d_block(input, num_filters)
+    c2  = conv2d_block(c1, 1)
 
     # # --------------------------------- #
     # # Dense Hidden Layer                #
     # # --------------------------------- #
 
     f0 = Flatten()(c2)
-    d0 = Dense(1024, activation='relu')(f0)
+    d0 = Dense(512, activation='relu')(f0)
 
     # --------------------------------- #
     # Output Layer                      #
@@ -80,9 +82,9 @@ def create_eventnet(
     )
 
     model.compile(
-        optimizer = SGD(learning_rate=0.005),
+        optimizer = SGD(learning_rate=learning_rate),
         loss      = 'mean_squared_error',
-        metrics   = ['mean_squared_error'],
+        metrics   = ['acc', 'mean_absolute_error'],
     )
 
     return model
