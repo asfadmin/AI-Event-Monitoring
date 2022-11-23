@@ -7,3 +7,4 @@ hyp3-sdk
 pytest
 gdal
 geopy
+flask

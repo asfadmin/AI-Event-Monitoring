@@ -6,437 +6,401 @@
  Credits:      Functions taken from https://github.com/matthew-gaddes/SyInterferoPy
 """
 
-import math
-import random
-
 import numpy as np
-import matplotlib.pyplot as plt
 
-from src.synthetic_interferogram import wrap_interferogram, add_noise
+from time import perf_counter
 
+from src.synthetic_interferogram import wrap_interferogram
 
-def I1(xi, eta, q, delta, nu, R, X, d_tild):
+class Okada():
 
     """
-    Compute the component I1 of the model (for more information, see 
+    Class that models surface deformation.
+
+    Based off of:
+
+    https://github.com/matthew-gaddes/SyInterferoPy
+
+    and
+
     Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return I1
+    Bulletin of the Seismological Society of America (1985): 1135-1154
     """
 
-    if np.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(-xi/(np.cos(delta)*(R + d_tild))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)/np.cos(delta)
-    else:
-        return -((1 - 2*nu)/2.)*(xi*q/((R + d_tild)**2))
-
-
-def I2(xi, eta, q, delta, nu, R, y_tild, d_tild):
-
-    """
-    Compute the component I2 of the model (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return I2
-    """
-
-    return (1 - 2*nu)*(-np.log(R + eta)) - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)
-
-
-def I3(xi, eta, q, delta, nu, R, y_tild, d_tild):
-
-    """
-    Compute the component I3 of the model (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return I3
-    """
-
-    if np.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(y_tild/(np.cos(delta)*(R + d_tild)) - np.log(R + eta)) + I4(xi, eta, q, delta, nu, R, d_tild)*np.sin(delta)/np.cos(delta)
-    else:
-        return ((1 - 2*nu)/2.)*(eta/(R + d_tild) + y_tild*q/((R + d_tild)**2) - np.log(R + eta))
-    
-
-def I4(xi, eta, q, delta, nu, R, d_tild):
-
-    """
-    Compute the component I4 of the model (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return I4
-    """
-
-    if np.cos(delta) > 10E-8:
-        return (1 - 2*nu)*(np.log(R + d_tild) - np.sin(delta)*np.log(R + eta))/np.cos(delta)
-    else:
-        return -(1 - 2*nu)*q/(R + d_tild)
-    
-
-def I5(xi, eta, q, delta, nu, R, X, d_tild):
-
-    """
-    Compute the component I5 of the model (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return I5
-    """
-
-    if np.cos(delta) > 10E-8:
-        return (1 - 2*nu)*2*np.arctan((eta*(X + q*np.cos(delta)) + X*(R + X)*np.sin(delta))/(xi*(R + X)*np.cos(delta)))/np.cos(delta)
-    else:
-        return -(1 - 2*nu)*xi*np.sin(delta)/(R + d_tild)
-
-
-def f_x_strike(xi, eta, q, delta, nu):
-
-    """
-    Fault strike component along the x axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return xi*q/(R*(R + eta)) + np.arctan(xi*eta/(q*R)) + I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)
-
-
-def f_x_dip(xi, eta, q, delta, nu):
-    
-    """
-    Fault dip component along the x axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*np.cos(delta) + q*np.sin(delta)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return q/R - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)*np.cos(delta)
-
-
-def f_x_tensile(xi, eta, q, delta, nu):
-    
-    """
-    Fault tensile component along the x axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*np.cos(delta) + q*np.sin(delta)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return (q**2)/(R*(R + eta)) - I3(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)**2
-
-
-def f_y_strike(xi, eta, q, delta, nu):
-    
-    """
-    Fault strike component along the y axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    y_tild = eta*np.cos(delta) + q*np.sin(delta)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return y_tild*q/(R*(R + eta)) + q*np.cos(delta)/(R + eta) + I2(xi, eta, q, delta, nu, R, y_tild, d_tild)*np.sin(delta)
-
-
-def f_y_dip(xi, eta, q, delta, nu):
-    
-    """
-    Fault dip component along the y axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    X = np.sqrt(xi**2 + q**2)
-    y_tild = eta*np.cos(delta) + q*np.sin(delta)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return y_tild*q/(R*(R + xi)) + np.cos(delta)*np.arctan(xi*eta/(q*R)) - I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)*np.cos(delta)
-
-
-def f_y_tensile(xi, eta, q, delta, nu):
-   
-    """
-    Fault tensile component along the y axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return -d_tild*q/(R*(R + xi)) - np.sin(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I1(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)**2
-
-
-
-def f_z_strike(xi, eta, q, delta, nu):
-    
-    """
-    Fault strike component along the z axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-    
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return d_tild*q/(R*(R + eta)) + q*np.sin(delta)/(R + eta) + I4(xi, eta, q, delta, nu, R, d_tild)*np.sin(delta)
-
-
-def f_z_dip(xi, eta, q, delta, nu):
-    
-    """
-    Fault dip component along the z axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-    
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    X = np.sqrt(xi**2 + q**2)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return d_tild*q/(R*(R + xi)) + np.sin(delta)*np.arctan(xi*eta/(q*R)) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)*np.cos(delta)
-
-
-def f_z_tensile(xi, eta, q, delta, nu):
-    
-    """
-    Fault tensile component along the z axis (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The associated component
-    """
-    
-    R = np.sqrt(xi**2 + eta**2 + q**2)
-    X = np.sqrt(xi**2 + q**2)
-    y_tild = eta*np.cos(delta) + q*np.sin(delta)
-    d_tild = eta*np.sin(delta) - q*np.cos(delta)
-    return y_tild*q/(R*(R + xi)) + np.cos(delta)*(xi*q/(R*(R + eta)) - np.arctan(xi*eta/(q*R))) - I5(xi, eta, q, delta, nu, R, X, d_tild)*np.sin(delta)**2
-
-
-def chinnerys_notation(f, x, p, q, L, W, delta, nu):
-    
-    """
-    Formula to add the different fault components (for more information, see 
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154)
-    
-    @return The combined components
-    """
-    
-    return f(x, p, q, delta, nu)\
-           - f(x, p - W, q, delta, nu)\
-           - f(x - L, p, q, delta, nu)\
-           + f(x - L, p - W, q, delta, nu)
-
-
-def compute_okada_displacement(fault_centroid_x,
-                               fault_centroid_y,
-                               fault_centroid_depth,
-                               fault_strike,
-                               fault_dip,
-                               fault_length,
-                               fault_width,
-                               fault_rake,
-                               fault_slip,
-                               fault_open,
-                               poisson_ratio,
-                               x_array,
-                               y_array):
-    '''
-    Compute the surface displacements for a rectangular fault, based on
-    Okada's model. For more information, see:
-    Okada, Surface deformation due to shear and tensile faults in a half-space,
-    Bulletin of the Seismological Society of America (1985) 75 (4): 1135-1154
-    
-    @param fault_centroid_x: x cooordinate for the fault's centroid
-    @param fault_centroid_y: y cooordinate for the fault's centroid
-    @param fault_centroid_depth: depth of the fault's centroid
-    @param fault_strike: strike of the fault ([0 - 2pi], in radian)
-    @param fault_dip: dip of the fault ([0 - pi/2], in radian)
-    @param fault_length: length of the fault (same unit as x and y)
-    @param fault_width: width of the fault (same unit as x and y)
-    @param fault_rake: rake of the fault ([-pi - pi], in radian)
-    @param fault_slip: slipe of the fault (same unit as x and y)
-    @param fault_open: opening of the fault (same unit as x and y)
-    @param poisson_ratio: Poisson's ratio
-    @param x_array: x cooordinate for the domain within a NumPy array
-    @param y_array: y cooordinate for the domain within a NumPy array
-    
-    @return The surface displacement field
-    '''
-    U1 = np.cos(fault_rake)*fault_slip
-    U2 = np.sin(fault_rake)*fault_slip
-
-    east_component = x_array - fault_centroid_x + np.cos(fault_strike)*np.cos(fault_dip)*fault_width/2.
-    north_component = y_array - fault_centroid_y - np.sin(fault_strike)*np.cos(fault_dip)*fault_width/2.
-    okada_x_array = np.cos(fault_strike)*north_component + np.sin(fault_strike)*east_component + fault_length/2.
-    okada_y_array = np.sin(fault_strike)*north_component - np.cos(fault_strike)*east_component + np.cos(fault_dip)*fault_width
-    
-    d = fault_centroid_depth + np.sin(fault_dip)*fault_width/2.
-    p = okada_y_array*np.cos(fault_dip) + d*np.sin(fault_dip)
-    q = okada_y_array*np.sin(fault_dip) - d*np.cos(fault_dip)
-
-    displacement_shape = [3] + list(x_array.shape)
-    okada_displacement_array = np.zeros(displacement_shape)
-    
-    okada_displacement_array[0] = -U1*chinnerys_notation(f_x_strike, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  - U2*chinnerys_notation(f_x_dip, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  + fault_open*chinnerys_notation(f_x_tensile, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)
-    okada_displacement_array[1] = -U1*chinnerys_notation(f_y_strike, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  - U2*chinnerys_notation(f_y_dip, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  + fault_open*chinnerys_notation(f_y_tensile, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)
-    okada_displacement_array[2] = -U1*chinnerys_notation(f_z_strike, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  - U2*chinnerys_notation(f_z_dip, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)\
-                                  + fault_open*chinnerys_notation(f_z_tensile, okada_x_array, p, q, fault_length, fault_width, fault_dip, poisson_ratio)/(2*np.pi)
-
-    displacement_array = np.zeros(displacement_shape)
-
-    displacement_array[0] = np.sin(fault_strike)*okada_displacement_array[0] - np.cos(fault_strike)*okada_displacement_array[1]
-    displacement_array[1] = np.cos(fault_strike)*okada_displacement_array[0] + np.sin(fault_strike)*okada_displacement_array[1]
-    displacement_array[2] = okada_displacement_array[2]
-            
-    return displacement_array
-
-
-def deformation_eq_dyke_sill(source, source_xy_m, xyz_m, **kwargs):    
-    
-    """
-    A function to create deformation patterns for either an earthquake, dyke or sill.   Uses the Okada function from PyInSAR: https://github.com/MITeaps/pyinsar
-    To aid in readability, different sources take different parameters (e.g. slip for a quake, opening for a dyke)
-    are passed separately as kwargs, even if they ultimately go into the same field in the model parameters.  
-    
-    A quick recap on definitions:
-        strike - measured clockwise from 0 at north, 180 at south.  fault dips to the right of this.  hanging adn fo
-        dip - measured from horizontal, 0 for horizontal, 90 for vertical.  
-        rake - direction the hanging wall moves during rupture, measured relative to strike, anticlockwise is positive, so:
-            0 for left lateral ss 
-            180 (or -180) for right lateral ss
-            -90 for normal
-            90 for thrust
-
-    Inputs:
-        source | string | quake or dyke or sill
-        source_xy_m | tuple | x and y location of centre of source, in metres.  
-        xyz_m | rank2 array | x and y locations of all points in metres.  0,0 is top left?  
-
+    def __init__(self, source, source_xy_m, tile_size, **kwargs):
         
-        examples of kwargs:
-            
-        quake_normal = {'strike' : 0,
-                        'dip' : 70,
-                        'length' : 5000,
-                        'rake' : -90,
-                        'slip' : 1,
-                        'top_depth' : 4000,
-                        'bottom_depth' : 8000}
-        
-        quake_thrust = {'strike' : 0,
-                        'dip' : 30,
-                        'length' : 5000,
-                        'rake' : 90,
-                        'slip' : 1,
-                        'top_depth' : 4000,
-                        'bottom_depth' : 8000}
-        
-        quake_ss = {'strike' : 0,
-                    'dip' : 80,
-                    'length' : 5000,
-                    'rake' : 0,
-                    'slip' : 1,
-                    'top_depth' : 4000,
-                    'bottom_depth' : 8000}
-        
-        dyke = {'strike' : 0,
-                'top_depth' : 1000,
-                'bottom_depth' : 3000,
-                'length' : 5000,
-                'dip' : 80,
-                'opening' : 0.5}
-        
-        sill = {'strike' : 0,
-                'depth' : 3000,
-                'width' : 5000,
-                'length' : 5000,
-                'dip' : 1,
-                'opening' : 0.5}
-        
-    Returns:
-        x_grid | rank 2 array | displacment in x direction for each point (pixel on Earth's surface)
-        y_grid | rank 2 array | displacment in y direction for each point (pixel on Earth's surface)
-        z_grid | rank 2 array | displacment in z direction for each point (pixel on Earth's surface)
-        los_grid | rank 2 array | change in satellite - ground distance, in satellite look angle direction. Need to confirm if +ve is up or down.  
-        
-    History:
-        2020/08/05 | MEG | Written
-        2020/08/21 | MEG | Switch from disloc3d.m function to compute_okada_displacement.py functions.  
-    """    
-    
-    # 1:  Setting for elastic parameters.  
-    lame = {'lambda' : 2.3e10,                              # elastic modulus (Lame parameter, units are pascals)
-            'mu'     : 2.3e10}                              # shear modulus (Lame parameter, units are pascals)
-    v = lame['lambda'] / (2*(lame['lambda'] + lame['mu']))  #  calculate poisson's ration
+        np.seterr(divide='ignore')
 
-    if source == 'quake':
-        opening = 0
-        slip = kwargs['slip']
-        rake = kwargs['rake']
-        width = kwargs['bottom_depth'] - kwargs['top_depth']
-        # centroid_depth = np.mean((kwargs['bottom_depth'] - kwargs['top_depth']))
-        centroid_depth = np.mean((kwargs['bottom_depth'], kwargs['top_depth']))
-    elif source == 'dyke':                                                                               # ie dyke or sill
-        opening = kwargs['opening']
-        slip = 0
-        rake = 0
-        width = kwargs['bottom_depth'] - kwargs['top_depth']
-        centroid_depth = np.mean((kwargs['bottom_depth'], kwargs['top_depth']))
-    elif source == 'sill':                                                                               # ie dyke or sill
-        opening = kwargs['opening']
-        slip = 0
-        rake = 0
-        centroid_depth = kwargs['depth']
-        width = kwargs['width']
-    else:
-        raise Exception(f"'Source' must be either 'quake', 'dyke', or 'sill', but is set to {source}.  Exiting.")
+        self.source_type = source
+        self.source_x    = source_xy_m[0]
+        self.source_y    = source_xy_m[1]
+        self.tile_size   = tile_size
+        self.params      = kwargs
+
+        self.gen_coordiantes()
+
+        self.los_vector  = np.array(
+            [
+                [ 0.38213591],
+                [-0.08150437],
+                [ 0.92050485]
+            ]
+        )
+
+        # Lames Constants and Poisson Ratio
+        self.lames_mu     = 2.3e10 # μ
+        self.lames_lambda = 2.3e10 # λ
+        self.nu           = self.lames_lambda / (2 * (self.lames_lambda + self.lames_mu)) # Poisson Ratio: ν
+
+        self.length = kwargs['length']
+        self.strike = np.deg2rad(kwargs['strike'])
+
+        # δ
+        self.dip    = np.deg2rad(kwargs['dip'])
+
+        # Parameters Depending on Type of Event
+        if source == 'quake':
+            self.opening = 0
+            self.slip    = kwargs['slip']
+            self.rake    = np.deg2rad(kwargs['rake'])
+            self.width   = kwargs['bottom_depth'] - kwargs['top_depth']
+            self.depth   = np.mean((kwargs['bottom_depth'], kwargs['top_depth']))
+
+        elif source == 'dyke':
+            self.opening = kwargs['opening']
+            self.slip    = 0
+            self.rake    = np.deg2rad(0)
+            self.width   = kwargs['bottom_depth'] - kwargs['top_depth']
+            self.depth   = np.mean((kwargs['bottom_depth'], kwargs['top_depth']))
+
+        elif source == 'sill':
+            self.opening = kwargs['opening']
+            self.slip    = 0
+            self.rake    = np.deg2rad(0)
+            self.depth   = kwargs['depth']
+            self.width   = kwargs['width']
+
+        else:
+            raise Exception(f"'Source' must be either 'quake', 'dyke', or 'sill', but is set to {source}.  Exiting.")
+
+        # Components in North and East Directions
+        self.east  = self.grid_x - self.source_x + np.cos(self.strike) * np.cos(self.dip) * (self.width / 2)
+        self.north = self.grid_y - self.source_y - np.sin(self.strike) * np.cos(self.dip) * (self.width / 2)
+
+        # ξ is okada_x
+        self.okada_x = np.cos(self.strike) * self.north + np.sin(self.strike) * self.east + (self.length / 2)
+        self.okada_y = np.sin(self.strike) * self.north - np.cos(self.strike) * self.east + (np.cos(self.dip) * self.width) 
+
+        self.d   = self.depth + np.sin(self.dip) * (self.width / 2)
+        self.q   = (self.okada_y * np.sin(self.dip)) - (self.d * np.cos(self.dip))
+
+        # η
+        self.eta = (self.okada_y * np.cos(self.dip)) + (self.d * np.sin(self.dip))
+
+        self.compute_I_components()
+
+        self.U1 = np.cos(self.rake) * self.slip
+        self.U2 = np.sin(self.rake) * self.slip
+        self.U3 = self.opening
+
+        self.compute_displacement()
+
+    def gen_coordiantes(self):
+
+        x_axis, y_axis = np.meshgrid(          # Coordinate Axes
+            np.arange(0, self.tile_size) * 90, # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)), # 90m/pixel in x direction
+            np.arange(0, self.tile_size) * 90  # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)) # 90m/pixel in y direction
+        )
+
+        y_axis    = np.flipud(y_axis)
+
+        ij_bases  = np.vstack(             # Coordinate System Basis i and j
+            (np.ravel(x_axis)[np.newaxis],
+             np.ravel(y_axis)[np.newaxis])
+        )
+
+        ijk_bases = np.vstack(             # Coordinate System Basis i, j, and k
+            (ij_bases,
+            np.zeros((1, ij_bases.shape[1])))
+        )
+
+        self.x_axis_shape = x_axis.shape
+        self.y_axis_shape = y_axis.shape
+        self.grid_x = ijk_bases[0, ]
+        self.grid_y = ijk_bases[1,:]
+
+    def chinnery(self, f):
         
-    # 3:  compute deformation using Okada function
-    U = compute_okada_displacement(source_xy_m[0], source_xy_m[1],                    # x y location, in metres
-                                   centroid_depth,                                    # fault_centroid_depth, guess metres?  
-                                   np.deg2rad(kwargs['strike']),
-                                   np.deg2rad(kwargs['dip']),
-                                   kwargs['length'], width,                           # length and width, in metres
-                                   np.deg2rad(rake),                                  # rake, in rads
-                                   slip, opening,                                     # slip (if quake) or opening (if dyke or sill)
-                                   v, xyz_m[0,], xyz_m[1,:])                          # poissons ratio, x and y coords of surface locations.
-
-    return U
+        """
+        Method of combining the different components of displacement.
+        """
+        
+        return f(0, 0) - f(self.width, 0) - f(0, self.length) + f(self.width, self.length)
 
 
-def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, difference = False):
+    def compute_displacement(self):
+
+        """
+        Compute the displacements in all directions from all of the sources and combine them.
+        """        
+
+        if self.source_type == 'quake':
+            U_1 = (self.U1 / (2*np.pi)) * self.chinnery(self.strike_slip_displacement)
+            U_2 = (self.U2 / (2*np.pi)) * self.chinnery(self.dip_slip_displacement)
+        else:
+            U_1 = 0
+            U_2 = 0
+
+        if (self.source_type == 'sill' or self.source_type == 'dyke'):
+            U_3 = (self.U3 / (2*np.pi)) * self.chinnery(self.tensile_displacement)
+        else:
+            U_3 = 0
+
+        okada_array = - U_1 - U_2 + U_3
+
+        displacement_array  = np.zeros((3, self.tile_size * self.tile_size))
+
+        displacement_array[0] = np.sin(self.strike) * okada_array[0] - np.cos(self.strike) * okada_array[1]
+        displacement_array[1] = np.cos(self.strike) * okada_array[0] + np.sin(self.strike) * okada_array[1]
+        displacement_array[2] = okada_array[2]
+
+        self.displacement = displacement_array
+
+        shapes   = (self.x_axis_shape[0], self.x_axis_shape[1])
+        x_grid   = np.reshape(self.displacement[0,], shapes) * self.los_vector[0,0]
+        y_grid   = np.reshape(self.displacement[1,], shapes) * self.los_vector[1,0]
+        z_grid   = np.reshape(self.displacement[2,], shapes) * self.los_vector[2,0]
+
+        self.los_displacement = (x_grid + y_grid + z_grid)
+
+    def update_params_WL(self, W, L):
+        
+        xi  = self.okada_x - L
+        eta = self.eta     - W
+
+        self.R = np.sqrt(np.square(xi) + np.square(eta) + np.square(self.q))
+        self.X = np.sqrt(np.square(xi) + np.square(self.q))
+        self.y_tilda = (eta * np.cos(self.dip)) + (self.q * np.sin(self.dip)) 
+        self.d_tilda = (eta * np.sin(self.dip)) - (self.q * np.cos(self.dip))
+        
+        return xi, eta
+
+
+    def compute_I_1(self, W, L):
+
+        xi  = self.okada_x - L
+        eta = self.eta     - W 
+
+        if W != 0 and L != 0:
+            I_5 = self.I_5_WL
+        elif W != 0:
+            I_5 = self.I_5_W
+        elif L != 0:
+            I_5 = self.I_5_L
+        else:
+            I_5 = self.I_5
+
+        if np.cos(self.dip) > 10E-8:
+            return   (1 - 2 * self.nu) * (-xi / (np.cos(self.dip) * (self.R + self.d_tilda))) - np.tan(self.dip) * I_5
+        else:
+            return -((1 - 2 * self.nu) / 2) * ((xi * self.q) / np.square((self.R + self.d_tilda)))
+
+
+    def compute_I_2(self, W, L):
+
+        xi  = self.okada_x - L
+        eta = self.eta     - W       
+
+        if W != 0 and L != 0:
+            I_3 = self.I_3_WL
+        elif W != 0:
+            I_3 = self.I_3_W
+        elif L != 0:
+            I_3 = self.I_3_L
+        else:
+            I_3 = self.I_3
+
+        return (1 - 2 * self.nu) * -np.log(self.R + eta) - I_3
+
+
+    def compute_I_3(self, W, L):
+
+        xi  = self.okada_x - L
+        eta = self.eta     - W       
+
+        if W != 0 and L != 0:
+            I_4 = self.I_4_WL
+        elif W != 0:
+            I_4 = self.I_4_W
+        elif L != 0:
+            I_4 = self.I_4_L
+        else:
+            I_4 = self.I_4
+        
+        if np.cos(self.dip) > 10E-8:
+            return  (1 - 2 * self.nu) * ((1 / (np.cos(self.dip))) * (self.y_tilda / (self.R + self.d_tilda)) - np.log(self.R + eta)) + np.tan(self.dip) * I_4
+        else:
+            return ((1 - 2 * self.nu) / 2) * ((eta / (self.R + self.d_tilda)) + ((self.y_tilda * self.q) / np.square(self.R + self.d_tilda)) - np.log(self.R + eta))
+
+
+    def compute_I_4(self, W, L):
+
+        xi  = self.okada_x - L
+        eta = self.eta     - W       
+
+
+        if np.cos(self.dip) > 10E-8:
+            return  (1 - 2 * self.nu) * (1 / np.cos(self.dip)) * (np.log(self.R + self.d_tilda) - np.sin(self.dip) * np.log(self.R + eta))
+        else:
+            return -(1 - 2 * self.nu) * (self.q / (self.R + self.d_tilda))
+
+
+    def compute_I_5(self, W, L):
+        
+        xi  = self.okada_x - L
+        eta = self.eta     - W       
+
+        if np.cos(self.dip) > 10E-8:
+            a = (eta * (self.X + (self.q * np.cos(self.dip))) + (self.X * (self.R + self.X) * np.sin(self.dip)))
+            b = (xi * (self.R + self.X) * np.cos(self.dip))
+            return  (1 - 2 * self.nu) * 2 * np.arctan(a / b) / np.cos(self.dip)
+        else:
+            return -(1 - 2 * self.nu) * ((xi * np.sin(self.dip)) / (self.R + self.d_tilda))
+
+
+    def compute_I_components(self):  
+
+        """
+        Precompute all necessary I components to avoid doing it more than once.
+        """
+
+        self.update_params_WL(0, 0)
+
+        self.I_5 = self.compute_I_5(0, 0)
+        self.I_4 = self.compute_I_4(0, 0)
+        self.I_3 = self.compute_I_3(0, 0)
+        self.I_2 = self.compute_I_2(0, 0)
+        self.I_1 = self.compute_I_1(0, 0)
+
+        self.update_params_WL(self.width, 0)
+
+        self.I_5_W = self.compute_I_5(self.width, 0)
+        self.I_4_W = self.compute_I_4(self.width, 0)
+        self.I_3_W = self.compute_I_3(self.width, 0)
+        self.I_2_W = self.compute_I_2(self.width, 0)
+        self.I_1_W = self.compute_I_1(self.width, 0)
+
+        self.update_params_WL(0, self.length)
+
+        self.I_5_L = self.compute_I_5(0, self.length)
+        self.I_4_L = self.compute_I_4(0, self.length)
+        self.I_3_L = self.compute_I_3(0, self.length)
+        self.I_2_L = self.compute_I_2(0, self.length)
+        self.I_1_L = self.compute_I_1(0, self.length)
+
+        self.update_params_WL(self.width, self.length)
+
+        self.I_5_WL = self.compute_I_5(self.width, self.length)
+        self.I_4_WL = self.compute_I_4(self.width, self.length)
+        self.I_3_WL = self.compute_I_3(self.width, self.length)
+        self.I_2_WL = self.compute_I_2(self.width, self.length)
+        self.I_1_WL = self.compute_I_1(self.width, self.length)            
+
+
+    def get_Is(self, W, L):
+
+        """
+        Get the I components corresponding to W and L
+        """
+
+        if W != 0 and L != 0:
+            I_1 = self.I_1_WL
+            I_2 = self.I_2_WL
+            I_3 = self.I_3_WL
+            I_4 = self.I_4_WL
+            I_5 = self.I_5_WL
+        elif W != 0:
+            I_1 = self.I_1_W
+            I_2 = self.I_2_W
+            I_3 = self.I_3_W
+            I_4 = self.I_4_W
+            I_5 = self.I_5_W
+        elif L != 0:
+            I_1 = self.I_1_L
+            I_2 = self.I_2_L
+            I_3 = self.I_3_L
+            I_4 = self.I_4_L
+            I_5 = self.I_5_L
+        else:
+            I_1 = self.I_1
+            I_2 = self.I_2
+            I_3 = self.I_3
+            I_4 = self.I_4
+            I_5 = self.I_5
+
+        return I_1, I_2, I_3, I_4, I_5
+
+
+    def strike_slip_displacement(self, W, L):
+
+        xi, eta = self.update_params_WL(W, L)
+
+        I_1, I_2, _, I_4, _ = self.get_Is(W, L)
+
+        q_re  = self.q / (self.R + eta)
+        q_rre = (1 / self.R) * q_re
+        arctan  = np.arctan((xi * eta) / (self.q * self.R))
+
+        x_direction = (xi * q_rre) + arctan + (I_1 * np.sin(self.dip))
+        y_direction = (self.y_tilda * q_rre) + (np.cos(self.dip) * q_re) + (I_2 * np.sin(self.dip))
+        z_direction = (self.d_tilda * q_rre) + (np.sin(self.dip) * q_re) + (I_4 * np.sin(self.dip))
+
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
+
+
+    def dip_slip_displacement(self, W, L):
+
+        xi, eta = self.update_params_WL(W, L)
+
+        I_1, _, I_3, _, I_5 = self.get_Is(W, L)          
+
+        sc_dip = np.sin(self.dip) * np.cos(self.dip)
+        q_rrx  = self.q / (self.R * (self.R + xi))
+        arctan   = np.arctan((xi * eta) / (self.q * self.R))
+
+        x_direction = (self.q / self.R) - I_3 * sc_dip
+        y_direction = (self.y_tilda * q_rrx) + (np.cos(self.dip) * arctan) - (I_1 * sc_dip)
+        z_direction = (self.d_tilda * q_rrx) + (np.sin(self.dip) * arctan) - (I_5 * sc_dip)
+
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
+
+
+    def tensile_displacement(self, W, L):
+
+        xi, eta = self.update_params_WL(W, L)
+
+        I_1, _, I_3, _, I_5 = self.get_Is(W, L)
+
+        s_d    = np.square(np.sin(self.dip))
+        q_rre  = self.q / (self.R * (self.R + eta))      
+        q_rrx  = self.q / (self.R * (self.R + xi))
+        arctan = np.arctan((xi * eta) / (self.q * self.R))
+        q_rre_arctan = (xi * q_rre) - arctan
+
+        x_direction =  (self.q * q_rre) - (I_3 * s_d )
+        y_direction = -(self.d_tilda * q_rrx) - (np.sin(self.dip) * q_rre_arctan) - (I_1 * s_d)
+        z_direction =  (self.y_tilda * q_rrx) + (np.cos(self.dip) * q_rre_arctan) - (I_5 * s_d)
+
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
+
+
+def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m = 0.02, difference = True):
     
     """ A function to create synthetic turbulent atmospheres based on the  methods in Lohman Simons 2005, or using Andy Hooper and Lin Shen's fft method.  
     Note that due to memory issues, when using the covariance (Lohman) method, largers ones are made by interpolateing smaller ones.  
@@ -466,10 +430,8 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, dif
     2020/10/06 | MEG | Add support for rectangular atmospheres, fix some bugs.  
     2020_03_01 | MEG | Add option to use Lin Shen/Andy Hooper's fft method which is quicker than the covariance method.  
     """
-    
-    import numpy as np
 
-    
+
     def lon_lat_to_ijk(lons_mg, lats_mg):
         
         """ Given a meshgrid of the lons and lats of the lower left corner of each pixel, 
@@ -483,25 +445,31 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, dif
         History:
             2020/10/01 | MEG | Written 
         """
-        
+
         from geopy import distance
-        import numpy as np
-        
+
         ny, nx = lons_mg.shape
+
         pixel_spacing = {}
-        pixel_spacing['x'] = distance.distance((lats_mg[-1,0], lons_mg[-1,0]), (lats_mg[-1,0], lons_mg[-1,1])).meters     # this should vary with latitude.  Usually around 90 (metres) for SRTM3 resolution.  
-        pixel_spacing['y'] = distance.distance((lats_mg[-1,0], lons_mg[-1,0]), (lats_mg[-2,0], lons_mg[-1,0])).meters     # this should be constant at all latitudes.  
-    
-        X, Y = np.meshgrid(pixel_spacing['x'] * np.arange(0, nx), pixel_spacing['y'] * np.arange(0,ny))                   # make a meshgrid
-        Y = np.flipud(Y)                                                                                                  # change 0 y cordiante from matrix style (top left) to axes style (bottom left)
-        ij = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))                                                # pairs of coordinates of everywhere we have data   
-        ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))                                                                 # xy and 0 depth, as 3xlots
-        
+        pixel_spacing['x'] = distance.distance((lats_mg[-1,0], lons_mg[-1,0]), (lats_mg[-1,0], lons_mg[-1,1])).meters
+        pixel_spacing['y'] = distance.distance((lats_mg[-1,0], lons_mg[-1,0]), (lats_mg[-2,0], lons_mg[-1,0])).meters
+
+        X, Y = np.meshgrid(pixel_spacing['x'] * np.arange(0, nx), pixel_spacing['y'] * np.arange(0, ny))
+        Y = np.flipud(Y)
+
+        ij  = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))
+        ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))
+
         return ijk, pixel_spacing
 
 
-    def generate_correlated_noise_fft(nx, ny, std_long, sp):
-        
+    def generate_correlated_noise_fft(
+        nx,
+        ny,
+        std_long,
+        sp
+    ):
+
         """ A function to create synthetic turbulent troposphere delay using an FFT approach. 
         The power of the turbulence is tuned by the weather model at the longer wavelengths.
         
@@ -518,49 +486,55 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, dif
             2020_??_?? | LS | Adapted from code by Andy Hooper.  
             2021_03_01 | MEG | Small change to docs and inputs to work with SyInterferoPy
         """
-                
+
         np.seterr(divide='ignore')
-    
-        cut_off_freq = 1/50                                                    # drop wavelengths above 50 km 
-        
-        x      = np.arange(0, int(nx / 2))                                     # positive frequencies only
-        y      = np.arange(0, int(ny / 2))                                     # positive frequencies only
+
+        cut_off_freq = 1 / 50
+
+        x, y   = np.arange(0, int(nx / 2)), np.arange(0, int(ny / 2))
+
         freq_x = np.divide(x, nx * sp)
         freq_y = np.divide(y, ny * sp)
+
         Y, X   = np.meshgrid(freq_x, freq_y)
-        freq   = np.sqrt((X * X + Y * Y) / 2)                                  # 2D positive frequencies
-        
-        log_power     = np.log10(freq) * -11/3                                 # -11/3 in 2D gives -8/3 in 1D
-        ix            = np.where(freq < 2/3)
-        log_power[ix] = np.log10(freq[ix]) * -8/3 -np.log10(2/3)               # change slope at 1.5 km (2/3 cycles per km)
-        
+
+        freq   = np.sqrt((X * X + Y * Y) / 2)
+
+        ix            = freq < 2/3
+        log_power     = np.log10(freq) * -11/3
+        log_power[ix] = np.log10(freq[ix]) * -8/3 -np.log10(2/3)
+
+        ix            = freq < cut_off_freq
         bin_power     = np.power(10, log_power)
-        ix            = np.where(freq < cut_off_freq)
         bin_power[ix] = 0
-        
-        APS_power = np.zeros((ny,nx))                                         # mirror positive frequencies into other quadrants
-        
+
+        APS_power = np.zeros((ny,nx))
+
         APS_power[0:int(ny / 2)      , 0:int(nx / 2)        ] = bin_power
         APS_power[0:int(ny / 2)      , int(np.ceil(nx / 2)):] = np.fliplr(bin_power)
         APS_power[int(np.ceil(ny/2)):, 0:int(nx / 2)        ] = np.flipud(bin_power)
         APS_power[int(np.ceil(ny/2)):, int(np.ceil(nx/2))  :] = np.fliplr(np.flipud(bin_power))
-       
+
         APS_filt = np.sqrt(APS_power)
-        
-        x      = np.random.randn(ny, nx)      # white noise
+
+        x      = np.random.randn(ny, nx)
         y_tmp  = np.fft.fft2(x)
-        y_tmp2 = np.multiply(y_tmp, APS_filt) # convolve with filter
+        y_tmp2 = np.multiply(y_tmp, APS_filt)
         y      = np.fft.ifft2(y_tmp2)
-        
+
         APS = np.real(y)
-        APS = APS / np.std(APS) * std_long  #  adjust the turbulence by the weather model at the longer wavelengths.
-        APS = APS * 0.01                    # convert from cm to m
-        
+        APS = APS / np.std(APS) * std_long
+        APS = APS * 0.01
+
         return APS 
 
 
-    def rescale_atmosphere(atm, atm_mean = 0.02, atm_sigma = 0.005):
-        
+    def rescale_atmosphere(
+        atm,
+        atm_mean = 0.02,
+        atm_sigma = 0.005
+    ):
+
         """ a function to rescale a 2d atmosphere with any scale to a mean centered
         one with a min and max value drawn from a normal distribution.  
         Inputs:
@@ -573,49 +547,36 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, method = 'fft', mean_m = 0.02, dif
             20YY/MM/DD | MEG | Written
             2020/10/02 | MEG | Standardise throughout to use metres for units.  
         """
+
+        atm -= np.mean(atm)
         
-        atm -= np.mean(atm)                                                         # mean centre
-        atm_strength = (atm_sigma * np.random.randn(1)) + atm_mean                  # maximum strength of signal is drawn from a gaussian distribution, mean and sigma set in metres.  
-        if np.abs(np.min(atm)) > np.abs(np.max(atm)):                               # if range of negative numbers is larger
-            atm *= (atm_strength / np.abs(np.min(atm)))                             # strength is drawn from a normal distribution  with a mean set by mean_m (e.g. 0.02)
+        atm_strength = (atm_sigma * np.random.randn(1)) + atm_mean
+        
+        if np.abs(np.min(atm)) > np.abs(np.max(atm)):
+            atm *= (atm_strength / np.abs(np.min(atm)))
         else:
-            atm *= (atm_strength / np.max(atm))                     # but if positive part is larger, rescale in the same way as above.  
+            atm *= (atm_strength / np.max(atm))
+        
         return atm
 
 
-    # 0: Check inputs
-    if method not in ['fft', 'cov']:
-        raise Exception(f"'method' must be either 'fft' (for the fourier transform based method), "
-                        f" or 'cov' (for the covariance based method).  {method} was supplied, so exiting.  ")
-
-    #1: determine if linear interpolation is required
     ny, nx = lons_mg.shape
 
-    nx_generate = nx      # if not interpolating, these don't change.  
-    ny_generate = ny
-    lons_mg_ds = lons_mg  # if not interpolating, don't need to downsample.  
-    lats_mg_ds = lats_mg
-
-    #2: calculate distance between points
-    ph_turbs = np.zeros((n_atms, ny_generate, nx_generate))       # initiate output as a rank 3 (ie n_images x ny x nx)
-    _, pixel_spacing = lon_lat_to_ijk(lons_mg_ds, lats_mg_ds) # get pixel positions in metres from origin in lower left corner (and also their size in x and y direction)      
-
-    #3: generate atmospheres, using either of the two methods.  
-    if difference == True:
-        n_atms += 1   # if differencing atmospheres, create one extra so that when differencing we are left with the correct number
+    ph_turbs = np.zeros((n_atms, ny, nx))
+    _, pixel_spacing = lon_lat_to_ijk(lons_mg, lats_mg)
 
     for i in range(n_atms):
-        ph_turbs[i,:,:] = generate_correlated_noise_fft(nx_generate, ny_generate,    std_long=1, 
-                                                        sp = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y'])) ) # generate noise using fft method.  pixel spacing is average in x and y direction (and m converted to km) 
+        ph_turbs[i,:,:] = generate_correlated_noise_fft(
+            nx, 
+            ny,
+            std_long = 1, 
+            sp       = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y']))
+        )
 
-    ph_turbs_output = ph_turbs # if we're not interpolating, no change needed
-       
-    # 4: rescale to correct range (i.e. a couple of cm)
-    ph_turbs_m = np.zeros(ph_turbs_output.shape)
-    for atm_n, atm in enumerate(ph_turbs_output):
+    ph_turbs_m = np.zeros(ph_turbs.shape)
+    for atm_n, atm in enumerate(ph_turbs):
         ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
 
-    # 5: return back to the shape given, which can be a rectangle:
     ph_turbs_m = ph_turbs_m[:,:lons_mg.shape[0],:lons_mg.shape[1]]
 
     return ph_turbs_m
@@ -648,7 +609,15 @@ def gen_fake_topo(
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
-    dem = generate_perlin(dem.shape[0]) * random.randint(alt_scale_min, alt_scale_max)
+    dem = generate_perlin(dem.shape[0]) * 200
+    
+    neg_indices = dem < np.max(dem) / 1.75
+    
+    dem[neg_indices] = 0
+
+    non_zero_indices = dem > 0
+
+    dem[non_zero_indices] = dem[non_zero_indices] - np.min(dem[non_zero_indices])
 
     return dem
 
@@ -657,7 +626,6 @@ def atm_topo_simulate(
     dem_m:         np.ndarray,
     strength_mean: float = 56.0,
     strength_var:  float = 2.0,
-    difference:    bool  = True
 ):
 
     """
@@ -683,30 +651,21 @@ def atm_topo_simulate(
     import numpy as np
     import numpy.ma as ma
 
-    envisat_lambda = 0.056                     # envisat/S1 wavelength in m
-    dem = 0.001 * dem_m                        # convert from metres to km
+    # Sentinel-1 Wavelength in meters
+    s1_lambda = 0.056
+    dem_km = 0.001 * dem_m
 
-    if difference is False:
-        ph_topo = (strength_mean + strength_var * np.random.randn(1)) * dem
-    elif difference is True:
-        ph_topo_aq1 = (strength_mean + strength_var * np.random.randn(1)) * dem  # this is the delay for one acquisition
-        ph_topo_aq2 = (strength_mean + strength_var * np.random.randn(1)) * dem  # and for another
-        ph_topo = ph_topo_aq1 - ph_topo_aq2                                      # interferogram is the difference, still in rad
-    else:
-        print("'difference' must be either True or False.  Exiting...")
-        import sys; sys.exit()
+    ph_topo_aq1 = (strength_mean + strength_var * np.random.randn(1)) * dem_km  # this is the delay for one acquisition
+    ph_topo_aq2 = (strength_mean + strength_var * np.random.randn(1)) * dem_km  # and for another
+    ph_topo_m   = ((ph_topo_aq1 - ph_topo_aq2)  / (4 * np.pi)) * s1_lambda      # interferogram is the difference, converted from rad to meters
 
-    # convert from rad to m
-    ph_topo_m = (ph_topo / (4*np.pi)) * envisat_lambda # delay/elevation ratio is taken from a paper (pinel 2011) using Envisat data
-
-
-    if np.max(ph_topo_m) < 0:                          # ensure that it always start from 0, either increasing or decreasing
+    if np.max(ph_topo_m) < 0:
         ph_topo_m -= np.max(ph_topo_m)
     else:
         ph_topo_m -= np.min(ph_topo_m)
 
     ph_topo_m  = ma.array(ph_topo_m, mask = ma.getmask(dem_m))
-    ph_topo_m -= ma.mean(ph_topo_m)                   # mean centre the signal
+    ph_topo_m -= ma.mean(ph_topo_m)
 
     return ph_topo_m
 
@@ -735,11 +694,11 @@ def aps_simulate(
 
     lons    = np.arange(0.0, 0.0 + scaled_size, pixel_size_degs)
     lats    = np.arange(0.0, 0.0 + scaled_size, pixel_size_degs)
-    lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
+    
+    lons_mg = np.repeat(lons[np.newaxis,:], len(lats),     axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
-    ph_turb = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.02,
-                                 method = 'fft')
+    ph_turb = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.02)
 
     return ph_turb[0,]
 
@@ -772,8 +731,7 @@ def coherence_mask_simulate(
     lons_mg = np.repeat(lons[np.newaxis,:], len(lats), axis = 0)
     lats_mg = np.repeat(lats[::-1, np.newaxis], len(lons), axis = 1)
 
-    mask_coh_values = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.01,
-                                 method = 'fft')
+    mask_coh_values = atmosphere_turb(1, lons_mg, lats_mg, mean_m = 0.01)
 
     mask_coh_values = (mask_coh_values - np.min(mask_coh_values)) / np.max(mask_coh_values - np.min(mask_coh_values))
     mask_coh = np.where(mask_coh_values > threshold, np.ones(lons_mg.shape), np.zeros(lons_mg.shape)) 
@@ -782,9 +740,13 @@ def coherence_mask_simulate(
 
 
 def gen_simulated_deformation(
-    seed:      int  = 0,
-    tile_size: int  = 512,
-    log:       bool = False
+    seed:              int   = 0,
+    tile_size:         int   = 512,
+    log:               bool  = False,
+    atmosphere_scalar: float = 100 * np.pi,
+    amplitude_scalar:  float = 1000 * np.pi,
+    event_type:        str   = 'quake',
+    **kwargs
 ):
 
     """
@@ -801,6 +763,12 @@ def gen_simulated_deformation(
         the input shape of the model.
     log : bool, Optional
         If true, the function will log various relevant values in the console. 
+    atmosphere_scalar : float, Optional
+        Scale factor for the intensity of atmospheric noise.
+    amplitude_scalar : float, Optional
+        Scale factor for the deformation.
+    event_type : str, Optional
+        The type of deformation event. Can be quake, sill, or dyke.
 
     Returns:
     --------
@@ -814,120 +782,201 @@ def gen_simulated_deformation(
 
     if seed != 0: np.random.seed(seed)
 
-    atmosphere_scalar = 90 * np.pi
-    amplitude_scalar  = 1000 * np.pi
+    presence    = np.asarray([1])
 
-    presence    = np.asarray([0])
     masked_grid = np.zeros((tile_size, tile_size)) 
-    los_vector  = np.array([[ 0.38213591],
-                            [-0.08150437],
-                            [ 0.92050485]])
 
-    img_composition_choice = np.random.randint(0, 11)
+    los_vector  = np.array(
+        [
+            [ 0.38213591],
+            [-0.08150437],
+            [ 0.92050485]
+        ]
+    )
 
-    if img_composition_choice < 5:
+    random_nums = np.random.rand(13)
 
-        random_nums = np.random.rand(9)
+    dip = np.random.randint(75, 90) 
 
-        X, Y = np.meshgrid(np.arange(0, tile_size) * 90, np.arange(0, tile_size) * 90)
-        Y    = np.flipud(Y)
+    if not kwargs:
 
-        ij  = np.vstack((np.ravel(X)[np.newaxis], np.ravel(Y)[np.newaxis]))
-        ijk = np.vstack((ij, np.zeros((1, ij.shape[1]))))   
+        axes_max = (tile_size) * 90
 
-        source_x = np.max(X) // ((random_nums[0] * 10) + 1)
-        source_y = np.max(Y) // ((random_nums[1] * 10) + 1)
+        source_x = axes_max // ((random_nums[0] * 10) + 1)
+        source_y = axes_max // ((random_nums[1] * 10) + 1)
 
-        length    = 1000 + ((1 + np.max(X) // 16) * random_nums[2])
-        top_depth = 4000 + ((1 + np.max(X) // 8 ) * random_nums[3])
+        length    = 500 + 2000 * random_nums[2]
+        top_depth = length + 2000 + ((axes_max // 8 ) * random_nums[3])
+        depth     = 2000 + ((axes_max // 16 ) * random_nums[4])
+        width     = 500  + 500 + 1000 * random_nums[5]
 
         kwargs = {
-            'strike'      : 180 * random_nums[4],
-            'dip'         :  90 * random_nums[5],
+            'strike'      : 180 * random_nums[6],
+            'dip'         : [45, dip][random_nums[7] < 0.5],
             'length'      : length,
-            'rake'        : [90, -90][random_nums[6] < 0.5],
+            'rake'        : [-90, 90][random_nums[8] < 0.5],
             'slip'        : 1,
             'top_depth'   : top_depth,
-            'bottom_depth': top_depth * (1.1 + (5 * random_nums[7]))
+            'bottom_depth': top_depth * (2 + 4 * random_nums[10]),
+            'width'       : width,
+            'depth'       : depth,
+            'opening'     : 0.5
         }
-
-        U = deformation_eq_dyke_sill("quake", (source_x, source_y), ijk, **kwargs)
-
-        x_grid   = np.reshape(U[0,], (X.shape[0], X.shape[1])) * los_vector[0,0]
-        y_grid   = np.reshape(U[1,], (X.shape[0], X.shape[1])) * los_vector[1,0]
-        z_grid   = np.reshape(U[2,], (X.shape[0], X.shape[1])) * los_vector[2,0]
-
-        los_grid = (x_grid + y_grid + z_grid) * amplitude_scalar
-
-        masked_indices = np.abs(los_grid) >= np.pi * 2  # Num of fringes to say yes to.
-        masked_grid[masked_indices] = np.abs(los_grid[masked_indices]) / (np.max(np.abs(los_grid[masked_indices])))
-
-        atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
-        interferogram    = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
-        wrapped_grid     = wrap_interferogram(interferogram, noise = 0.0)
-
-        coherence_mask                   = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.5)
-        coh_masked_indices               = coherence_mask[0,0:tile_size, 0:tile_size] == 0
-        wrapped_grid[coh_masked_indices] = 0
-
-        if log:
-            print("_______\n")
-            print("Length         (meters)  ", length)
-            print("Top Depth      (meters)  ", top_depth)
-            print("Bottom Depth   (meters)  ", kwargs['bottom_depth'])
-            print("")
-            print("Max X Position (meters)  ", np.max(X))
-            print("Max Y Position (meters)  ", np.max(Y))
-            print("Src X Position (meters)  ", source_x)
-            print("Src Y Position (meters)  ", source_y)
-            print("")
-            print("Slip           (0  or 1) ", kwargs['slip'])
-            print("Dip            (degrees) ", kwargs['dip'])
-            print("Rake           (degrees) ", kwargs['rake'])
-            print("Strike         (degrees) ", kwargs['strike'])
-            print("")
-            print("Maximum Phase Value: ", np.max(np.abs(interferogram)))
-            print("_______\n")
-
-        presence[0] = 1
-
-        return masked_grid, wrapped_grid, presence
-
-    elif img_composition_choice == 10:
-
-        masked_grid  = np.zeros((tile_size, tile_size))
-        wrapped_grid = wrap_interferogram(masked_grid, noise=1.0)
-
-        threshold      = random.random() / 2
-        coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
-        coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0        
-        wrapped_grid[coh_indices] = 0
-
-        return masked_grid, wrapped_grid, presence
 
     else:
 
-        topo_phase = 0
-        turb_phase = aps_simulate(tile_size) * atmosphere_scalar
+        top_depth = kwargs['top_depth']
+        source_x  = kwargs['source_x']
+        source_y  = kwargs['source_y']
+        length    = kwargs['length']
 
-        topo_phase_roll = np.random.randint(0, 2)
-        if topo_phase_roll == 1:
+    from time import perf_counter
 
-            simulated_topography = gen_fake_topo(
-                size          = tile_size,
-                alt_scale_min = 100,
-                alt_scale_max = 500
-            )
+    start = perf_counter()
+    Event = Okada(event_type, (source_x, source_y), tile_size = tile_size, **kwargs)
+    end   = perf_counter()
 
-            topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar * 10
+    los_grid = Event.los_displacement * amplitude_scalar
 
-        threshold      = random.random() / 2
-        coherence_mask = coherence_mask_simulate(tile_size, threshold=threshold)
-        coh_indices    = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
+    masked_indices   = np.abs(los_grid) >= np.pi * 2
+    n_masked_indices = np.abs(los_grid) <  np.pi * 2
+
+    los_grid[n_masked_indices]  = 0
+    masked_grid[masked_indices] = 1
+
+    atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
+
+    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.4)
+    coh_masked_indices = coherence_mask[0,0:tile_size, 0:tile_size] == 0
+
+    interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
+ 
+    n_masked_indices = np.abs(interferogram) <  np.pi * 5
+    masked_grid[n_masked_indices]     = 0
+    interferogram[coh_masked_indices] = 0
+
+    wrapped_grid = wrap_interferogram(interferogram)
+
+    if log:
+        print("__________\n")
+        print(event_type)
+        print("__________\n")
+        print("Length         (meters)  ", length)
+        print("Top Depth      (meters)  ", top_depth)
+        print("Bottom Depth   (meters)  ", kwargs['bottom_depth'])
+        print("Depth          (meters)  ", kwargs['depth'])
+        print("")
+        print("Slip           (0  or 1) ", kwargs['slip'])
+        print("Dip            (degrees) ", kwargs['dip'])
+        print("Rake           (degrees) ", kwargs['rake'])
+        print("Strike         (degrees) ", kwargs['strike'])
+        print("Opening:       (meters)  ", kwargs['opening'])
+        print("")
+        print("Max X Position (meters)  ", axes_max)
+        print("Max Y Position (meters)  ", axes_max)
+        print("Src X Position (meters)  ", source_x)
+        print("Src Y Position (meters)  ", source_y)
+        print("")
+        print("Maximum Phase Value:     ", np.max(np.abs(interferogram)))
+        print("")
+        print("Compute Time   (seconds) ", end - start)
+        print("__________\n")
+
+    return interferogram, masked_grid, wrapped_grid, presence
+
+
+def gen_gaussian_noise(
+    seed:        int   = 0,
+    tile_size:   int   = 512,
+    noise_level: float = 90 * np.pi,
+    threshold:   float = 90 * np.pi / 4
+):
+
+    if seed != 0: 
+        np.random.seed(seed)
+
+    masked_grid  = np.zeros((tile_size, tile_size))
+
+    noise_grids = np.random.uniform(-noise_level, noise_level, size=(2, tile_size, tile_size))
+
+    inconsistancy = np.abs(noise_grids[1]) >= threshold
+
+    noise_grids[1][inconsistancy] = 0
+
+    index = noise_grids[1] == 0
+    noise_grids[0][index] = 0 
+
+    return noise_grids[0]
+
+
+def gen_sim_noise(
+    seed:              int   = 0,
+    tile_size:         int   = 512,
+    gaussian_only:     bool  = False,
+    atmosphere_scalar: float = 200 * np.pi,
+):
+
+    """
+    Generate a wrapped interferogram along with an event-mask simulating a noisy interferogram with no deformation.
+
+    Parameters:
+    -----------
+    seed : int, Optional
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        the results will be different every time.
+    tile_size : int, Optional
+        The desired dimensional size of the interferogram pairs. This should match
+        the input shape of the model.
+    log : bool, Optional
+        If true, the function will log various relevant values in the console.
+    atmosphere_scalar : float, Optional
+        Scale factor for the intensity of atmospheric noise.
+
+    Returns:
+    --------
+    masked_grid : np.ndarray(shape=(tile_size, tile_size))
+        An array representing a mask over the simulated deformation which simulates masking an event.
+    wrapped_grid : np.ndarray(shape=(tile_size, tile_size)
+        The wrapped interferogram.
+    presence : [1] or [0]
+        [1] if the image contains an event else [0]
+    """
+
+    if seed != 0: np.random.seed(seed)
+
+    presence = np.asarray([0])
+
+    if gaussian_only:
+
+        threshold = np.random.randint(0, 100 * np.pi)
+        noise_grid = gen_gaussian_noise(seed, tile_size, threshold=threshold)
+        wrapped_grid = wrap_interferogram(noise_grid)
+        masked_grid = np.zeros((tile_size, tile_size))
+        phase = masked_grid
         
-        wrapped_grid = np.angle(np.exp(1j * (turb_phase + topo_phase)))
+    else:
+
+        simulated_topography = gen_fake_topo(
+            size          = tile_size,
+            alt_scale_min = 100,
+            alt_scale_max = 500
+        )
+
+        turb_phase = aps_simulate(tile_size) * atmosphere_scalar
+        topo_phase = aps_simulate(tile_size) * atmosphere_scalar + np.abs(atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi)
+
+        threshold       = np.random.random() / 2
+        coherence_mask  = coherence_mask_simulate(tile_size, threshold=threshold)
+        coh_indices     = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
+
+        phase = turb_phase + topo_phase
+        
+        wrapped_grid = np.angle(np.exp(1j * (phase)))
         wrapped_grid[coh_indices] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-        return masked_grid, wrapped_grid, presence
+        phase[coh_indices] = 0
+
+    return phase, masked_grid, wrapped_grid, presence

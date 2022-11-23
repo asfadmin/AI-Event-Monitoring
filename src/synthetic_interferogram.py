@@ -129,9 +129,11 @@ def wrap_interferogram(
     if seed:
         np.random.seed(seed)
 
-    noise = np.random.uniform(-noise, noise, size=interferogram.shape)
+    if noise > 0.0: 
+        noise = np.random.uniform(-noise, noise, size=interferogram.shape)
+        interferogram = noise + interferogram
 
-    wrapped_interferogram = np.angle(np.exp(1j * (noise + interferogram)))
+    wrapped_interferogram = np.angle(np.exp(1j * (interferogram)))
 
     return wrapped_interferogram
 

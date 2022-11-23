@@ -1,13 +1,20 @@
 """
-Andrew Player
-September 2022
-Basic convolutional model, for now, for classifying the images.
+ Created By:   Andrew Player
+ File Name:    eventnet.py
+ Date Created: September 2022
+ Description:  Basic convolutional model, for now, for classifying the images.
 """
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense, Dropout
+from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense
 from tensorflow.keras.models     import Model
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras            import mixed_precision
+
+
+policy = mixed_precision.Policy('mixed_float16')
+mixed_precision.set_global_policy(policy)
+
 
 def conv2d_block(
     input_tensor: Tensor ,
@@ -28,13 +35,14 @@ def conv2d_block(
     x = LeakyReLU()(x)
 
     return x
-
+ 
 
 def create_eventnet(
     model_name:    str   = 'model',
-    tile_size:     int   = 128    ,
+    tile_size:     int   = 512    ,
     num_filters:   int   = 32     ,
-    label_count:   int   = 1
+    label_count:   int   = 1      ,
+    learning_rate: float = 0.005
 ) -> Model:
 
     """
@@ -43,20 +51,19 @@ def create_eventnet(
 
     input = Input(shape = (tile_size, tile_size, 1))
 
-
     # # --------------------------------- #
     # # Feature Map Generation            #
     # # --------------------------------- #
 
-    c1 = conv2d_block(input, num_filters * 1)
-    c2 = conv2d_block(c1, 1)
+    c1  = conv2d_block(input, num_filters)
+    c2  = conv2d_block(c1, 1)
 
     # # --------------------------------- #
     # # Dense Hidden Layer                #
     # # --------------------------------- #
 
     f0 = Flatten()(c2)
-    d0 = Dense(1024, activation='relu')(f0)
+    d0 = Dense(512, activation='relu')(f0)
 
     # --------------------------------- #
     # Output Layer                      #
@@ -75,9 +82,9 @@ def create_eventnet(
     )
 
     model.compile(
-        optimizer = SGD(learning_rate=0.005),
-        loss      = 'mean_absolute_error',
-        metrics   = ['mean_squared_error'],
+        optimizer = SGD(learning_rate=learning_rate),
+        loss      = 'mean_squared_error',
+        metrics   = ['acc', 'mean_absolute_error'],
     )
 
     return model
