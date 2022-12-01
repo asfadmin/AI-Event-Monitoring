@@ -278,7 +278,7 @@ def make_simulated_dataset(
             unwrapped, masked, wrapped, presence = gen_simulated_deformation(
                 seed       = current_seed,
                 tile_size  = tile_size,
-                event_type = 'quake'
+                event_type = event_type
             )
         else:
             unwrapped, masked, wrapped, presence = gen_sim_noise(
