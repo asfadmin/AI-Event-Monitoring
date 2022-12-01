@@ -820,7 +820,7 @@ def gen_simulated_deformation(
             'bottom_depth': top_depth * (2 + 4 * random_nums[10]),
             'width'       : width,
             'depth'       : depth,
-            'opening'     : 0.5
+            'opening'     : 1
         }
 
     else:
@@ -846,7 +846,7 @@ def gen_simulated_deformation(
 
     atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
 
-    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.4)
+    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.5)
     coh_masked_indices = coherence_mask[0,0:tile_size, 0:tile_size] == 0
 
     interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
