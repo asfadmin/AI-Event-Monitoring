@@ -547,15 +547,19 @@ def check_images_wrapper(images_path):
 
     from os     import listdir
     from src.io import get_image_array
+    from numpy  import angle, exp, pi
 
     for filename in listdir(images_path):        
         
         if filename.endswith(".tif"):
             
             image = get_image_array(f"{images_path}/{filename}")
+            
+            image = angle(exp(1j * (image)))
+            
             print(f"\n{filename}\n")
             
-            plt.imshow(image)
+            plt.imshow(image, cmap='jet', vmin=-pi, vmax=pi)
             plt.show()
 
 
