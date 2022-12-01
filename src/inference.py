@@ -137,7 +137,7 @@ def mask_with_model(
 
     if crop_size == 0:
         crop_size = tile_size
-    
+
     mask_tiles = mask_model.predict(tiled_arr_w, batch_size=8)
 
     mask_tiles[zeros] = 0
@@ -173,6 +173,99 @@ def mask_with_model(
     )
 
     return mask, pres_mask, pres_vals
+
+
+def plot_results(wrapped, mask, presence_mask):
+
+    _, [axs_wrapped, axs_mask, axs_presence_mask] = plt.subplots(1, 3, sharex=True, sharey=True)
+
+    axs_wrapped.set_title('Wrapped')
+    axs_mask.set_title('Segmentation Mask')
+    axs_presence_mask.set_title('Presence Mask')
+    
+    axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
+    axs_mask.imshow(mask, origin='lower', cmap='jet')
+    axs_presence_mask.imshow(presence_mask, origin='lower', cmap='jet')
+    
+    plt.show()
+
+
+def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
+
+    """
+    Helper for test_model(). Evaluates EventNet Models over a directory of real interferograms.
+
+    Parameters:
+    -----------
+    mask_model : Keras Model
+        The model for masking
+    pres_model : Keras Model
+        The model for binary classification.
+    directory : str
+        A directory containing interferogram tifs.
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs to be
+        equal to the output shape of the masking model and input shape of the presence model.
+
+    Returns:
+    --------
+    None
+    """
+
+    from os     import listdir, path
+    from src.io import get_image_array
+
+    positives = 0
+    negatives = 0
+
+    arr_uw = 0
+
+    print('---------------------------------------')
+    print('tag  | label    | guess    | confidence')
+    print('---------------------------------------')
+
+    for filename in listdir(directory):
+        if 'unw_phase' in filename:
+            try:
+                arr_uw = get_image_array(path.join(directory, filename))
+                arr_w  = np.angle(np.exp(1j * (arr_uw)))
+            except:
+                print(f"Failed to load unwrapped phase image: {filename}")
+                continue
+        elif 'wrapped' in filename:
+            try:
+                arr_w = get_image_array(path.join(directory, filename))
+            except:
+                print(f"Failed to load wrapped phase image: {filename}")
+                continue
+
+        mask, pres_mask, pres_vals = mask_with_model(
+            mask_model = mask_model,
+            pres_model = pres_model,
+            arr_w      = arr_w,
+            tile_size  = tile_size,
+            crop_size  = crop_size
+        )
+
+        presence_guess = np.any(np.max(pres_vals) > 0.75)
+
+        tag   = filename.split('_')[-3]
+        label = "Positive" if "Positives" in directory else "Negative"
+        guess = "Positive" if presence_guess           else "Negative"
+
+        print(f'{tag} | {label} | {guess} |{np.max(pres_vals): 0.8f}')
+        
+        plot_results(arr_w, mask, pres_mask)
+
+        if presence_guess: positives += 1
+        else:              negatives += 1
+
+
+
+    return positives, negatives
 
 
 def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_size):
@@ -225,74 +318,6 @@ def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_siz
     print(f'Num False Negatives: {false_negatives}')
     print(f'Total Predictions:   {total}')
     print(f'Accuracy:            {accuracy}%')
-
-
-def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
-
-    """
-    Helper for test_model(). Evaluates EventNet Models over a directory of real interferograms.
-
-    Parameters:
-    -----------
-    mask_model : Keras Model
-        The model for masking
-    pres_model : Keras Model
-        The model for binary classification.
-    directory : str
-        A directory containing interferogram tifs.
-    tile_size : int
-        The width and height of the tiles that the image will be broken into, this needs
-        to match the input shape of the model.
-    crop_size : int, Optional
-        If the models output shape is different than the input shape, this value needs to be
-        equal to the output shape of the masking model and input shape of the presence model.
-
-    Returns:
-    --------
-    None
-    """
-
-    from os     import listdir, path
-    from src.io import get_image_array
-
-    positives = 0
-    negatives = 0
-
-    arr_uw = 0
-
-    for filename in listdir(directory):
-        if 'unw_phase' in filename:
-            try:
-                arr_uw = get_image_array(path.join(directory, filename))
-                arr_w  = np.angle(np.exp(1j * (arr_uw)))
-            except:
-                print(f"Failed to load unwrapped phase image: {filename}")
-                continue
-        elif 'wrapped' in filename:
-            try:
-                arr_w = get_image_array(path.join(directory, filename))
-            except:
-                print(f"Failed to load wrapped phase image: {filename}")
-                continue
-
-        mask, pres_mask, pres_vals = mask_with_model(
-            mask_model = mask_model,
-            pres_model = pres_model,
-            arr_w      = arr_w,
-            tile_size  = tile_size,
-            crop_size  = crop_size
-        )
-
-        presence_guess = np.any(np.max(pres_vals) > 0.75)
-
-        if presence_guess:
-            print(f'{path.join(directory, filename)}: Positive -- Presence: {np.max(pres_vals): 0.4f}')
-            positives += 1
-        else:
-            print(f'{path.join(directory, filename)}: Negative -- Presence: {np.max(pres_vals): 0.4f}')
-            negatives += 1
-
-    return positives, negatives
 
 
 def mask_simulated(
@@ -445,7 +470,7 @@ def test_binary_choice(
         event_type    = ''
         noise_only    = False
         gaussian_only = False
-        
+
         if   i < quake_count: 
             event_type = 'quake'
         elif i < dyke_count: 
