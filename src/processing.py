@@ -55,7 +55,7 @@ def tile(
         The number of columns of tiles.
     """
 
-    cropped = crop_size > 0
+    cropped = crop_size > 0 and crop_size != tile_shape[0]
     rows, cols = len(arr[:, 0]), len(arr[0, :])
 
     if(cols % tile_shape[1] != 0 or rows % tile_shape[0] != 0):
