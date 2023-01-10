@@ -800,12 +800,13 @@ def sagemaker_server_wrapper():
     from src.io import get_image_array
 
     ping_test_image = '/opt/ml/code/tests/test_image.tif'
-    mask_model_path = '/opt/ml/models/models/mask_model'
-    pres_model_path = '/opt/ml/models/models/pres_model'
-    
-    print(os.listdir('/opt/ml/models'))
-    print(os.listdir('/opt/ml/models/models'))
-            
+    mask_model_path = '/opt/ml/model/models/mask_model'
+    pres_model_path = '/opt/ml/model/models/pres_model'
+
+    print(os.listdir('/opt/ml'))
+    print(os.listdir('/opt/ml/model'))
+    print(os.listdir('/opt/ml/model/models'))
+
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
 
