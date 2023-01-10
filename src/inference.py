@@ -56,13 +56,13 @@ def mask_and_plot(
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
 
-    arr_w, arr_uw, corr = get_product_arrays(product_path)
+    arr_w, arr_uw, corr, w_dataset = get_product_arrays(product_path)
 
-    zeros         = arr_uw == 0
-    bad_coherence = corr < 0.3
+    # zeros         = arr_uw == 0
+    # bad_coherence = corr < 0.3
 
-    arr_w[zeros]         = 0
-    arr_w[bad_coherence] = 0
+    # arr_w[zeros]         = 0
+    # arr_w[bad_coherence] = 0
 
     mask_pred, pres_mask, pres_vals = mask_with_model(
         mask_model = mask_model,
@@ -74,10 +74,10 @@ def mask_and_plot(
 
     presence_guess = np.max(pres_vals) > 0.75
 
-    arr_uw[zeros]            = 0
-    arr_uw[bad_coherence]    = 0
-    mask_pred[zeros]         = 0
-    mask_pred[bad_coherence] = 0
+    # arr_uw[zeros]            = 0
+    # arr_uw[bad_coherence]    = 0
+    # mask_pred[zeros]         = 0
+    # mask_pred[bad_coherence] = 0
 
     if presence_guess:
         print("Positive")
@@ -85,6 +85,16 @@ def mask_and_plot(
         print("Negative") 
 
     plot_imgs(arr_w, arr_uw, mask_pred, pres_mask)
+
+    filename = "output.tif"
+    img = Image.fromarray(mask_pred)
+    img.save(filename)
+
+    from osgeo import gdal
+
+    out_dataset = gdal.Open(filename, gdal.GA_Update)
+    out_dataset.SetGeoTransform(w_dataset.GetGeoTransform())
+    out_dataset.SetProjection(w_dataset.GetProjection())
 
     return mask_pred, presence_guess
 
@@ -138,16 +148,22 @@ def mask_with_model(
     if crop_size == 0:
         crop_size = tile_size
 
-    mask_tiles = mask_model.predict(tiled_arr_w, batch_size=8)
+    # tiled_arr_w += np.pi
+    # tiled_arr_w /= (2*np.pi)
+    # tiled_arr_w[zeros] = 0
+
+    mask_tiles = mask_model.predict(tiled_arr_w, batch_size=1)
 
     mask_tiles[zeros] = 0
 
-    rnd  = mask_tiles >= 0.5
-    trnc = mask_tiles <  0.5
+    rnd  = mask_tiles >= 0.7
+    trnc = mask_tiles <  0.7
+    # rnd2 = mask_tiles >= 0.5
     mask_tiles[trnc]  = 0
+    # mask_tiles[rnd2]  = 0.5
     mask_tiles[rnd]   = 1
 
-    pres_vals  = pres_model.predict(mask_tiles, batch_size=8)
+    pres_vals  = pres_model.predict(mask_tiles, batch_size=1)
     pres_tiles = np.zeros((w_rows*w_cols, tile_size, tile_size))
 
     index = 0
@@ -164,6 +180,8 @@ def mask_with_model(
         w_cols,
         arr_w.shape
     )
+
+    mask[arr_w == 0] = 0
 
     pres_mask = tiles_to_image(
         pres_tiles,
@@ -190,7 +208,7 @@ def plot_results(wrapped, mask, presence_mask):
     plt.show()
 
 
-def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
+def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size, save_images=False, output_dir=None):
 
     """
     Helper for test_model(). Evaluates EventNet Models over a directory of real interferograms.
@@ -230,14 +248,14 @@ def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
     for filename in listdir(directory):
         if 'unw_phase' in filename:
             try:
-                arr_uw = get_image_array(path.join(directory, filename))
-                arr_w  = np.angle(np.exp(1j * (arr_uw)))
+                arr_uw, dataset = get_image_array(path.join(directory, filename))
+                arr_w           = np.angle(np.exp(1j * (arr_uw)))
             except:
                 print(f"Failed to load unwrapped phase image: {filename}")
                 continue
         elif 'wrapped' in filename:
             try:
-                arr_w = get_image_array(path.join(directory, filename))
+                arr_w,  dataset = get_image_array(path.join(directory, filename))
             except:
                 print(f"Failed to load wrapped phase image: {filename}")
                 continue
@@ -263,12 +281,22 @@ def test_images_in_dir(mask_model, pres_model, directory, tile_size, crop_size):
         if presence_guess: positives += 1
         else:              negatives += 1
 
+        if save_images:
+            filename = f"{output_dir}/{tag}_mask.tif"
+            img = Image.fromarray(mask)
+            img.save(filename)
 
+            from osgeo import gdal
+
+            out_dataset = gdal.Open(filename, gdal.GA_Update)
+            out_dataset.SetGeoTransform(dataset.GetGeoTransform())
+            out_dataset.SetProjection(dataset.GetProjection())
+            out_dataset.FlushCache()
 
     return positives, negatives
 
 
-def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_size):
+def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_size, save_images=False, output_dir=None):
 
     """
     Evaluate EventNet Models over a directory of real interferograms.
@@ -305,8 +333,8 @@ def test_model(mask_model_path, pres_model_path, images_dir, tile_size, crop_siz
     positive_dir = path.join(images_dir, 'Positives')
     negative_dir = path.join(images_dir, 'Negatives')
 
-    true_positives, false_negatives = test_images_in_dir(mask_model, pres_model, positive_dir, tile_size, crop_size)
-    false_positives, true_negatives = test_images_in_dir(mask_model, pres_model, negative_dir, tile_size, crop_size)
+    true_positives, false_negatives = test_images_in_dir(mask_model, pres_model, positive_dir, tile_size, crop_size, save_images, output_dir)
+    false_positives, true_negatives = test_images_in_dir(mask_model, pres_model, negative_dir, tile_size, crop_size, save_images, output_dir)
 
     total = true_positives + false_positives + true_negatives + false_negatives
 
@@ -565,6 +593,10 @@ def plot_imgs(wrapped, true_mask, pred_mask, pred_mask_rounded):
     Helper for plotting the results of a mask prediction along with its corresponding truths.
     """
 
+    rnd_indices = pred_mask < 0.4
+    pred_mask_rounded = np.copy(wrapped)
+    pred_mask_rounded[rnd_indices] = pred_mask_rounded[rnd_indices] - 10
+
     _, [[axs_wrapped, axs_mask], [axs_unwrapped, axs_mask_rounded]] = plt.subplots(2, 2, sharex=True, sharey=True, tight_layout=True)
 
     axs_wrapped.set_title("Wrapped")
@@ -574,10 +606,10 @@ def plot_imgs(wrapped, true_mask, pred_mask, pred_mask_rounded):
     axs_unwrapped.imshow(true_mask, origin='lower', cmap='jet')
 
     axs_mask.set_title("Mask w/o Rounding")
-    axs_mask.imshow(pred_mask, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+    axs_mask.imshow(pred_mask_rounded, origin='lower', cmap='jet')
 
     axs_mask_rounded.set_title("Mask w/ Rounding")
-    axs_mask_rounded.imshow(pred_mask_rounded, origin='lower', cmap='jet', vmin=0.0, vmax=1.0)
+    axs_mask_rounded.imshow(pred_mask, origin='lower', cmap='jet')
 
     plt.show()
 
