@@ -5,7 +5,7 @@
 """
 
 import click
-from src.config import SYNTHETIC_DIR
+from src.config import SYNTHETIC_DIR, MASK_DIR
 
 
 # ------------- #
@@ -323,12 +323,14 @@ def test_binary_choice_wrapper(mask_model_path, pres_model_path, seed, num_trial
 
 
 @cli.command   ('test-model')
-@click.argument('model_path'           , type=str                                  )
-@click.argument('pres_model_path'      , type=str                                  )
-@click.argument('images_dir'           , type=str                                  )
-@click.option  ('-t', '--tile_size'    , type=int , default=512, help=tilesize_help)
-@click.option  ('-c', '--crop_size'    , type=int , default=0  , help=cropsize_help)
-def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_size):
+@click.argument('model_path'         , type=str                                       )
+@click.argument('pres_model_path'    , type=str                                       )
+@click.argument('images_dir'         , type=str                                       )
+@click.option  ('-t', '--tile_size'  , type=int , default=512     , help=tilesize_help)
+@click.option  ('-c', '--crop_size'  , type=int , default=0       , help=cropsize_help)
+@click.option  ('-s', '--save_images', type=bool, default=False   , help=""           )
+@click.option  ('-o', '--output_dir' , type=str , default=MASK_DIR, help=""           )
+def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_size, save_images, output_dir):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -344,7 +346,7 @@ def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_
 
     from src.inference import test_model
 
-    test_model(model_path, pres_model_path, images_dir, tile_size, crop_size)
+    test_model(model_path, pres_model_path, images_dir, tile_size, crop_size, save_images, output_dir)
 
 
 @cli.command   ('model-summary')
@@ -553,9 +555,9 @@ def check_images_wrapper(images_path):
         
         if filename.endswith(".tif"):
             
-            image = get_image_array(f"{images_path}/{filename}")
+            image, _ = get_image_array(f"{images_path}/{filename}")
             
-            image = angle(exp(1j * (image)))
+            image    = angle(exp(1j * (image)))
             
             print(f"\n{filename}\n")
             
@@ -797,9 +799,9 @@ def sagemaker_server_wrapper():
     from src.inference import mask_with_model
     from src.io import get_image_array
 
-    ping_test_image = 'tests/test_image.tif'
-    mask_model_path = '/opt/ml/models/mask_model'
-    pres_model_path = '/opt/ml/models/pres_model'
+    ping_test_image = '/opt/ml/code/tests/test_image.tif'
+    mask_model_path = '/opt/ml/models/models/mask_model'
+    pres_model_path = '/opt/ml/models/models/pres_model'
             
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
@@ -815,8 +817,8 @@ def sagemaker_server_wrapper():
         """
 
         try:
-            
-            image = get_image_array(ping_test_image)
+
+            image, dataset = get_image_array(ping_test_image)
 
             masked, presence_mask, pres_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
 
@@ -851,7 +853,7 @@ def sagemaker_server_wrapper():
             with open("image.tif", "wb") as f:
                 f.write(byteImg.getbuffer())
 
-            image = get_image_array("image.tif")
+            image, dataset = get_image_array("image.tif")
 
             masked, presence_mask, presence_vals = mask_with_model(mask_model_path, pres_model_path, image, tile_size=512)
 
