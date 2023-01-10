@@ -84,6 +84,7 @@ def hyp3_login() -> HyP3:
     hyp3 : HyP3
         The hyp3 session class.
     """
+
     try:
         username, password = get_netrc_credentials()
     except IndexError and FileNotFoundError:
