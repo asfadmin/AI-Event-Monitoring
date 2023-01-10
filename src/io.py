@@ -97,7 +97,7 @@ def get_image_array(
     band = dataset.GetRasterBand(1)
     arr = band.ReadAsArray()
 
-    return arr
+    return arr, dataset
 
 
 def get_product_arrays(
@@ -134,11 +134,15 @@ def get_product_arrays(
         elif filename[-13:] == 'unw_phase.tif':
             unwrapped_path = product_path + '/' + filename
 
-    wrapped     = get_image_array(wrapped_path)
-    correlation = get_image_array(correlation_path)
-    unwrapped   = get_image_array(unwrapped_path)
+    correlation, _ = get_image_array(correlation_path)
+    unwrapped, dataset  = get_image_array(unwrapped_path)
 
-    return wrapped, unwrapped, correlation
+    if wrapped_path != "":
+        wrapped, _ = get_image_array(wrapped_path)
+    else:
+        wrapped = np.angle(np.exp(1j * unwrapped))
+
+    return wrapped, unwrapped, correlation, dataset
 
 
 def get_dataset_arrays(
@@ -251,9 +255,9 @@ def make_simulated_dataset(
     }
 
     quake_count     = np.ceil(0.4 * amount)
-    dyke_count      = quake_count + np.ceil(0.1 * amount)
-    sill_count      = dyke_count  + np.ceil(0.1 * amount)
-    mix_noise_count = sill_count  + np.floor(0.3 * amount)
+    dyke_count      = quake_count + np.ceil(0.15 * amount)
+    sill_count      = dyke_count  + np.ceil(0.15 * amount)
+    mix_noise_count = sill_count  + np.floor(0.2 * amount)
 
     count = 0
     while count < amount:
@@ -278,7 +282,7 @@ def make_simulated_dataset(
             unwrapped, masked, wrapped, presence = gen_simulated_deformation(
                 seed       = current_seed,
                 tile_size  = tile_size,
-                event_type = event_type
+                event_type = 'quake'
             )
         else:
             unwrapped, masked, wrapped, presence = gen_sim_noise(
@@ -293,7 +297,7 @@ def make_simulated_dataset(
             
             round_mask = True
             mask_zeros = True
-            
+
             wrapped     = wrapped.reshape((1, tile_size, tile_size, 1))
             masked_pred = model.predict(wrapped)
 
@@ -301,7 +305,7 @@ def make_simulated_dataset(
             masked_pred = np.abs(masked_pred.reshape((crop_size, crop_size)))
 
             if round_mask:
-                tolerance  = 0.5
+                tolerance  = 0.7
                 round_up   = masked_pred >= tolerance
                 round_down = masked_pred <  tolerance
 
