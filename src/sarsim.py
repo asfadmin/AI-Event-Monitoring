@@ -189,7 +189,6 @@ class Okada():
     def compute_I_1(self, W, L):
 
         xi  = self.okada_x - L
-        eta = self.eta     - W 
 
         if W != 0 and L != 0:
             I_5 = self.I_5_WL
@@ -208,7 +207,6 @@ class Okada():
 
     def compute_I_2(self, W, L):
 
-        xi  = self.okada_x - L
         eta = self.eta     - W       
 
         if W != 0 and L != 0:
@@ -225,7 +223,6 @@ class Okada():
 
     def compute_I_3(self, W, L):
 
-        xi  = self.okada_x - L
         eta = self.eta     - W       
 
         if W != 0 and L != 0:
@@ -245,7 +242,6 @@ class Okada():
 
     def compute_I_4(self, W, L):
 
-        xi  = self.okada_x - L
         eta = self.eta     - W       
 
 
@@ -609,7 +605,7 @@ def gen_fake_topo(
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
-    dem = generate_perlin(dem.shape[0]) * 200
+    dem = generate_perlin(dem.shape[0]) * 250
     
     neg_indices = dem < np.max(dem) / 1.75
     
@@ -628,7 +624,7 @@ def atm_topo_simulate(
     strength_var:  float = 2.0,
 ):
 
-    """
+    """`
     Generate simulated topographic atmospheric error.
 
     Parameters:
@@ -652,7 +648,7 @@ def atm_topo_simulate(
     import numpy.ma as ma
 
     # Sentinel-1 Wavelength in meters
-    s1_lambda = 0.056
+    s1_lambda = 0.0547
     dem_km = 0.001 * dem_m
 
     ph_topo_aq1 = (strength_mean + strength_var * np.random.randn(1)) * dem_km  # this is the delay for one acquisition
@@ -743,7 +739,7 @@ def gen_simulated_deformation(
     seed:              int   = 0,
     tile_size:         int   = 512,
     log:               bool  = False,
-    atmosphere_scalar: float = 100 * np.pi,
+    atmosphere_scalar: float = 90 * np.pi,
     amplitude_scalar:  float = 1000 * np.pi,
     event_type:        str   = 'quake',
     **kwargs
@@ -786,17 +782,9 @@ def gen_simulated_deformation(
 
     masked_grid = np.zeros((tile_size, tile_size)) 
 
-    los_vector  = np.array(
-        [
-            [ 0.38213591],
-            [-0.08150437],
-            [ 0.92050485]
-        ]
-    )
-
     random_nums = np.random.rand(13)
 
-    dip = np.random.randint(75, 90) 
+    dip = 90
 
     if not kwargs:
 
@@ -805,19 +793,19 @@ def gen_simulated_deformation(
         source_x = axes_max // ((random_nums[0] * 10) + 1)
         source_y = axes_max // ((random_nums[1] * 10) + 1)
 
-        length    = 500 + 2000 * random_nums[2]
-        top_depth = length + 2000 + ((axes_max // 8 ) * random_nums[3])
-        depth     = 2000 + ((axes_max // 16 ) * random_nums[4])
+        length    = 1000 + 2000 * random_nums[2]
+        top_depth = 3000  + 5000 * random_nums[3]
+        depth     = 1000 + ((axes_max // 32 ) * random_nums[4])
         width     = 500  + 500 + 1000 * random_nums[5]
 
         kwargs = {
             'strike'      : 180 * random_nums[6],
-            'dip'         : [45, dip][random_nums[7] < 0.5],
+            'dip'         : [45, 45][random_nums[7] < 0.5],
             'length'      : length,
-            'rake'        : [-90, 90][random_nums[8] < 0.5],
+            'rake'        : [-90, -90][random_nums[7] < 0.5],
             'slip'        : 1,
             'top_depth'   : top_depth,
-            'bottom_depth': top_depth * (2 + 4 * random_nums[10]),
+            'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
             'width'       : width,
             'depth'       : depth,
             'opening'     : 1
@@ -836,26 +824,36 @@ def gen_simulated_deformation(
     Event = Okada(event_type, (source_x, source_y), tile_size = tile_size, **kwargs)
     end   = perf_counter()
 
-    los_grid = Event.los_displacement * amplitude_scalar
+    los_grid = Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5]
 
-    masked_indices   = np.abs(los_grid) >= np.pi * 2
-    n_masked_indices = np.abs(los_grid) <  np.pi * 2
+    masked_indices    = los_grid >= np.pi * 2
+    n_masked_indices  = los_grid <  np.pi * 2
+    no_masked_indices = los_grid <  np.pi * 2
 
-    los_grid[n_masked_indices]  = 0
+    los_grid[no_masked_indices] = 0
     masked_grid[masked_indices] = 1
 
     atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
 
-    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.5)
+    coherence_mask     = coherence_mask_simulate(tile_size, threshold=random_nums[8]*0.3)
     coh_masked_indices = coherence_mask[0,0:tile_size, 0:tile_size] == 0
 
     interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
  
-    n_masked_indices = np.abs(interferogram) <  np.pi * 5
-    masked_grid[n_masked_indices]     = 0
-    interferogram[coh_masked_indices] = 0
+    n_masked_indices   = np.abs(interferogram) <  np.pi * 3
+    n_masked_indices2  = np.abs(interferogram) <  np.pi * 5
+    masked_grid[masked_indices]        = 1
+    masked_grid[n_masked_indices2]     = 0.5
+    masked_grid[n_masked_indices]      = 0
+    # masked_grid[coh_masked_indices]    = 0
+    interferogram[coh_masked_indices]  = 0
 
-    wrapped_grid = wrap_interferogram(interferogram)
+    wrapped_grid = np.angle(np.exp(1j * (interferogram)))
+
+    zeros = wrapped_grid == 0
+    wrapped_grid += np.pi
+    wrapped_grid /= (2 * np.pi)
+    wrapped_grid[zeros] = 0
 
     if log:
         print("__________\n")
@@ -882,7 +880,9 @@ def gen_simulated_deformation(
         print("Compute Time   (seconds) ", end - start)
         print("__________\n")
 
-    return interferogram, masked_grid, wrapped_grid, presence
+    unwrapped = Event.los_displacement * amplitude_scalar + atmosphere_phase[0:tile_size, 0:tile_size]
+
+    return unwrapped, masked_grid, wrapped_grid, presence
 
 
 def gen_gaussian_noise(
@@ -894,8 +894,6 @@ def gen_gaussian_noise(
 
     if seed != 0: 
         np.random.seed(seed)
-
-    masked_grid  = np.zeros((tile_size, tile_size))
 
     noise_grids = np.random.uniform(-noise_level, noise_level, size=(2, tile_size, tile_size))
 
@@ -949,21 +947,32 @@ def gen_sim_noise(
 
     if gaussian_only:
 
-        threshold = np.random.randint(0, 100 * np.pi)
-        noise_grid = gen_gaussian_noise(seed, tile_size, threshold=threshold)
-        wrapped_grid = wrap_interferogram(noise_grid)
-        masked_grid = np.zeros((tile_size, tile_size))
-        phase = masked_grid
-        
+        threshold         = 90 * np.pi
+        noise_grid_full   = gen_gaussian_noise(seed, tile_size, threshold=threshold)
+
+        noise_grid_inconsistent = gen_gaussian_noise(seed, tile_size, threshold=(threshold * np.random.random() / 2))
+
+        threshold       = np.random.random() / 2
+        coherence_mask  = coherence_mask_simulate(tile_size, threshold=threshold)
+        coh_indices     = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
+
+        noise_grid              = noise_grid_full
+        noise_grid[coh_indices] = noise_grid_inconsistent[coh_indices]
+
+        wrapped_grid = np.angle(np.exp(1j * (noise_grid)))
+
+        masked_grid  = np.zeros((tile_size, tile_size))
+        phase        = masked_grid
+
     else:
 
         simulated_topography = gen_fake_topo(
             size          = tile_size,
-            alt_scale_min = 100,
-            alt_scale_max = 500
+            alt_scale_min = 0,
+            alt_scale_max = 50
         )
 
-        turb_phase = aps_simulate(tile_size) * atmosphere_scalar
+        turb_phase = aps_simulate(tile_size) * atmosphere_scalar / 8
         topo_phase = aps_simulate(tile_size) * atmosphere_scalar + np.abs(atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi)
 
         threshold       = np.random.random() / 2
@@ -971,12 +980,15 @@ def gen_sim_noise(
         coh_indices     = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
 
         phase = turb_phase + topo_phase
-        
+
         wrapped_grid = np.angle(np.exp(1j * (phase)))
         wrapped_grid[coh_indices] = 0
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-        phase[coh_indices] = 0
+    zeros = wrapped_grid == 0
+    wrapped_grid += np.pi
+    wrapped_grid /= (2 * np.pi)
+    wrapped_grid[zeros] = 0
 
     return phase, masked_grid, wrapped_grid, presence
