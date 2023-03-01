@@ -115,6 +115,53 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
     print("")
     print(f"Created simulated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
+    
+    
+@cli.command   ('make-simulated-ts-dataset')
+@click.argument('name'              , type=str                                                                    )
+@click.argument('amount'            , type=int                        , default=1                                 )
+@click.option  ('-t', '--tile_size' , type=int                        , default=512          , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=512          , help=cropsize_help )
+@click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
+@click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
+@click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
+def make_simulated_time_series_dataset_wrapper(name, amount, tile_size, crop_size, output_dir, seed, split):
+
+    """
+    Create a randomly generated simulated time-series dataset of unwrapped interferograms and their corresponding presences.
+
+    ARGS:\n
+    name        Name of dataset. Seed is appended.\n
+                <name>_seed<seed>\n
+    amount      Number of simulated interferograms created.\n
+    """
+
+    from src.io import split_dataset, make_simulated_time_series_dataset
+
+    print("")
+
+    name, count, dir_name, distribution, dataset_info = make_simulated_time_series_dataset(
+        name,
+        output_dir,
+        amount,
+        seed,
+        tile_size,
+        crop_size
+    )
+
+    num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
+
+    try:
+        log_file = open(output_dir.__str__() + '/' + dir_name + '/parameters.txt', 'w')
+        log_file.write(dataset_info)
+    except Exception as e:
+        print(f'{type(e)}: {e}')
+
+    print("")
+    print(f"Data Type Distribution: {distribution}")
+    print("")
+    print(f"Created simulated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}")
+    print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
 @cli.command   ('make-simulated-binary-dataset')
@@ -217,8 +264,8 @@ def train_model_wrapper(
 
     from src.training import train
 
-    if model_type not in ['eventnet', 'unet', 'resnet', 'resnet_classifier']:
-        print("\nBad model type. Should be \'eventnet\', \'unet\', \'resnet_classifier\', or \'resnet\'.")
+    if model_type not in ['eventnet', 'unet', 'unet3d', 'resnet', 'resnet_classifier']:
+        print("\nBad model type. Should be \'eventnet\', \'unet\', \'uent3d\' \'resnet_classifier\', or \'resnet\'.")
         return
 
     train(
@@ -788,6 +835,7 @@ def sagemaker_server_wrapper():
 
     import os
     import json
+    import requests
 
     from io import BytesIO
 
@@ -810,6 +858,43 @@ def sagemaker_server_wrapper():
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
 
+    try:
+        
+        event_list_res = requests.get('https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events')
+        event_list_res.status_code
+
+    except:
+        
+        print("Could not connect to event list API. Using test event list.")
+        exit(1)
+
+    def get_image_from_sarviews(
+        usgs_event_id: str = 'us6000jkpr',
+        granule_name:  str = 'S1AA_20230126T212437_20230219T212436_VVR024_INT80_G_weF_3603'
+    ):
+        
+        product_name  = granule_name + '.zip'
+
+        event_list = event_list_res.json()
+        event_obj  = next((item for item in event_list if ("usgs_event_id" in item) and (item["usgs_event_id"] == usgs_event_id)), None)
+        event_id   = event_obj['event_id']
+
+        event_get_res = requests.get(f'https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events/{event_id}')
+        event_get_res.status_code
+
+        event_get_list = event_get_res.json()
+        event_obj      = next((item for item in event_get_list["products"] if item["files"]["product_name"] == product_name), None)
+
+        product_url = event_obj['files']['product_url']
+
+        os.system(f'wget --quiet {product_url}')
+        os.system(f'unzip -qq {product_name}')
+        os.system(f'ls {granule_name}')
+
+        image_path = granule_name + '/' + granule_name + '_unw_phase.tif'
+
+        return image_path
+
     app = flask.Flask(__name__)
 
     @app.route('/ping', methods=['GET'])
@@ -822,7 +907,9 @@ def sagemaker_server_wrapper():
 
         try:
 
-            image, dataset = get_image_array(ping_test_image)
+            image_path = get_image_from_sarviews()
+
+            image, dataset = get_image_array(image_path)
 
             masked, presence_mask, pres_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
 
@@ -853,13 +940,16 @@ def sagemaker_server_wrapper():
         status = 200
 
         try:
-            byteImg = BytesIO(request.get_data())
-            with open("image.tif", "wb") as f:
-                f.write(byteImg.getbuffer())
+            content = request.json
 
-            image, dataset = get_image_array("image.tif")
+            usgs_event_id = content['usgs_event_id']
+            granule_name = content['product_name']
 
-            masked, presence_mask, presence_vals = mask_with_model(mask_model_path, pres_model_path, image, tile_size=512)
+            image_path = get_image_from_sarviews(usgs_event_id, granule_name)
+
+            image, dataset = get_image_array(image_path)
+
+            masked, presence_mask, presence_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
 
             if np.mean(presence_mask) > 0.0:
                 presense = True
@@ -869,7 +959,7 @@ def sagemaker_server_wrapper():
             result = {
                 "presense": presense,
             }
-            
+
         except Exception as err:
 
             status = 500
