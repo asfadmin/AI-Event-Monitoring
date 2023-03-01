@@ -15,8 +15,9 @@ from datetime import datetime
 
 from src.config                  import AOI_DIR, MASK_DIR, MODEL_DIR, PRODUCTS_DIR, REAL_DIR, SYNTHETIC_DIR, TENSORBOARD_DIR
 from src.processing              import tile
-from src.sarsim                  import gen_simulated_deformation, gen_sim_noise
+from src.sarsim                  import gen_simulated_deformation, gen_sim_noise, gen_simulated_time_series
 from src.synthetic_interferogram import simulate_unet_cropping
+from PIL import Image
 
 
 def save_dataset(
@@ -31,6 +32,46 @@ def save_dataset(
     """
 
     np.savez(save_path, mask=mask, wrapped=wrapped, presence=presence)
+    
+
+def save_time_series_dataset(
+    save_path: Path,
+    phases:    list,
+    mask:      np.ndarray,
+    presence:  int
+) -> None:
+
+    """
+    Saves event-mask and wrapped ndarrays to a single .npz file.
+    """
+
+    np.savez(save_path, phases=phases, mask=mask, presence=presence)
+
+
+def load_ts_dataset(
+    load_path: Path
+) -> Tuple[np.ndarray, np.ndarray]:
+
+    """
+    Loads event-mask and wrapped ndarrays from .npz file.
+
+    Parameters:
+    -----------
+    load_path : Path
+        The path to the data example that should be loaded.
+
+    Returns:
+    --------
+    mask : np.ndarray
+        The array of the event-mask loaded from the .npz.
+    wrapped : np.ndarray
+        The array of the wrapped interferogram loaded from the .npz.
+    presence : [0] or [1]
+        [1] if the image contains an event else [0]
+    """
+
+    dataset_file = np.load(load_path)
+    return dataset_file['phases'], dataset_file['mask'], dataset_file['presence']
 
 
 def load_dataset(
@@ -255,9 +296,9 @@ def make_simulated_dataset(
     }
 
     quake_count     = np.ceil(0.4 * amount)
-    dyke_count      = quake_count + np.ceil(0.15 * amount)
-    sill_count      = dyke_count  + np.ceil(0.15 * amount)
-    mix_noise_count = sill_count  + np.floor(0.2 * amount)
+    dyke_count      = quake_count + np.ceil(0.1 * amount)
+    sill_count      = dyke_count  + np.ceil(0.1 * amount)
+    mix_noise_count = sill_count  + np.floor(0.3 * amount)
 
     count = 0
     while count < amount:
@@ -325,6 +366,121 @@ def make_simulated_dataset(
         current_name = f"sim_seed{current_seed}_{count}_{event_type}"
         save_path = save_directory / current_name
         save_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
+
+        count += 1
+
+    dataset_info = (
+        f'Name: {name}\n' +
+        f'Size: {amount}\n' +
+        f'Date: {datetime.utcnow()}\n' +
+        f'Seed: {seed}\n' +
+        f'Tile: {tile_size}\n' + 
+        f'Crop: {crop_size}\n' +
+        f'\nDistribution:\n{distribution}\n' +
+        f'\nSeed List:\n{seeds}\n'
+    )
+
+    print(f"Generated {count} of {amount} simulated interferogram pairs.")
+    return seed, count, dir_name, distribution, dataset_info
+
+
+def make_simulated_time_series_dataset(
+    name:         str,
+    output_dir:   str,
+    amount:       int,
+    seed:         int,
+    tile_size:    int,
+    crop_size:    int,
+    model_path:   str  = ""
+) -> Tuple[int, int, str]:
+
+    """
+    Generate a dataset containing pairs of wrapped interferograms from simulated deformation along with their event-masks
+
+    Parameters:
+    -----------
+    name : str
+        The name of the dataset to be generate. The saved name will be formatted
+        like <name>_amount<amount>_seed<seed>.
+    output_dir : str
+        The directory to save the generated dataset to.
+    amount : int
+        The amount of simulated interferogram pairs to be generated.
+    seed : int
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        a seed will be generated and the results will be different every time.
+    tile_size : int
+        The size of the simulated interferograms, which should match the desired tile sizes of
+        of the real interferograms. This also needs to match the input shape of the model.
+    crop_size : int
+        If the model's output shape does not match its input shape, this should be set to match
+        the output shape. The unwrapped interferogram will be cropped to this.
+
+    Returns:
+    --------
+    seed : int
+        The generated or inputed seed.
+    count : int
+        The number of samples that were generated.
+    dir_name : str
+        The generated name of the dataset directory.
+    """
+
+    if not seed:
+        seed = np.random.randint(100000, 999999)
+
+    np.random.seed(seed)
+
+    seeds = np.random.randint(100000, 999999, size=amount)
+
+    dir_name = f"{name}_amount{amount}_seed{seed}"
+
+    save_directory = Path(output_dir) / dir_name
+    if not save_directory.is_dir():
+        save_directory.mkdir()
+
+    distribution = {
+        "quake": 0,
+        "mixed_noise": 0
+    }
+
+    quake_count     = np.ceil(0.5 * amount)
+
+    count = 0
+    while count < amount:
+
+        current_seed = seeds[count]
+
+
+        if count < quake_count:
+            
+            phases, mask = gen_simulated_time_series(
+                seed       = current_seed,
+                tile_size  = tile_size
+            )
+            
+            distribution['quake'] += 1
+            
+            presence = 1
+        else:
+            
+            phases, mask = gen_simulated_time_series(
+                seed       = current_seed,
+                tile_size  = tile_size,
+                noise_only = True
+            )
+            
+            distribution['mixed_noise'] += 1
+            
+            presence = 0
+
+        if count % 10 == 0 and count != 0:
+            print(f"Generated {count} of {amount} simulated interferogram pairs.")
+
+        current_name = f"sim_seed{current_seed}_{count}"
+        save_path = save_directory / current_name
+        save_time_series_dataset(save_path, phases=phases[:, 0, :, :], mask=mask, presence=presence)
 
         count += 1
 

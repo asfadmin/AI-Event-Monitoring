@@ -156,11 +156,11 @@ def mask_with_model(
 
     mask_tiles[zeros] = 0
 
-    rnd  = mask_tiles >= 0.7
-    trnc = mask_tiles <  0.7
-    # rnd2 = mask_tiles >= 0.5
+    rnd  = mask_tiles >= 0.5
+    trnc = mask_tiles <  0.5
+    # # rnd2 = mask_tiles >= 0.5
     mask_tiles[trnc]  = 0
-    # mask_tiles[rnd2]  = 0.5
+    # # mask_tiles[rnd2]  = 0.5
     mask_tiles[rnd]   = 1
 
     pres_vals  = pres_model.predict(mask_tiles, batch_size=1)

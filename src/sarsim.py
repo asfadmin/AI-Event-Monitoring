@@ -566,7 +566,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m = 0.02, difference = True):
             nx, 
             ny,
             std_long = 1, 
-            sp       = 0.001 * np.mean((pixel_spacing['x'], pixel_spacing['y']))
+            sp       = 0.0009 * np.mean((pixel_spacing['x'], pixel_spacing['y']))
         )
 
     ph_turbs_m = np.zeros(ph_turbs.shape)
@@ -605,7 +605,7 @@ def gen_fake_topo(
     from src.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))    
-    dem = generate_perlin(dem.shape[0]) * 250
+    dem = generate_perlin(dem.shape[0]) * alt_scale_max
     
     neg_indices = dem < np.max(dem) / 1.75
     
@@ -649,7 +649,7 @@ def atm_topo_simulate(
 
     # Sentinel-1 Wavelength in meters
     s1_lambda = 0.0547
-    dem_km = 0.001 * dem_m
+    dem_km = 0.01 * dem_m
 
     ph_topo_aq1 = (strength_mean + strength_var * np.random.randn(1)) * dem_km  # this is the delay for one acquisition
     ph_topo_aq2 = (strength_mean + strength_var * np.random.randn(1)) * dem_km  # and for another
@@ -739,7 +739,7 @@ def gen_simulated_deformation(
     seed:              int   = 0,
     tile_size:         int   = 512,
     log:               bool  = False,
-    atmosphere_scalar: float = 90 * np.pi,
+    atmosphere_scalar: float = 100 * np.pi,
     amplitude_scalar:  float = 1000 * np.pi,
     event_type:        str   = 'quake',
     **kwargs
@@ -793,25 +793,30 @@ def gen_simulated_deformation(
         source_x = axes_max // ((random_nums[0] * 10) + 1)
         source_y = axes_max // ((random_nums[1] * 10) + 1)
 
-        length    = 1000 + 2000 * random_nums[2]
-        top_depth = 3000  + 5000 * random_nums[3]
-        depth     = 1000 + ((axes_max // 32 ) * random_nums[4])
-        width     = 500  + 500 + 1000 * random_nums[5]
+        length    = 1000 + 3000 * random_nums[2]
+        top_depth = 6000 + 5000 * random_nums[3]
+        depth     = 2000 + 2000 * random_nums[3]
+        width     = 2000 + 3000 * random_nums[2]
 
         kwargs = {
             'strike'      : 180 * random_nums[6],
-            'dip'         : [45, 45][random_nums[7] < 0.5],
+            'dip'         : [45, 90][random_nums[7] < 0.5],
             'length'      : length,
             'rake'        : [-90, -90][random_nums[7] < 0.5],
-            'slip'        : 1,
+            'slip'        : 3,
             'top_depth'   : top_depth,
             'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
-            'width'       : width,
+            'width'       : depth / 4,
             'depth'       : depth,
-            'opening'     : 1
+            'opening'     : 5
         }
 
+        if event_type == 'dyke':
+            kwargs['dip'] = 90
+
     else:
+
+        axes_max = (tile_size) * 90
 
         top_depth = kwargs['top_depth']
         source_x  = kwargs['source_x']
@@ -826,8 +831,8 @@ def gen_simulated_deformation(
 
     los_grid = Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5]
 
-    masked_indices    = los_grid >= np.pi * 2
-    n_masked_indices  = los_grid <  np.pi * 2
+    masked_indices    = np.abs(los_grid) >= np.pi * 2
+    n_masked_indices  = np.abs(los_grid) < np.pi * 2
     no_masked_indices = los_grid <  np.pi * 2
 
     los_grid[no_masked_indices] = 0
@@ -843,17 +848,17 @@ def gen_simulated_deformation(
     n_masked_indices   = np.abs(interferogram) <  np.pi * 3
     n_masked_indices2  = np.abs(interferogram) <  np.pi * 5
     masked_grid[masked_indices]        = 1
-    masked_grid[n_masked_indices2]     = 0.5
+    masked_grid[n_masked_indices2]     = 1
     masked_grid[n_masked_indices]      = 0
     # masked_grid[coh_masked_indices]    = 0
     interferogram[coh_masked_indices]  = 0
 
     wrapped_grid = np.angle(np.exp(1j * (interferogram)))
 
-    zeros = wrapped_grid == 0
-    wrapped_grid += np.pi
-    wrapped_grid /= (2 * np.pi)
-    wrapped_grid[zeros] = 0
+    # zeros = wrapped_grid == 0
+    # wrapped_grid += np.pi
+    # wrapped_grid /= (2 * np.pi)
+    # wrapped_grid[zeros] = 0
 
     if log:
         print("__________\n")
@@ -863,6 +868,7 @@ def gen_simulated_deformation(
         print("Top Depth      (meters)  ", top_depth)
         print("Bottom Depth   (meters)  ", kwargs['bottom_depth'])
         print("Depth          (meters)  ", kwargs['depth'])
+        print("Width          (meters)  ", kwargs['width'])
         print("")
         print("Slip           (0  or 1) ", kwargs['slip'])
         print("Dip            (degrees) ", kwargs['dip'])
@@ -911,7 +917,7 @@ def gen_sim_noise(
     seed:              int   = 0,
     tile_size:         int   = 512,
     gaussian_only:     bool  = False,
-    atmosphere_scalar: float = 200 * np.pi,
+    atmosphere_scalar: float = 90 * np.pi,
 ):
 
     """
@@ -968,27 +974,136 @@ def gen_sim_noise(
 
         simulated_topography = gen_fake_topo(
             size          = tile_size,
-            alt_scale_min = 0,
-            alt_scale_max = 50
+            alt_scale_min = 50,
+            alt_scale_max = 100
         )
 
-        turb_phase = aps_simulate(tile_size) * atmosphere_scalar / 8
-        topo_phase = aps_simulate(tile_size) * atmosphere_scalar + np.abs(atm_topo_simulate(simulated_topography) * atmosphere_scalar * np.pi)
+        turb_phase = aps_simulate(tile_size) * atmosphere_scalar
+        topo_phase = atm_topo_simulate(simulated_topography) * atmosphere_scalar # aps_simulate(tile_size) * atmosphere_scalar + 
 
-        threshold       = np.random.random() / 2
-        coherence_mask  = coherence_mask_simulate(tile_size, threshold=threshold)
+        noise_grid_full   = gen_gaussian_noise(seed, tile_size, threshold=90*np.pi)
+        coherence_mask  = coherence_mask_simulate(tile_size, threshold=0.3)
         coh_indices     = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
 
         phase = turb_phase + topo_phase
+        phase[coh_indices] = noise_grid_full[coh_indices]
 
         wrapped_grid = np.angle(np.exp(1j * (phase)))
-        wrapped_grid[coh_indices] = 0
+
 
         masked_grid = np.zeros((tile_size, tile_size))
 
-    zeros = wrapped_grid == 0
-    wrapped_grid += np.pi
-    wrapped_grid /= (2 * np.pi)
-    wrapped_grid[zeros] = 0
+    # zeros = wrapped_grid == 0
+    # wrapped_grid += np.pi
+    # wrapped_grid /= (2 * np.pi)
+    # wrapped_grid[zeros] = 0
 
     return phase, masked_grid, wrapped_grid, presence
+
+
+def gen_simulated_time_series(
+    n_interferograms:  int   = 32,
+    tile_size:         int   = 512,
+    seed:              int   = 0,
+    atmosphere_scalar: float = 90 * np.pi,
+    noise_only:        bool  = False
+):
+    
+    """
+    Generate a time-series of interferograms with simulated deformation. Correlated by a common dem.
+
+    Parameters:
+    -----------
+    seed : int, Optional
+        A seed for the random functions. For the same seed, with all other values the same
+        as well, the interferogram generation will have the same results. If left at 0,
+        the results will be different every time.
+    tile_size : int, Optional
+        The desired dimensional size of the interferogram pairs. This should match
+        the input shape of the model.
+    log : bool, Optional
+        If true, the function will log various relevant values in the console.
+    atmosphere_scalar : float, Optional
+        Scale factor for the intensity of atmospheric noise.
+
+    Returns:
+    --------
+    masked_grid : np.ndarray(shape=(tile_size, tile_size))
+        An array representing a mask over the simulated deformation which simulates masking an event.
+    wrapped_grid : np.ndarray(shape=(tile_size, tile_size)
+        The wrapped interferogram.
+    presence : [1] or [0]
+        [1] if the image contains an event else [0]
+    """
+    
+    if seed != 0: np.random.seed(seed)
+
+    simulated_topography = gen_fake_topo(
+        size          = tile_size,
+        alt_scale_max = 100
+    )
+
+    event_type  = 'quake'
+    axes_max    = (tile_size) * 90
+    random_nums = np.random.rand(13)
+    scalar      = 100 * np.pi
+    mask = np.zeros((tile_size, tile_size))
+
+    if not noise_only:
+
+        axes_max = (tile_size) * 90
+
+        source_x = axes_max // ((random_nums[0] * 10) + 1)
+        source_y = axes_max // ((random_nums[1] * 10) + 1)
+
+        length    = 1000 + 3000 * random_nums[2]
+        top_depth = 6000 + 5000 * random_nums[3]
+        depth     = 2000 + 2000 * random_nums[3]
+        width     = 2000 + 3000 * random_nums[2]
+
+        kwargs = {
+            'strike'      : 180 * random_nums[6],
+            'dip'         : [45, 90][int(random_nums[7] < 0.5)],
+            'length'      : length,
+            'rake'        : [-90, -90][int(random_nums[7] < 0.5)],
+            'slip'        : 3,
+            'top_depth'   : top_depth,
+            'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
+            'width'       : depth / 4,
+            'depth'       : depth,
+            'opening'     : 5
+        }
+
+        if event_type == 'dyke':
+            kwargs['dip'] = 90
+
+        Event = Okada(event_type, (source_x, source_y), tile_size = tile_size, **kwargs)
+
+        los_displacement = Event.los_displacement
+        
+        phase = scalar * los_displacement
+        
+        mask[np.abs(phase) > np.pi] = 1
+        
+    else:
+        
+        los_displacement = np.zeros((tile_size, tile_size))
+
+    phases = np.zeros((n_interferograms, 2, tile_size, tile_size))
+
+    for i in range(n_interferograms):
+        
+        displacement_step = los_displacement / n_interferograms
+        
+        topo_phase         = np.abs(atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi)
+        turb_phase         = aps_simulate(tile_size) * atmosphere_scalar * 0.3
+        
+        phase_step         = scalar * displacement_step + topo_phase + turb_phase
+        wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
+
+        phase_step         = (phase_step + np.abs(np.min(phase_step))) / np.max((phase_step + np.abs(np.min(phase_step)))) # Normalize
+        
+        phases[i] = [phase_step, wrapped_phase_step]
+        
+
+    return phases, mask
