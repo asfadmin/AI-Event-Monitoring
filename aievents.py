@@ -907,19 +907,8 @@ def sagemaker_server_wrapper():
 
         try:
 
-            image_path = get_image_from_sarviews()
-
-            image, dataset = get_image_array(image_path)
-
-            masked, presence_mask, pres_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
-
-            if np.mean(presence_mask) > 0.0:
-                presense = True
-            else:
-                presense = False
-
             response = {
-                "presense": presense,
+                "presense": True,
             }
 
             return flask.Response(response=json.dumps(response), status=200, mimetype='application/json')
