@@ -190,7 +190,7 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
 
     from src.io import split_dataset, make_simulated_dataset
 
-    name, count, dir_name, _, _ = make_simulated_dataset(
+    seed, count, dir_name, _, _ = make_simulated_dataset(
         name,
         output_dir,
         amount,
@@ -203,7 +203,6 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
 
     print("")
-    print(f"Created binary dataset of size {count} at {output_dir.__str__() + '/' + name}.")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
@@ -936,7 +935,7 @@ def sagemaker_server_wrapper():
 
             image_path = get_image_from_sarviews(usgs_event_id, granule_name)
 
-            image, dataset = get_image_array(image_path)
+            image, dataset = np.angle(np.exp(1j * get_image_array(image_path)))
 
             masked, presence_mask, presence_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
 
