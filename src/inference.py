@@ -72,7 +72,7 @@ def mask_and_plot(
         crop_size  = crop_size
     )
 
-    presence_guess = np.max(pres_vals) > 0.75
+    presence_guess = np.mean(pres_mask) > 0.0
 
     # arr_uw[zeros]            = 0
     # arr_uw[bad_coherence]    = 0

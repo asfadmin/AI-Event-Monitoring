@@ -935,9 +935,10 @@ def sagemaker_server_wrapper():
 
             image_path = get_image_from_sarviews(usgs_event_id, granule_name)
 
-            image, dataset = np.angle(np.exp(1j * get_image_array(image_path)))
+            image, dataset = get_image_array(image_path)
+            wrapped_image = np.angle(np.exp(1j * image))
 
-            masked, presence_mask, presence_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
+            masked, presence_mask, presence_vals = mask_with_model(mask_model, pres_model, wrapped_image, tile_size=512)
 
             if np.mean(presence_mask) > 0.0:
                 presense = True
