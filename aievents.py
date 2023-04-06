@@ -580,6 +580,80 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     show_product(product_path, crop_size, tile_size)
 
 
+@cli.command   ('sort-images-by-size')
+@click.argument('images_path', type=str)
+def sort_images_wrapper(images_path):
+
+    """
+    View images in a directory for manual labeling.
+
+    ARGS:\n
+    images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
+    """
+
+    import matplotlib.pyplot as plt
+
+    from os     import listdir, system
+    from src.io import get_image_array
+    from numpy  import angle, exp, pi
+
+    try:
+        system(f'mkdir -p {images_path}/Small {images_path}/Medium {images_path}/Large')
+    except:
+        None
+
+    for filename in listdir(images_path):        
+        
+        if filename.endswith(".tif"):
+            
+            image, _ = get_image_array(f"{images_path}/{filename}")
+            
+            image    = angle(exp(1j * (image)))
+            
+            print(f"\n{filename}\n")
+            
+            plt.imshow(image, cmap='jet', vmin=-pi, vmax=pi)
+            plt.show()
+
+            size = input("Size? (S/M/L): ").lower()
+
+            try:
+                if size[0] == "s":
+                    system(f'mv {images_path}/{filename} {images_path}/Small')
+                elif size[0] == "m":
+                    system(f'mv {images_path}/{filename} {images_path}/Medium')
+                elif size[0] == "l":
+                    system(f'mv {images_path}/{filename} {images_path}/Large')
+            except Exception as e:
+                print("Could not move file. Error: ", e)
+
+
+@cli.command   ('check-image')
+@click.argument('image_path', type=str)
+def check_image_wrapper(image_path):
+
+    """
+    View images in a directory for manual labeling.
+
+    ARGS:\n
+    images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
+    """
+
+    import matplotlib.pyplot as plt
+
+    from os     import listdir
+    from src.io import get_image_array
+    from numpy  import angle, exp, pi
+
+    
+    image, _ = get_image_array(image_path)
+    
+    image    = angle(exp(1j * (image)))
+        
+    plt.imshow(image, cmap='jet', vmin=-pi, vmax=pi)
+    plt.show()
+    
+
 @cli.command   ('check-images')
 @click.argument('images_path', type=str)
 def check_images_wrapper(images_path):
