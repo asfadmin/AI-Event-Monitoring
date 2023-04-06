@@ -793,26 +793,64 @@ def gen_simulated_deformation(
         source_x = axes_max // ((random_nums[0] * 10) + 1)
         source_y = axes_max // ((random_nums[1] * 10) + 1)
 
-        length    = 1000 + 3000 * random_nums[2]
         top_depth = 6000 + 5000 * random_nums[3]
-        depth     = 2000 + 2000 * random_nums[3]
-        width     = 2000 + 3000 * random_nums[2]
 
-        kwargs = {
-            'strike'      : 180 * random_nums[6],
-            'dip'         : [45, 90][random_nums[7] < 0.5],
-            'length'      : length,
-            'rake'        : [-90, -90][random_nums[7] < 0.5],
-            'slip'        : 3,
-            'top_depth'   : top_depth,
-            'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
-            'width'       : depth / 4,
-            'depth'       : depth,
-            'opening'     : 5
-        }
+        if event_type == 'quake':
 
-        if event_type == 'dyke':
-            kwargs['dip'] = 90
+            length    = 1000 + 3000 * random_nums[2]
+            depth     = 2000 + 2000 * random_nums[3]
+            width     = 2000 + 3000 * random_nums[2]
+
+            kwargs = {
+                'strike'      : 180 * random_nums[6],
+                'dip'         : [45, 90][random_nums[7] < 0.5],
+                'length'      : length,
+                'rake'        : [-90, -90][random_nums[7] < 0.5],
+                'slip'        : 3,
+                'top_depth'   : top_depth,
+                'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
+                'width'       : depth / 4,
+                'depth'       : depth,
+                'opening'     : 5
+            }
+
+        elif event_type == 'sill':
+            
+            length = 2000 + 3000 * random_nums[2]
+            depth  = 4000 + 2000 * random_nums[3]
+            width  = 2000 + 3000 * random_nums[4]
+
+            kwargs = {
+                'strike'      : 180 * random_nums[5],
+                'dip'         : 0,
+                'length'      : length,
+                'rake'        : 0,
+                'slip'        : 0,
+                'top_depth'   : 0,
+                'bottom_depth': 0,
+                'width'       : width,
+                'depth'       : depth,
+                'opening'     : 0.5
+            }
+
+        elif event_type == 'dyke':
+            
+            length = 2000 + 3000 * random_nums[2]
+            depth  = 4000 + 2000 * random_nums[3]
+            width  = 2000 + 3000 * random_nums[4]
+
+            kwargs = {
+                'strike'      : 180 * random_nums[5],
+                'dip'         : 0,
+                'length'      : length,
+                'rake'        : 0,
+                'slip'        : 0,
+                'top_depth'   : top_depth,
+                'bottom_depth': top_depth + (top_depth * 2 + 10000 * random_nums[8]),
+                'width'       : width,
+                'depth'       : depth,
+                'opening'     : 0.5
+            }
 
     else:
 
@@ -829,13 +867,14 @@ def gen_simulated_deformation(
     Event = Okada(event_type, (source_x, source_y), tile_size = tile_size, **kwargs)
     end   = perf_counter()
 
-    los_grid = Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5]
+    los_grid = Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5] * 0.5
 
     masked_indices    = np.abs(los_grid) >= np.pi * 2
     n_masked_indices  = np.abs(los_grid) < np.pi * 2
     no_masked_indices = los_grid <  np.pi * 2
 
-    los_grid[no_masked_indices] = 0
+    if event_type == 'quake':
+        los_grid[no_masked_indices] = 0
     masked_grid[masked_indices] = 1
 
     atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
@@ -845,8 +884,8 @@ def gen_simulated_deformation(
 
     interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
  
-    n_masked_indices   = np.abs(interferogram) <  np.pi * 3
-    n_masked_indices2  = np.abs(interferogram) <  np.pi * 5
+    n_masked_indices   = np.abs(interferogram) <  np.pi * 5
+    n_masked_indices2  = np.abs(interferogram) <  np.pi * 7
     masked_grid[masked_indices]        = 1
     masked_grid[n_masked_indices2]     = 1
     masked_grid[n_masked_indices]      = 0
