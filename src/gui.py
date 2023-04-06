@@ -182,8 +182,8 @@ def interactive_interferogram(event_type: str = "quake") -> None:
         **kwargs
     )
 
-    axs_wrapped.imshow(wrapped, origin='lower', cmap='jet', vmin=-np.pi, vmax=np.pi)
-    axs_unwrapped.imshow(masked, origin='lower', cmap='jet')
+    axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
+    axs_unwrapped.imshow(unwrapped, origin='lower', cmap='jet')
 
     def update(val):
 
@@ -209,8 +209,8 @@ def interactive_interferogram(event_type: str = "quake") -> None:
             **kwargs
         )
 
-        axs_wrapped.imshow(wrapped, origin='lower', cmap='jet', vmin=-np.pi, vmax=np.pi)
-        axs_unwrapped.imshow(masked, origin='lower', cmap='jet')
+        axs_wrapped.imshow(wrapped, origin='lower', cmap='jet')
+        axs_unwrapped.imshow(unwrapped, origin='lower', cmap='jet')
 
         fig.canvas.draw()
 

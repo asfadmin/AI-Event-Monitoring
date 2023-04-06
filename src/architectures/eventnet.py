@@ -6,7 +6,7 @@
 """
 
 from tensorflow                  import Tensor
-from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense
+from tensorflow.keras.layers     import Conv2D, Input, LeakyReLU, Flatten, Dense, GlobalAveragePooling2D
 from tensorflow.keras.models     import Model
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras            import mixed_precision
@@ -18,7 +18,9 @@ mixed_precision.set_global_policy(policy)
 
 def conv2d_block(
     input_tensor: Tensor ,
-    num_filters:  int
+    num_filters:  int    ,
+    kernel_size:  int = 3,
+    strides:      int = 1
 ) -> Tensor:
 
     """
@@ -27,9 +29,10 @@ def conv2d_block(
 
     x = Conv2D(
         filters            = num_filters,
-        kernel_size        = (3, 3)     ,
+        kernel_size        = (kernel_size, kernel_size),
+        strides            = (strides, strides),
         kernel_initializer = 'random_normal',
-        padding            = 'same'     ,
+        padding            = 'same'
     )(input_tensor)
 
     x = LeakyReLU()(x)
@@ -55,21 +58,26 @@ def create_eventnet(
     # # Feature Map Generation            #
     # # --------------------------------- #
 
-    c1  = conv2d_block(input, num_filters)
-    c2  = conv2d_block(c1, 1)
+    c1 = conv2d_block(input, num_filters,   kernel_size=7, strides=2)
+    c2 = conv2d_block(c1,    num_filters,   kernel_size=3, strides=2)
+    c3 = conv2d_block(c2,    num_filters=1, kernel_size=1, strides=1)
 
     # # --------------------------------- #
     # # Dense Hidden Layer                #
     # # --------------------------------- #
 
-    f0 = Flatten()(c2)
-    d0 = Dense(512, activation='relu')(f0)
+    #TODO: Try Global Average Pooling
+
+    g1 = GlobalAveragePooling2D(keepdims=True, data_format='channels_last')(c3)
+
+    # f0 = Flatten()(c3)
+    # d0 = Dense(512, activation='relu')(f0)
 
     # --------------------------------- #
     # Output Layer                      #
     # --------------------------------- #
 
-    output = Dense(label_count, activation='sigmoid')(d0)
+    output = Dense(label_count, activation='sigmoid')(g1)
 
     # --------------------------------- #
     # Model Creation and Compilation    #

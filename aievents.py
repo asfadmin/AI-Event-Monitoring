@@ -5,7 +5,7 @@
 """
 
 import click
-from src.config import SYNTHETIC_DIR
+from src.config import SYNTHETIC_DIR, MASK_DIR
 
 
 # ------------- #
@@ -115,6 +115,53 @@ def make_simulated_dataset_wrapper(name, amount, tile_size, crop_size, output_di
     print("")
     print(f"Created simulated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
+    
+    
+@cli.command   ('make-simulated-ts-dataset')
+@click.argument('name'              , type=str                                                                    )
+@click.argument('amount'            , type=int                        , default=1                                 )
+@click.option  ('-t', '--tile_size' , type=int                        , default=512          , help=tilesize_help )
+@click.option  ('-c', '--crop_size' , type=int                        , default=512          , help=cropsize_help )
+@click.option  ('-d', '--output_dir', type=click.Path(file_okay=False), default=SYNTHETIC_DIR, help=outputdir_help)
+@click.option  ('-s', '--seed'      , type=int                        , default=None         , help=seed_help     )
+@click.option  ('-s', '--split'     , type=float                      , default=0.0          , help=split_help    )
+def make_simulated_time_series_dataset_wrapper(name, amount, tile_size, crop_size, output_dir, seed, split):
+
+    """
+    Create a randomly generated simulated time-series dataset of unwrapped interferograms and their corresponding presences.
+
+    ARGS:\n
+    name        Name of dataset. Seed is appended.\n
+                <name>_seed<seed>\n
+    amount      Number of simulated interferograms created.\n
+    """
+
+    from src.io import split_dataset, make_simulated_time_series_dataset
+
+    print("")
+
+    name, count, dir_name, distribution, dataset_info = make_simulated_time_series_dataset(
+        name,
+        output_dir,
+        amount,
+        seed,
+        tile_size,
+        crop_size
+    )
+
+    num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
+
+    try:
+        log_file = open(output_dir.__str__() + '/' + dir_name + '/parameters.txt', 'w')
+        log_file.write(dataset_info)
+    except Exception as e:
+        print(f'{type(e)}: {e}')
+
+    print("")
+    print(f"Data Type Distribution: {distribution}")
+    print("")
+    print(f"Created simulated dataset with seed: {seed}, and {count} entries. Saved to {dir_name}")
+    print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
 @cli.command   ('make-simulated-binary-dataset')
@@ -143,7 +190,7 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
 
     from src.io import split_dataset, make_simulated_dataset
 
-    name, count, dir_name, _, _ = make_simulated_dataset(
+    seed, count, dir_name, _, _ = make_simulated_dataset(
         name,
         output_dir,
         amount,
@@ -156,7 +203,6 @@ def make_simulated_binary_dataset_wrapper(name, model_path, amount, tile_size, c
     num_train, num_validation = split_dataset(output_dir.__str__() + '/' + dir_name, split)
 
     print("")
-    print(f"Created binary dataset of size {count} at {output_dir.__str__() + '/' + name}.")
     print(f"Dataset was split into train and validation sets of size {num_train} and {num_validation}.\n")
 
 
@@ -217,8 +263,8 @@ def train_model_wrapper(
 
     from src.training import train
 
-    if model_type not in ['eventnet', 'unet', 'resnet', 'resnet_classifier']:
-        print("\nBad model type. Should be \'eventnet\', \'unet\', \'resnet_classifier\', or \'resnet\'.")
+    if model_type not in ['eventnet', 'unet', 'unet3d', 'resnet', 'resnet_classifier']:
+        print("\nBad model type. Should be \'eventnet\', \'unet\', \'uent3d\' \'resnet_classifier\', or \'resnet\'.")
         return
 
     train(
@@ -323,12 +369,14 @@ def test_binary_choice_wrapper(mask_model_path, pres_model_path, seed, num_trial
 
 
 @cli.command   ('test-model')
-@click.argument('model_path'           , type=str                                  )
-@click.argument('pres_model_path'      , type=str                                  )
-@click.argument('images_dir'           , type=str                                  )
-@click.option  ('-t', '--tile_size'    , type=int , default=512, help=tilesize_help)
-@click.option  ('-c', '--crop_size'    , type=int , default=0  , help=cropsize_help)
-def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_size):
+@click.argument('model_path'         , type=str                                       )
+@click.argument('pres_model_path'    , type=str                                       )
+@click.argument('images_dir'         , type=str                                       )
+@click.option  ('-t', '--tile_size'  , type=int , default=512     , help=tilesize_help)
+@click.option  ('-c', '--crop_size'  , type=int , default=0       , help=cropsize_help)
+@click.option  ('-s', '--save_images', type=bool, default=False   , help=""           )
+@click.option  ('-o', '--output_dir' , type=str , default=MASK_DIR, help=""           )
+def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_size, save_images, output_dir):
 
     """
     Predicts on a wrapped interferogram & event-mask pair and plots the results
@@ -344,7 +392,7 @@ def test_model_wrapper(model_path, pres_model_path, images_dir, tile_size, crop_
 
     from src.inference import test_model
 
-    test_model(model_path, pres_model_path, images_dir, tile_size, crop_size)
+    test_model(model_path, pres_model_path, images_dir, tile_size, crop_size, save_images, output_dir)
 
 
 @cli.command   ('model-summary')
@@ -532,6 +580,80 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     show_product(product_path, crop_size, tile_size)
 
 
+@cli.command   ('sort-images-by-size')
+@click.argument('images_path', type=str)
+def sort_images_wrapper(images_path):
+
+    """
+    View images in a directory for manual labeling.
+
+    ARGS:\n
+    images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
+    """
+
+    import matplotlib.pyplot as plt
+
+    from os     import listdir, system
+    from src.io import get_image_array
+    from numpy  import angle, exp, pi
+
+    try:
+        system(f'mkdir -p {images_path}/Small {images_path}/Medium {images_path}/Large')
+    except:
+        None
+
+    for filename in listdir(images_path):        
+        
+        if filename.endswith(".tif"):
+            
+            image, _ = get_image_array(f"{images_path}/{filename}")
+            
+            image    = angle(exp(1j * (image)))
+            
+            print(f"\n{filename}\n")
+            
+            plt.imshow(image, cmap='jet', vmin=-pi, vmax=pi)
+            plt.show()
+
+            size = input("Size? (S/M/L): ").lower()
+
+            try:
+                if size[0] == "s":
+                    system(f'mv {images_path}/{filename} {images_path}/Small')
+                elif size[0] == "m":
+                    system(f'mv {images_path}/{filename} {images_path}/Medium')
+                elif size[0] == "l":
+                    system(f'mv {images_path}/{filename} {images_path}/Large')
+            except Exception as e:
+                print("Could not move file. Error: ", e)
+
+
+@cli.command   ('check-image')
+@click.argument('image_path', type=str)
+def check_image_wrapper(image_path):
+
+    """
+    View images in a directory for manual labeling.
+
+    ARGS:\n
+    images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
+    """
+
+    import matplotlib.pyplot as plt
+
+    from os     import listdir
+    from src.io import get_image_array
+    from numpy  import angle, exp, pi
+
+    
+    image, _ = get_image_array(image_path)
+    
+    image    = angle(exp(1j * (image)))
+        
+    plt.imshow(image, cmap='jet', vmin=-pi, vmax=pi)
+    plt.show()
+    
+
 @cli.command   ('check-images')
 @click.argument('images_path', type=str)
 def check_images_wrapper(images_path):
@@ -553,9 +675,9 @@ def check_images_wrapper(images_path):
         
         if filename.endswith(".tif"):
             
-            image = get_image_array(f"{images_path}/{filename}")
+            image, _ = get_image_array(f"{images_path}/{filename}")
             
-            image = angle(exp(1j * (image)))
+            image    = angle(exp(1j * (image)))
             
             print(f"\n{filename}\n")
             
@@ -786,6 +908,7 @@ def sagemaker_server_wrapper():
 
     import os
     import json
+    import requests
 
     from io import BytesIO
 
@@ -797,12 +920,53 @@ def sagemaker_server_wrapper():
     from src.inference import mask_with_model
     from src.io import get_image_array
 
-    ping_test_image = 'tests/test_image.tif'
-    mask_model_path = '/opt/ml/models/mask_model'
-    pres_model_path = '/opt/ml/models/pres_model'
-            
+    ping_test_image = '/opt/ml/code/tests/test_image.tif'
+    mask_model_path = '/opt/ml/model/models/mask_model'
+    pres_model_path = '/opt/ml/model/models/pres_model'
+
+    print(os.listdir('/opt/ml'))
+    print(os.listdir('/opt/ml/model'))
+    print(os.listdir('/opt/ml/model/models'))
+
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
+
+    try:
+        
+        event_list_res = requests.get('https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events')
+        event_list_res.status_code
+
+    except:
+        
+        print("Could not connect to event list API. Using test event list.")
+        exit(1)
+
+    def get_image_from_sarviews(
+        usgs_event_id: str = 'us6000jkpr',
+        granule_name:  str = 'S1AA_20230126T212437_20230219T212436_VVR024_INT80_G_weF_3603'
+    ):
+        
+        product_name  = granule_name + '.zip'
+
+        event_list = event_list_res.json()
+        event_obj  = next((item for item in event_list if ("usgs_event_id" in item) and (item["usgs_event_id"] == usgs_event_id)), None)
+        event_id   = event_obj['event_id']
+
+        event_get_res = requests.get(f'https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events/{event_id}')
+        event_get_res.status_code
+
+        event_get_list = event_get_res.json()
+        event_obj      = next((item for item in event_get_list["products"] if item["files"]["product_name"] == product_name), None)
+
+        product_url = event_obj['files']['product_url']
+
+        os.system(f'wget --quiet {product_url}')
+        os.system(f'unzip -qq {product_name}')
+        os.system(f'ls {granule_name}')
+
+        image_path = granule_name + '/' + granule_name + '_unw_phase.tif'
+
+        return image_path
 
     app = flask.Flask(__name__)
 
@@ -815,18 +979,9 @@ def sagemaker_server_wrapper():
         """
 
         try:
-            
-            image = get_image_array(ping_test_image)
-
-            masked, presence_mask, pres_vals = mask_with_model(mask_model, pres_model, image, tile_size=512)
-
-            if np.mean(presence_mask) > 0.0:
-                presense = True
-            else:
-                presense = False
 
             response = {
-                "presense": presense,
+                "presense": True,
             }
 
             return flask.Response(response=json.dumps(response), status=200, mimetype='application/json')
@@ -847,13 +1002,17 @@ def sagemaker_server_wrapper():
         status = 200
 
         try:
-            byteImg = BytesIO(request.get_data())
-            with open("image.tif", "wb") as f:
-                f.write(byteImg.getbuffer())
+            content = request.json
 
-            image = get_image_array("image.tif")
+            usgs_event_id = content['usgs_event_id']
+            granule_name = content['product_name']
 
-            masked, presence_mask, presence_vals = mask_with_model(mask_model_path, pres_model_path, image, tile_size=512)
+            image_path = get_image_from_sarviews(usgs_event_id, granule_name)
+
+            image, dataset = get_image_array(image_path)
+            wrapped_image = np.angle(np.exp(1j * image))
+
+            masked, presence_mask, presence_vals = mask_with_model(mask_model, pres_model, wrapped_image, tile_size=512)
 
             if np.mean(presence_mask) > 0.0:
                 presense = True
@@ -863,7 +1022,7 @@ def sagemaker_server_wrapper():
             result = {
                 "presense": presense,
             }
-            
+
         except Exception as err:
 
             status = 500
