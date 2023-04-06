@@ -9,7 +9,7 @@ def cli():
 @click.argument("usgs-event-id", type=str)
 @click.argument("product-name", type=str)
 def model_inference(usgs_event_id, product_name):
- url = "https://aevrv4z4vf.execute-api.us-west-2.amazonaws.com/test-2/predict-event"
+ url = "https://aevrv4z4vf.execute-api.us-west-2.amazonaws.com/test-3/predict-event"
 
  r = requests.post(
  url,
