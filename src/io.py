@@ -312,9 +312,9 @@ def make_simulated_dataset(
         if   count < quake_count: 
             event_type = 'quake'
         elif count < dyke_count: 
-            event_type = 'dyke'
+            event_type = 'quake'
         elif count < sill_count: 
-            event_type = 'sill'
+            event_type = 'dyke'
         else: 
             gaussian_only = count >= mix_noise_count
             event_type = 'gaussian_noise' if gaussian_only else 'mixed_noise'
@@ -323,7 +323,7 @@ def make_simulated_dataset(
             unwrapped, masked, wrapped, presence = gen_simulated_deformation(
                 seed       = current_seed,
                 tile_size  = tile_size,
-                event_type = 'quake'
+                event_type = event_type
             )
         else:
             unwrapped, masked, wrapped, presence = gen_sim_noise(
