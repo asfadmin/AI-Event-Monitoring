@@ -97,7 +97,7 @@ def create_unet(
     # c3 = Dropout(0.1)(c3)
     c4 = conv2d_block(c3   , num_filters *  8, strides=2, kernel_size=3)
     # c4 = Dropout(0.1)(c4)
-    c5 = conv2d_block(c4   , num_filters * 16, strides=1, kernel_size=3)
+    c5 = conv2d_block(c4   , num_filters * 16, strides=2, kernel_size=1)
     # c5 = Dropout(0.1)(c5)
 
 
@@ -105,10 +105,11 @@ def create_unet(
     # Learned Upscaling                 #
     # --------------------------------- #
 
-    u8  = transpose_block(c5 , c3,    num_filters * 8)
-    u9  = transpose_block(u8 , c2,    num_filters * 4)
-    u10 = transpose_block(u9 , c1,    num_filters * 2)
-    u11 = transpose_block(u10, input, num_filters * 1)
+    u8  = transpose_block(c5 , c4,    num_filters * 8)
+    u9  = transpose_block(u8 , c3,    num_filters * 4)
+    u10 = transpose_block(u9 , c2,    num_filters * 2)
+    u11 = transpose_block(u10, c1,    num_filters * 1)
+    u12 = transpose_block(u11, input, num_filters * 1)
 
     # u12 = Conv2DTranspose(
     #     filters      = num_filters,
@@ -127,7 +128,7 @@ def create_unet(
         kernel_size = (1, 1),
         filters     =  1    ,
         padding     = 'same'
-    )(u11)
+    )(u12)
 
     output = Activation('linear', dtype='float32')(output)
 
