@@ -39,7 +39,17 @@ data/
 ```
 You should now be ready to run everything.
 
-# Basic Commands <a name="commands"></a>
+# Command line interface <a name="commands"></a>
+
+There are two command line interfaces, `inference.py` which utilizes the cloud API for inference, and `aievents.py` which runs the models locally.
+
+## inference.py
+### Running inference
+```bash
+python inference.py predict-event [usgs-event-id] [product-name]
+```
+
+## aievents.py
 
 ### For a List of Commands
 ```bash
