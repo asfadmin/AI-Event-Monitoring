@@ -12,15 +12,14 @@ import numpy as np
 
 
 def tile(
-    arr:        np.ndarray,
+    arr: np.ndarray,
     tile_shape: Tuple[int, int],
-    crop_size:  int   = 0,
-    x_offset:   int   = 0,
-    y_offset:   int   = 0,
-    even_pad:   bool  = False,
-    pad_value:  float = 0.0
+    crop_size: int = 0,
+    x_offset: int = 0,
+    y_offset: int = 0,
+    even_pad: bool = False,
+    pad_value: float = 0.0,
 ) -> Tuple[np.ndarray, int, int]:
-
     """
     Tile a 2-dimensional array into an array of tiles of shape tile_shape.
 
@@ -58,29 +57,28 @@ def tile(
     cropped = crop_size > 0 and crop_size != tile_shape[0]
     rows, cols = len(arr[:, 0]), len(arr[0, :])
 
-    if(cols % tile_shape[1] != 0 or rows % tile_shape[0] != 0):
-        
+    if cols % tile_shape[1] != 0 or rows % tile_shape[0] != 0:
         if x_offset > 0 or y_offset > 0:
             arr_offset = np.zeros((rows + y_offset, cols + x_offset))
             arr_offset[0:rows, 0:cols] = arr
             arr = arr_offset
-        
+
         arr = pad(
             arr,
             tile_shape,
             even_pad=even_pad,
             extra_padding=(crop_size if cropped else 0),
-            value=pad_value
+            value=pad_value,
         )
-        
+
         rows, cols = len(arr[:, 0]), len(arr[0, :])
 
     if not cropped:
-        num_rows  = rows // tile_shape[0] - ceil(y_offset / tile_shape[0])
-        num_cols  = cols // tile_shape[1] - ceil(x_offset / tile_shape[1])
+        num_rows = rows // tile_shape[0] - ceil(y_offset / tile_shape[0])
+        num_cols = cols // tile_shape[1] - ceil(x_offset / tile_shape[1])
     else:
-        num_rows  = ceil((rows - tile_shape[0]) / crop_size)  # = (h-th)/ch
-        num_cols  = ceil((cols - tile_shape[1]) / crop_size)  # = (w-tw)/cw
+        num_rows = ceil((rows - tile_shape[0]) / crop_size)  # = (h-th)/ch
+        num_cols = ceil((cols - tile_shape[1]) / crop_size)  # = (w-tw)/cw
 
     num_tiles = num_rows * num_cols
 
@@ -93,8 +91,8 @@ def tile(
             col = j * (crop_size if cropped else tile_shape[1])
             row_start = row + y_offset
             col_start = col + x_offset
-            row_end   = row + y_offset + tile_shape[0]
-            col_end   = col + x_offset + tile_shape[1]
+            row_end = row + y_offset + tile_shape[0]
+            col_end = col + x_offset + tile_shape[1]
             tiles[t_row, :, :] = arr[row_start:row_end, col_start:col_end]
             t_row += 1
 
@@ -102,13 +100,12 @@ def tile(
 
 
 def pad(
-    arr:            np.ndarray,
-    tile_shape:     Tuple[int, int],
-    value:          float = 0.0,
-    extra_padding:  int   = 0,
-    even_pad:       bool  = False,
+    arr: np.ndarray,
+    tile_shape: Tuple[int, int],
+    value: float = 0.0,
+    extra_padding: int = 0,
+    even_pad: bool = False,
 ) -> np.ndarray:
-
     """
     Pad an array with a given value so that it can be tiled.
 
@@ -147,11 +144,7 @@ def pad(
     return arr_padded
 
 
-def simulate_unet_cropping(
-    arr:        np.ndarray,
-    crop_shape: tuple
-) -> np.ndarray:
-
+def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     """
     Symmetrically crop the inputed array.
 
@@ -160,9 +153,9 @@ def simulate_unet_cropping(
     arr : np.ndarray
         The 2-dimensional interferogram array to be cropped.
     crop_shape : tuple
-        The length of the rows and columns after being cropped, respectively. If the crop_shape
-        in a direction does not divide 2, the extra value will be placed on the 0 side. This should
-        match the models output shape.
+        The length of the rows and columns after being cropped, respectively. If the
+        crop_shape in a direction does not divide 2, the extra value will be placed on
+        the 0 side. This should match the models output shape.
 
     Returns:
     --------
@@ -172,18 +165,14 @@ def simulate_unet_cropping(
 
     startx = arr.shape[1] // 2 - ceil(crop_shape[1] / 2)
     starty = arr.shape[0] // 2 - ceil(crop_shape[0] / 2)
-    cropped_arr = arr[starty:starty + crop_shape[0], startx:startx + crop_shape[1]]
+    cropped_arr = arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
 
     return cropped_arr
 
 
 def tiles_to_image(
-    arr:            np.ndarray,
-    rows:           int,
-    cols:           int,
-    original_shape: Tuple[int, int]
+    arr: np.ndarray, rows: int, cols: int, original_shape: Tuple[int, int]
 ) -> np.ndarray:
-
     """
     Stich an array of 2-dimensional tiles into a single 2-dimensional array.
 
@@ -221,7 +210,9 @@ def tiles_to_image(
         row = i * tile_size
         for j in range(cols):
             col = j * tile_size
-            rebuilt_arr[row:row + tile_size, col:col + tile_size] = arr[(i * cols) + j]
+            rebuilt_arr[row : row + tile_size, col : col + tile_size] = arr[
+                (i * cols) + j
+            ]
 
     (y, x) = original_shape
 
@@ -229,19 +220,16 @@ def tiles_to_image(
     y_padded = y + (tile_size - (y % tile_size))
 
     start_row = ceil((y_padded - y) / 2)
-    end_row = (start_row + y)
+    end_row = start_row + y
     start_col = ceil((x_padded - x) / 2)
-    end_col = (start_col + x)
+    end_col = start_col + x
 
     rebuilt_arr = rebuilt_arr[start_row:end_row, start_col:end_col]
 
     return rebuilt_arr
 
 
-def blur2d(
-    arr: np.ndarray
-):
-
+def blur2d(arr: np.ndarray):
     """
     Apply a 5x5 Gaussian Blur/Smoothing filter with a 2D keras convolution.
 
@@ -259,26 +247,27 @@ def blur2d(
     from tensorflow import constant, float32
     from tensorflow.keras.backend import conv2d
 
-    size   = arr.shape[0]
-    arr    = arr.reshape((1, size, size, 1)) 
+    size = arr.shape[0]
+    arr = arr.reshape((1, size, size, 1))
     tensor = constant(arr, dtype=float32)
 
-    kernel_array =  np.reshape(
+    kernel_array = np.reshape(
         np.asarray(
             [
-                [1,  4,  7,  4, 1],
+                [1, 4, 7, 4, 1],
                 [4, 16, 26, 16, 4],
                 [7, 26, 41, 26, 7],
                 [4, 16, 26, 16, 4],
-                [1,  4,  7,  4, 1]
+                [1, 4, 7, 4, 1],
             ]
-        ) / 273, 
-        (5, 5, 1, 1)
+        )
+        / 273,
+        (5, 5, 1, 1),
     )
     kernel_tensor = constant(kernel_array, dtype=float32)
 
-    convolved_tensor =  conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
-    
-    convolved_array  = np.reshape(convolved_tensor.numpy(), (size, size))
+    convolved_tensor = conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
+
+    convolved_array = np.reshape(convolved_tensor.numpy(), (size, size))
 
     return convolved_array

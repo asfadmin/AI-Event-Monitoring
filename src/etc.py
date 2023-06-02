@@ -9,7 +9,6 @@ import sys
 
 
 def new_seed():
-
     """
     Randomly generates a seed for use in synthetic interferogram dataset generation.
 
