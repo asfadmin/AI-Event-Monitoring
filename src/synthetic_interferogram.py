@@ -205,7 +205,7 @@ def make_random_dataset(
     noise = random.uniform(0, max_noise)
 
     gaussians = []
-    for g2d in range(g2d_count):
+    for _g2d in range(g2d_count):
         amp = random.uniform(min_amp, max_amp)
         x_mean = random.uniform(min_x_mean, max_x_mean)
         y_mean = random.uniform(min_y_mean, max_y_mean)

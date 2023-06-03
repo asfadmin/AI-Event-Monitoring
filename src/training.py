@@ -283,7 +283,7 @@ def train(
             learning_rate=learning_rate,
         )
     else:
-        raise (
+        SystemExit(
             f'Invalid model type! Expected "unet", "resnet", or "eventnet" but got {model_type}.'
         )
 
