@@ -12,10 +12,7 @@ from tensorflow.keras.layers import (
     Conv2DTranspose,
     Input,
     concatenate,
-    MaxPooling2D,
     Activation,
-    Dropout,
-    AveragePooling2D,
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam

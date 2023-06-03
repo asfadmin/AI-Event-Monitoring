@@ -10,7 +10,6 @@ from tensorflow.keras.layers import (
     Conv2D,
     Input,
     LeakyReLU,
-    Flatten,
     Dense,
     GlobalAveragePooling2D,
 )

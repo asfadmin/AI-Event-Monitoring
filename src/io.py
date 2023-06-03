@@ -29,7 +29,6 @@ from src.sarsim import (
     gen_simulated_time_series,
 )
 from src.synthetic_interferogram import simulate_unet_cropping
-from PIL import Image
 
 
 def save_dataset(
@@ -303,7 +302,6 @@ def make_simulated_dataset(
         current_seed = seeds[count]
 
         event_type = ""
-        noise_only = False
         gaussian_only = False
 
         if count < quake_count:

@@ -118,7 +118,6 @@ def create_resnetclassifier(
         kernel_initializer="he_normal",
         padding="same",
     )(input)
-    b1 = BatchNormalization()(c1)
     a1 = Activation("relu")(c1)
     p1 = MaxPooling2D((3, 3), strides=(2, 2))(a1)
 

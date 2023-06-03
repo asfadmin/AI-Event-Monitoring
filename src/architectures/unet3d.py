@@ -11,11 +11,8 @@ from tensorflow.keras.layers import (
     Input,
     concatenate,
     Activation,
-    Dropout,
     Conv3D,
     Conv3DTranspose,
-    MaxPooling3D,
-    AveragePooling3D,
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam

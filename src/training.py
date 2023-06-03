@@ -10,7 +10,6 @@ import sys
 
 from math import ceil
 from typing import Any
-from time import time
 from datetime import datetime
 
 import numpy as np
@@ -112,26 +111,26 @@ def print_model_info(
     summary_string = "\n".join(summary_list[1:])
 
     print(
-        f"\n",
+        "\n",
         f"Model Name:    {model_name}\n",
         f"Model Type:    {model_type}\n",
         f"Date and Time: {datetime.utcnow()}\n",
-        f"\n",
+        "\n",
         f"Input Shape:   {input_shape}\n",
         f"Epochs:        {num_epochs}\n",
         f"Filters:       {num_filters}\n",
         f"Batch Size:    {batch_size}\n",
         f"Learning Rate: {learning_rate}\n",
-        f"\n",
+        "\n",
         f"Minimum Training Loss:   {min_loss: 0.15f} at epoch {min_loss_at}.\n",
         f"Minimum Validation Loss: {min_val_loss: 0.15f} at epoch {min_val_loss_at}.\n"
-        f"\n",
+        "\n",
         f"All Training Losses:\n {losses}\n",
-        f"\n",
+        "\n",
         f"All Validation Losses:\n {val_losses}\n",
-        f"\n",
+        "\n",
         f"Model Parameters from History:\n {history.params}\n",
-        f"\n",
+        "\n",
         f"Model Summary:\n{summary_string}\n",
     )
 
@@ -229,7 +228,9 @@ def train(
     all_training_files = os.listdir(train_path)
     all_validation_files = os.listdir(test_path)
 
-    filename_check = lambda x: "synth" in x or "sim" in x or "real" in x
+    def filename_check(x):
+        "synth" in x or "sim" in x or "real" in x
+
     training_partition = [item for item in all_training_files if filename_check(item)]
     validation_partition = [
         item for item in all_validation_files if filename_check(item)

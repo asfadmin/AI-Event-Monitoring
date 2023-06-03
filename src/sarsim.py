@@ -7,10 +7,7 @@
 """
 
 import numpy as np
-
 from time import perf_counter
-
-from src.synthetic_interferogram import wrap_interferogram
 
 
 class Okada:
@@ -804,8 +801,6 @@ def gen_simulated_deformation(
 
     random_nums = np.random.rand(13)
 
-    dip = 90
-
     if not kwargs:
         axes_max = (tile_size) * 90
 
@@ -875,8 +870,6 @@ def gen_simulated_deformation(
         source_x = kwargs["source_x"]
         source_y = kwargs["source_y"]
         length = kwargs["length"]
-
-    from time import perf_counter
 
     start = perf_counter()
     Event = Okada(event_type, (source_x, source_y), tile_size=tile_size, **kwargs)
@@ -1114,7 +1107,6 @@ def gen_simulated_time_series(
         length = 1000 + 3000 * random_nums[2]
         top_depth = 6000 + 5000 * random_nums[3]
         depth = 2000 + 2000 * random_nums[3]
-        width = 2000 + 3000 * random_nums[2]
 
         kwargs = {
             "strike": 180 * random_nums[6],

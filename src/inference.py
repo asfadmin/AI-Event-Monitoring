@@ -246,14 +246,14 @@ def test_images_in_dir(
             try:
                 arr_uw, dataset = get_image_array(path.join(directory, filename))
                 arr_w = np.angle(np.exp(1j * (arr_uw)))
-            except:
-                print(f"Failed to load unwrapped phase image: {filename}")
+            except Exception as e:
+                print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
         elif "wrapped" in filename:
             try:
                 arr_w, dataset = get_image_array(path.join(directory, filename))
-            except:
-                print(f"Failed to load wrapped phase image: {filename}")
+            except Exception as e:
+                print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
 
         mask, pres_mask, pres_vals = mask_with_model(
@@ -562,12 +562,6 @@ def test_binary_choice(
         result = "CORRECT!  " if guess == actual else "INCORRECT!"
 
         print(f"{result} Guess: {guess}   Actual: {actual}   Count: {i}")
-
-        b0 = (
-            np.zeros((tile_size, tile_size))
-            if guess == "Negative"
-            else np.ones((tile_size, tile_size))
-        )
 
         if count > 1:
             correctness = guess == actual

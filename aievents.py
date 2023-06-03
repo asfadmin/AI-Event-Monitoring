@@ -626,7 +626,10 @@ def show_dataset_wrapper(file_path):
     from src.io import load_dataset
 
     filenames = listdir(file_path)
-    filename_check = lambda x: "synth" in x or "sim" in x or "real" in x
+
+    def filename_check(x):
+        "synth" in x or "sim" in x or "real" in x
+
     data_filenames = [item for item in filenames if filename_check(item)]
 
     for filename in data_filenames:
@@ -669,11 +672,11 @@ def sort_images_wrapper(images_path):
     from os import listdir, system
     from src.io import get_image_array
     from numpy import angle, exp, pi
+    from pathlib import Path
 
-    try:
-        system(f"mkdir -p {images_path}/Small {images_path}/Medium {images_path}/Large")
-    except:
-        None
+    Path("{images_path}/Small").mkdir(parents=True, exist_ok=True)
+    Path("{images_path}/Medium").mkdir(parents=True, exist_ok=True)
+    Path("{images_path}/Large").mkdir(parents=True, exist_ok=True)
 
     for filename in listdir(images_path):
         if filename.endswith(".tif"):
@@ -711,7 +714,6 @@ def check_image_wrapper(image_path):
 
     import matplotlib.pyplot as plt
 
-    from os import listdir
     from src.io import get_image_array
     from numpy import angle, exp, pi
 
@@ -966,8 +968,6 @@ def sagemaker_server_wrapper():
     import json
     import requests
 
-    from io import BytesIO
-
     import numpy as np
     import flask
     from flask import request
@@ -976,7 +976,6 @@ def sagemaker_server_wrapper():
     from src.inference import mask_with_model
     from src.io import get_image_array
 
-    ping_test_image = "/opt/ml/code/tests/test_image.tif"
     mask_model_path = "/opt/ml/model/models/mask_model"
     pres_model_path = "/opt/ml/model/models/pres_model"
 
@@ -993,9 +992,9 @@ def sagemaker_server_wrapper():
         )
         event_list_res.status_code
 
-    except:
+    except requests.exceptions.RequestException as e:
         print("Could not connect to event list API. Using test event list.")
-        exit(1)
+        raise SystemExit(e)
 
     def get_image_from_sarviews(
         usgs_event_id: str = "us6000jkpr",
