@@ -1,0 +1,12 @@
+name: black Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the source repository
+        uses: actions/checkout@v3
+      - name: black lint
+        uses: psf/black@stable

@@ -17,14 +17,13 @@ padded_arr_3x3 = pad(test_arr_3x3, (2, 2))
 padded_arr_99x99 = pad(test_arr_99x99, (20, 20))
 padded_arr_10031x9257 = pad(test_arr_10031x9257, (256, 256))
 
-(tiled_arr_3x3       , _, _) = tile(test_arr_3x3, (2, 2), pad_value=-np.pi)
-(tiled_arr_99x99     , _, _) = tile(test_arr_99x99, (20, 20), pad_value=-np.pi)
-(tiled_arr_1031x925  , _, _) = tile(test_arr_1031x925, (256, 256), pad_value=-np.pi)
+(tiled_arr_3x3, _, _) = tile(test_arr_3x3, (2, 2), pad_value=-np.pi)
+(tiled_arr_99x99, _, _) = tile(test_arr_99x99, (20, 20), pad_value=-np.pi)
+(tiled_arr_1031x925, _, _) = tile(test_arr_1031x925, (256, 256), pad_value=-np.pi)
 (tiled_arr_10031x9257, _, _) = tile(test_arr_10031x9257, (256, 256), pad_value=-np.pi)
 
 
 def test_padding_shape():
-
     """
     Test that pad() is creating the correct minimumally divisible shapes.
     """
@@ -35,7 +34,6 @@ def test_padding_shape():
 
 
 def test_padding_value():
-
     """
     Test that pad() is placing the correct values in the correct places.
     """
@@ -55,7 +53,6 @@ def test_padding_value():
 
 
 def test_tiling_shape():
-
     """
     Test that tile() is creating arrays of the correct shape.
     """
@@ -67,7 +64,6 @@ def test_tiling_shape():
 
 
 def test_tiling_value():
-
     """
     Test that tile() is placing the correct values in the correct places.
     """

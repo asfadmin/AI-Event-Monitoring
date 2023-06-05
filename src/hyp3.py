@@ -11,7 +11,6 @@ from hyp3_sdk import HyP3, exceptions
 
 
 def get_netrc_credentials() -> Tuple[str, str]:
-
     """
     Get earthdata credentials from a .netrc file in the projects root dir.
 
@@ -23,16 +22,15 @@ def get_netrc_credentials() -> Tuple[str, str]:
         The user's earthdata password.
     """
 
-    with open('.netrc', 'r') as f:
+    with open(".netrc", "r") as f:
         contents = f.read()
-    username = contents.split(' ')[3]
-    password = contents.split(' ')[5].split('\n')[0]
+    username = contents.split(" ")[3]
+    password = contents.split(" ")[5].split("\n")[0]
 
     return username, password
 
 
 def input_earthdata_login() -> Tuple[str, str]:
-
     """
     Get a user's earthdata credentials from command-line input.
 
@@ -44,14 +42,13 @@ def input_earthdata_login() -> Tuple[str, str]:
         The user's earthdata password.
     """
 
-    print("Enter your NASA EarthData username: ", end='')
+    print("Enter your NASA EarthData username: ", end="")
     username = input()
     password = getpass()
     return username, password
 
 
 def write_netrc(username, password) -> None:
-
     """
     Write the earthdata username and password to a .netrc file.
 
@@ -67,14 +64,17 @@ def write_netrc(username, password) -> None:
     None
     """
 
-    with open('.netrc', 'w+') as f:
+    with open(".netrc", "w+") as f:
         f.write(
-            "machine urs.earthdata.nasa.gov login" + username + "password" + password + "\n"
+            "machine urs.earthdata.nasa.gov login"
+            + username
+            + "password"
+            + password
+            + "\n"
         )
 
 
 def hyp3_login() -> HyP3:
-
     """
     Pull the user's earthdata credentials from the .netrc file, else prompt them for it,
     and start a HyP3 session.

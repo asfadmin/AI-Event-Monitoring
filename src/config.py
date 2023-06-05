@@ -23,7 +23,7 @@ AOI_DIR = INPUT_DIR / "aoi"
 # Working data subdirectory path configs
 WORKING_DIR = DATA_DIR / "working"
 SYNTHETIC_DIR = WORKING_DIR / "synthetic"
-REAL_DIR      = WORKING_DIR / "real"
+REAL_DIR = WORKING_DIR / "real"
 
 # Output data subdirectory path configs
 OUTPUT_DIR = DATA_DIR / "output"
