@@ -11,7 +11,7 @@ from typing import Tuple
 import numpy as np
 from perlin_numpy import generate_perlin_noise_2d
 from astropy.modeling.models import Gaussian2D
-from src.processing import simulate_unet_cropping
+from insar_eventnet.processing import simulate_unet_cropping
 
 
 def make_synthetic_interferogram(size: int, *gaussians: Gaussian2D) -> np.ndarray:

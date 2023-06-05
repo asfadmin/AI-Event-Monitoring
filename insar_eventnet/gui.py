@@ -8,8 +8,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.io import get_product_arrays
-from src.processing import simulate_unet_cropping, tile, tiles_to_image
+from insar_eventnet.io import get_product_arrays
+from insar_eventnet.processing import simulate_unet_cropping, tile, tiles_to_image
 
 
 def show_dataset(masked: np.ndarray, wrapped: np.ndarray) -> None:
@@ -123,7 +123,7 @@ def interactive_interferogram(event_type: str = "quake") -> None:
 
     from matplotlib.widgets import Slider
 
-    from src.sarsim import gen_simulated_deformation
+    from insar_eventnet.sarsim import gen_simulated_deformation
 
     kwargs = {
         "source_x": 22000,

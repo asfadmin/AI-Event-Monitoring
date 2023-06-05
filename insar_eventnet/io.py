@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Tuple
 from datetime import datetime
 
-from src.config import (
+from insar_eventnet.config import (
     AOI_DIR,
     MASK_DIR,
     MODEL_DIR,
@@ -22,13 +22,13 @@ from src.config import (
     SYNTHETIC_DIR,
     TENSORBOARD_DIR,
 )
-from src.processing import tile
-from src.sarsim import (
+from insar_eventnet.processing import tile
+from insar_eventnet.sarsim import (
     gen_simulated_deformation,
     gen_sim_noise,
     gen_simulated_time_series,
 )
-from src.synthetic_interferogram import simulate_unet_cropping
+from insar_eventnet.synthetic_interferogram import simulate_unet_cropping
 
 
 def save_dataset(

@@ -617,7 +617,7 @@ def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 
         The array that is meant to be used as a simulated dem with values in meters.
     """
 
-    from src.synthetic_interferogram import generate_perlin
+    from insar_eventnet.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))
     dem = generate_perlin(dem.shape[0]) * alt_scale_max
