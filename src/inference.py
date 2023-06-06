@@ -99,6 +99,60 @@ def mask_and_plot(
     return mask_pred, presence_guess
 
 
+def mask(
+    mask_model_path: str,
+    pres_model_path: str,
+    product_path: str,
+    tile_size: int = 0,
+    crop_size: int = 0,
+    mask_model: Model = None,
+    pres_model: Model = None,
+) -> np.ndarray:
+    """
+    Generate a mask over potential events in a wrapped insar product.
+
+    Parameters:
+    -----------
+    model_path : str
+        The path to the model to use for generating the event-mask.
+    pres_model_path : str
+        The path to the model that predicts the presence of an event in a mask.
+    product_path : str
+        The path to the InSAR product from ASF that should be masked.
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs
+        to be equal to the output shape of the masking model and input shape of the
+        presence model.
+
+    Returns:
+    --------
+    mask_pred : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
+        The array containing the event-mask array as predicted by the model.
+    presence_guess : bool
+        True if there is an event else False.
+    """
+
+    mask_model = load_model(mask_model_path)
+    pres_model = load_model(pres_model_path)
+
+    arr_w, arr_uw, corr, w_dataset = get_product_arrays(product_path)
+
+    mask_pred, pres_mask, pres_vals = mask_with_model(
+        mask_model=mask_model,
+        pres_model=pres_model,
+        arr_w=arr_w,
+        tile_size=tile_size,
+        crop_size=crop_size,
+    )
+
+    presence_guess = np.mean(pres_mask) > 0.0
+
+    return mask_pred, presence_guess
+
+
 def mask_with_model(
     mask_model, pres_model, arr_w: np.ndarray, tile_size: int, crop_size: int = 0
 ) -> np.ndarray:
