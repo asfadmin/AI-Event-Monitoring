@@ -2,7 +2,7 @@
 
 The goal of this project is to create a deep learning model that can recognize and mask significant deformation events in InSAR interferograms.
 
-## Table of Content 
+## Table of Contents
 
 - [Setup](#setup)
 - [Commands](#commands)
@@ -13,13 +13,17 @@ The goal of this project is to create a deep learning model that can recognize a
 - [References](#references)
     
 # Setup <a name="setup"></a>
-This project uses poetry for dependency management.</br>
-First, install poetry and then run these commands:
+This project uses conda for dependency management.</br>
+First, install poetry, then create and activate a conda environment from the environment.yaml file:
 ```
-poetry install
-poetry shell
+conda create env -f environment.yaml
+conda activate insar-eventnet
 ```
-Once you are in the poetry virtual environment, you can run the setup command:
+Once you are in the conda virtual environment, install perlin-numpy from its git source:
+```
+pip install git+https://github.com/pvigier/perlin-numpy
+```
+and run the setup command:
 ```
 python aievents.py setup
 ```
