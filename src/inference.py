@@ -107,6 +107,7 @@ def mask(
     crop_size: int = 0,
     mask_model: Model = None,
     pres_model: Model = None,
+    output_file: str = None,
 ) -> np.ndarray:
     """
     Generate a mask over potential events in a wrapped insar product.
@@ -149,6 +150,16 @@ def mask(
     )
 
     presence_guess = np.mean(pres_mask) > 0.0
+
+    if output_file is not None:
+        img = Image.fromarray(mask_pred)
+        img.save(output_file)
+
+        from osgeo import gdal
+
+        out_dataset = gdal.Open(output_file, gdal.GA_Update)
+        out_dataset.SetGeoTransform(w_dataset.GetGeoTransform())
+        out_dataset.SetProjection(w_dataset.GetProjection())
 
     return mask_pred, presence_guess
 
