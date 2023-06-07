@@ -8,7 +8,10 @@
 import numpy as np
 import pytest
 from astropy.modeling.models import Gaussian2D
-from insar_eventnet.synthetic_interferogram import make_synthetic_interferogram, wrap_interferogram
+from insar_eventnet.synthetic_interferogram import (
+    make_synthetic_interferogram,
+    wrap_interferogram,
+)
 
 # test gaussians
 g2d1 = Gaussian2D(1.0, 150, 100, 20, 10, theta=0.5)
