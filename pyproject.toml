@@ -1,31 +1,33 @@
-[tool.poetry]
+[project]
 name = "insar-eventnet"
 version = "0.0.1"
 description = "A deep learning model that can recognize and mask significant deformation events in InSAR interferograms."
-authors = ["Your Name <you@example.com>"]
-license = "n"
-
-[tool.poetry.dependencies]
-python = "3.8.5"
-tensorflow = "2.5.0"
-astropy = "^4.2"
-numpy = "^1.18.0"
-click = "^7.1.2"
-matplotlib = "^3.3.3"
-hyp3-sdk = "^0.5.0"
-scipy = "1.10.1"
-flask = "^2.3.0"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.1"
-pytest-cov = "^2.11.1"
-pytest-sugar = "^0.9.4"
-pytest-datadir = "^1.3.1"
-notebook = "^6.2.0"
-ipywidgets = "^7.6.3"
-jupyter-contrib-nbextensions = "^0.5.1"
-
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+authors = [{name = "Your Name", email = "you@example.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dependencies = [
+    "tensorflow",
+    "numpy",
+    "geopy",
+    "matplotlib",
+    "scipy",
+    "click",
+    "astropy",
+    "gdal",
+    "flask",
+    "perlin-numpy@git+https://github.com/pvigier/perlin-numpy#egg=5e26837db14042e51166eb6cad4c0df2c1907016"
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+]
+[project.urls]
+"Homepage" = "https://github.com/asfadmin/AI-Event-Monitoring/tree/main"
+[project.scripts]
+insar-eventnet = "insar_eventnet.aievents:cli"
+[tool.setuptools]
+packages = ["insar_eventnet"]
