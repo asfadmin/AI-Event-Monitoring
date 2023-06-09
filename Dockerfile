@@ -12,7 +12,5 @@ COPY . /opt/ml/code
 
 WORKDIR /opt/ml/code
 
-RUN pip3 install -r requirements.txt
-RUN pip3 install git+https://github.com/pvigier/perlin-numpy
-
-ENTRYPOINT ["python3", "aievents.py"]
+RUN pip3 install .
+ENTRYPOINT ["insar-eventnet"]
