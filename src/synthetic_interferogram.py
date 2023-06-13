@@ -58,31 +58,17 @@ def add_noise(interferogram: np.ndarray, size: int) -> np.ndarray:
 
     return interferogram
 
+def generate_perlin_noise_2d(
+    shape, resolution):
 
-def generate_perlin(size: int) -> np.ndarray:
-    """
-    Generate an array with perlin noise.
-
-    Parameters:
-    -----------
-    size : int
-        The number of rows/cols.
-
-    Returns:
-    --------
-    perlin_array : np.ndarray
-        The array containing the generated perlin noise.
-
-    """
-
-    resolution = (res, res)
-    shape = (size, size)
     delta = (resolution[0] / shape[0], resolution[1]/shape[1])
     delta2 = (shape[0] // resolution[0], shape[1] // resolution[1])
 
     grid = np.mgrid[0:resolution[0]:delta[0], 0:resolution[1]:delta[1]].transpose(1, 2, 0) % 1
-    interpolated_grid = np.power(grid, 3) * (grid * (grid * 6 - 15) + 10)
 
+    interpolated_grid = np.power(grid, 3) * (grid * (grid * 6 - 15) + 10)
+   
+    #Create gradients
     angles = 2 * np.pi * np.random.rand(resolution[0] + 1, resolution[1] + 1)
     gradients = np.dstack((np.cos(angles), np.sin(angles)))
     gradients = gradients.repeat(delta2[0], 0).repeat(delta2[1], 1)
@@ -103,14 +89,34 @@ def generate_perlin(size: int) -> np.ndarray:
     ramps1 = (ramp01*(1-interpolated_grid[:,:,0]) + ramp11*interpolated_grid[:,:,0])*(interpolated_grid[:,:,1])
 
     ramps = ramps0+ramps1
-    p_noise = np.sqrt(2)*ramps
+
+    return np.sqrt(2)*ramps
+
+
+def generate_perlin(size: int) -> np.ndarray:
+    """
+    Generate an array with perlin noise.
+
+    Parameters:
+    -----------
+    size : int
+        The number of rows/cols.
+
+    Returns:
+    --------
+    perlin_array : np.ndarray
+        The array containing the generated perlin noise.
+
+    """
 
     perlin_array = np.zeros((size, size))
     for j in range(0, 3):
         for i in range(4 * (2**j), size):
             if size % i == 0:
                 res = i
-                perlin_array += p_noise * (2 ** (3 - j))
+                perlin_array += generate_perlin_noise_2d(
+                    (size, size), (res, res)
+                ) * (2 ** (3 - j))
                 break
     min = np.amin(perlin_array)
     perlin_array -= min
