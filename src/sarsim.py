@@ -136,9 +136,7 @@ class Okada:
 
         self.x_axis_shape = x_axis.shape
         self.y_axis_shape = y_axis.shape
-        self.grid_x = ijk_bases[
-            0,
-        ]
+        self.grid_x = ijk_bases[0,]
         self.grid_y = ijk_bases[1, :]
 
     def chinnery(self, f):
@@ -182,33 +180,9 @@ class Okada:
         self.displacement = displacement_array
 
         shapes = (self.x_axis_shape[0], self.x_axis_shape[1])
-        x_grid = (
-            np.reshape(
-                self.displacement[
-                    0,
-                ],
-                shapes,
-            )
-            * self.los_vector[0, 0]
-        )
-        y_grid = (
-            np.reshape(
-                self.displacement[
-                    1,
-                ],
-                shapes,
-            )
-            * self.los_vector[1, 0]
-        )
-        z_grid = (
-            np.reshape(
-                self.displacement[
-                    2,
-                ],
-                shapes,
-            )
-            * self.los_vector[2, 0]
-        )
+        x_grid = np.reshape(self.displacement[0,], shapes) * self.los_vector[0, 0]
+        y_grid = np.reshape(self.displacement[1,], shapes) * self.los_vector[1, 0]
+        z_grid = np.reshape(self.displacement[2,], shapes) * self.los_vector[2, 0]
 
         self.los_displacement = x_grid + y_grid + z_grid
 
@@ -617,9 +591,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
 
     ph_turbs_m = np.zeros(ph_turbs.shape)
     for atm_n, atm in enumerate(ph_turbs):
-        ph_turbs_m[
-            atm_n,
-        ] = rescale_atmosphere(atm, mean_m)
+        ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
 
     ph_turbs_m = ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
 
@@ -739,9 +711,7 @@ def aps_simulate(size: int = 512):
 
     ph_turb = atmosphere_turb(1, lons_mg, lats_mg, mean_m=0.02)
 
-    return ph_turb[
-        0,
-    ]
+    return ph_turb[0,]
 
 
 def coherence_mask_simulate(size: int = 512, threshold: float = 0.3):
