@@ -15,7 +15,8 @@ Install the ``libgdal-dev`` package with::
     
     sudo apt install libgdal-dev
 
-Some people have noted that apt has troubles resolving dependencies for the ``libgdal-dev`` package. `This stackoverflow answer may provide assistance <https://stackoverflow.com/a/72887401/>`_.
+.. note::
+    Some people have noted that apt has troubles resolving dependencies for the ``libgdal-dev`` package. `This stackoverflow answer may provide assistance <https://stackoverflow.com/a/72887401/>`_.
 
 Arch Linux
 """"""""""
