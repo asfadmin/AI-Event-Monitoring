@@ -482,9 +482,7 @@ def mask_simulated(
         )
     else:
         unwrapped, mask, wrapped, presence = gen_sim_noise(
-            seed=seed,
-            tile_size=tile_size,
-            gaussian_only=gaussian_only,
+            seed=seed, tile_size=tile_size, gaussian_only=gaussian_only
         )
 
     wrapped = wrapped.reshape((1, tile_size, tile_size, 1))
