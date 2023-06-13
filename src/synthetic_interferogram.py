@@ -68,7 +68,6 @@ def generate_perlin_noise_2d(
     grid = np.mgrid[0:resolution[0]:delta[0], 0:resolution[1]:delta[1]].transpose(1, 2, 0) % 1
 
     interpolated_grid = np.power(grid, 3) * (grid * (grid * 6 - 15) + 10)
-   
     angles = 2 * np.pi * np.random.rand(resolution[0] + 1, resolution[1] + 1)
     gradients = np.dstack((np.cos(angles), np.sin(angles)))
     gradients = gradients.repeat(delta2[0], 0).repeat(delta2[1], 1)
@@ -81,7 +80,6 @@ def generate_perlin_noise_2d(
 
     gradients01 = gradients[:-delta2[0], delta2[1]:]
     ramp01 = np.sum(np.dstack((grid[:, :, 0]  , grid[:, :, 1]-1)) * gradients01, 2)
-    
     gradients11 = gradients[delta2[0]:, delta2[1]:]
     ramp11 = np.sum(np.dstack((grid[:, :, 0]-1, grid[:, :, 1]-1)) * gradients11, 2)
 
