@@ -478,7 +478,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
         """
         Given a meshgrid of the lons and lats of the lower left corner of each pixel,
         find their distances (in metres) from the lower left corner.
-        
+
         Parameters
         -------
         lons_mg : rank 2 array
@@ -584,7 +584,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
         """
         a function to rescale a 2d atmosphere with any scale to a mean centered
         one with a min and max value drawn from a normal distribution.
-        
+
         Parameters
         ----------
         atm : rank 2 array
@@ -593,7 +593,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
             average max or min value of atmospheres that are created, in metres.  e.g. if 3 atmospheres have max values of 0.02m, 0.03m, and 0.04m, their mean would be 0.03m
         atm_sigma : float
             standard deviation of Gaussian distribution used to generate atmosphere strengths.
-        
+
         Returns
         -------
         atm : rank 2 array
