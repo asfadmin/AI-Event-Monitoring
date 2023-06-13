@@ -50,10 +50,7 @@ def conv2d_block(
 
 
 def transpose_block(
-    input_tensor: Tensor,
-    concat_tensor: Tensor,
-    num_filters: int,
-    kernel_size: int = 3,
+    input_tensor: Tensor, concat_tensor: Tensor, num_filters: int, kernel_size: int = 3
 ) -> Tensor:
     """
     Learned Upscaling for decoding
