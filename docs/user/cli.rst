@@ -8,12 +8,17 @@ List Commands
 
     insar-eventnet --help
 
-
 Detailed Usage Information
 ------------------------------
 ::
     
     insar-eventnet [command] --help
+
+Predict Event Using Cloud API
+------------------------------
+::
+    
+    insar-eventnet predict-event
 
 View a Random Synthetic Masked/Wrapped Pair
 ----------------------------------------------
