@@ -670,9 +670,7 @@ def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 
 
 
 def atm_topo_simulate(
-    dem_m: np.ndarray,
-    strength_mean: float = 56.0,
-    strength_var: float = 2.0,
+    dem_m: np.ndarray, strength_mean: float = 56.0, strength_var: float = 2.0
 ):
     """`
     Generate simulated topographic atmospheric error.

@@ -537,11 +537,7 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
 
 
 def dataset_from_products(
-    dataset_name: str,
-    product_path: str,
-    save_path: str,
-    tile_size: int,
-    crop_size: int,
+    dataset_name: str, product_path: str, save_path: str, tile_size: int, crop_size: int
 ) -> int:
     """
     Creates a dataset from a folder containing real interferogram products.
