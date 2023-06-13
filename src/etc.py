@@ -2,7 +2,7 @@
  Summary
  -------
  Misc functions.
- 
+
  Notes
  -----
  Created by Jason Herning.

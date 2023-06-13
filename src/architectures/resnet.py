@@ -2,11 +2,11 @@
  Summary
  -------
  Contains a network for sar classification
- 
+
  References
  ----------
  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7041455/
- 
+
  Notes
  -----
  Created By: Andrew Player

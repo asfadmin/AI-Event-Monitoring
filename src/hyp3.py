@@ -2,7 +2,7 @@
  Summary
  -------
  Functions for accessing Hyp3.
- 
+
  Notes
  -----
  Created by Jason Herning.

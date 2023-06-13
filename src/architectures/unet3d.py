@@ -2,7 +2,7 @@
  Summary
  -------
  Contains a network for sar classification
- 
+
  Notes
  -----
  Created By: Andrew Player

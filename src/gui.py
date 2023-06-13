@@ -2,7 +2,7 @@
  Summary
  -------
  GUI plotting of data and interactive visualizations.
- 
+
  Notes
  -----
  Created by Jason Herning, Andrew Player, and Robert Lawton.

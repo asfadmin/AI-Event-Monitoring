@@ -2,11 +2,11 @@
  Summary
  -------
  Functions for simulated-deformation interferogram generation for training datasets.
- 
+
  References
  ----------
  Functions taken from https://github.com/matthew-gaddes/SyInterferoPy.
- 
+
  -----
  Created by Andrew Player.
 """

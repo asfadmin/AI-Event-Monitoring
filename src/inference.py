@@ -3,7 +3,7 @@
  -------
  Functions for performing inference, such as masking events, and binary classification
  of events
- 
+
  Notes
  -----
  Created by Andrew Player.

@@ -2,7 +2,7 @@
  Summary
  -------
  Functions for training models.
- 
+
  Notes
  -----
  Created by Andrew Player.

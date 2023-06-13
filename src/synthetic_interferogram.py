@@ -2,7 +2,7 @@
  Summary
  -------
  Functions for synthetic interferogram generation for training.
- 
+
  Notes
  -----
  Created by Andrew Player.

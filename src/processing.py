@@ -2,7 +2,7 @@
  Summary
  -------
  Functions for the pre and post-processing of interferogram arrays.
- 
+
  Notes
  ------
  Created by Andrew Player.

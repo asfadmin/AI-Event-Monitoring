@@ -2,7 +2,7 @@
  Summary
  -------
  Basic convolutional model, for now, for classifying the images.
- 
+
  Notes
  ------
  Created By: Andrew Player

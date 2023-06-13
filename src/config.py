@@ -2,7 +2,7 @@
  Summary
  -------
  Holds global variables.
- 
+
  Notes
  -----
  Created by Jason Herning.
