@@ -5,11 +5,28 @@
 
 insar-eventnet
 ==========================================
-**insar-eventnet** is a package with a suite of methods for interacting with the EventNet model for the classification of deformation events in INSAR images. :doc:`user/gettingstarted` or view the documentation for the :doc:`api/src` interface. 
+**insar-eventnet** is a package with a suite of methods for interacting with the EventNet model for the classification of deformation events in INSAR images. :doc:`user/inferenceapi`, :doc:`user/installation` or view the documentation for the :doc:`api/src` interface. 
 
 .. toctree::
    :hidden:
+   :caption: Tutorials
 
-   user/gettingstarted
+   user/inferenceapi
+   user/installation
+   user/cli
+   user/methods
+   user/models
+
+.. toctree::
+   :hidden:
+   :glob:
+   :caption: Examples
+   
+   user/examples/*
+   
+.. toctree::
+   :hidden:
+   :caption: Package Interface Documentation
+
    api/modules
 
