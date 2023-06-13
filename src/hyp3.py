@@ -1,11 +1,11 @@
 """
  Summary
  -------
- functions for accessing hyp3.
+ Functions for accessing Hyp3.
  
  Notes
  -----
- Created By:  Jason Herning
+ Created by Jason Herning.
 """
 
 from getpass import getpass
@@ -62,10 +62,6 @@ def write_netrc(username, password) -> None:
         The user's earthdata username.
     password : str
         The user's earthdata password.
-
-    Returns:
-    --------
-    None
     """
 
     with open(".netrc", "w+") as f:

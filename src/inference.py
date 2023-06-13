@@ -1,11 +1,12 @@
 """
  Summary
  -------
- Functions related to inference with the model
+ Functions for performing inference, such as masking events, and binary classification
+ of events
  
  Notes
  -----
- Created By: Andrew Player
+ Created by Andrew Player.
 """
 
 import matplotlib.pyplot as plt
@@ -292,10 +293,6 @@ def test_images_in_dir(
         If the models output shape is different than the input shape, this value needs
         to be equal to the output shape of the masking model and input shape of the
         presence model.
-
-    Returns
-    --------
-    None
     """
 
     from os import listdir, path
@@ -391,10 +388,6 @@ def test_model(
         If the models output shape is different than the input shape, this value needs
         to be qual to the output shape of the masking model and input shape of the
         presence model.
-
-    Returns
-    --------
-    None
     """
 
     from os import path
@@ -471,10 +464,6 @@ def mask_simulated(
         to be equal to the output shape.
     use_sim : bool, Optional
         Use simulated interferograms rather than synthetic interferograms
-
-    Returns
-    --------
-    None
     """
 
     if crop_size == 0:
@@ -546,10 +535,6 @@ def test_binary_choice(
         Run binary model on the rounded mask or the raw mask.
     positive_thresh : bool, Optional
         Threshold for the binary model to consider an image positive.
-
-    Returns
-    --------
-    None
     """
 
     print(f"\nRunning tests over {count} Simulated Interferograms\n_______\n")
@@ -715,10 +700,6 @@ def visualize_layers(
     seed : int
         An integer value to seed the random function
         (the same seed results in the same image, all else equal).
-
-    Returns
-    --------
-    None
     """
 
     model = load_model(model_path)

@@ -1,11 +1,11 @@
 """
  Summary
  -------
- Contains the code for training models
+ Functions for training models.
  
  Notes
  -----
- Created By:   Andrew Player
+ Created by Andrew Player.
 """
 
 import os

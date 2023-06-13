@@ -1,11 +1,11 @@
 """
  Summary
  -------
- misc functions
+ Misc functions.
  
  Notes
  -----
- Created By:  Jason Herning
+ Created by Jason Herning.
 """
 
 import random

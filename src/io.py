@@ -5,7 +5,7 @@
  
  Notes
  -----
- Created By: Andrew Player
+ Created by Andrew Player.
 """
 
 
@@ -39,6 +39,17 @@ def save_dataset(
 ) -> None:
     """
     Saves event-mask and wrapped ndarrays to a single .npz file.
+
+    Parameters
+    ----------
+    save_path : Path
+        The path to save to.
+    mask : np.ndarray
+        The mask for the event.
+    wrapped : np.ndarray
+        The wrapped interferogram.
+    presence : int
+        The presence of an event in an interferogram. 1 if present, 0 if not.
     """
 
     np.savez(save_path, mask=mask, wrapped=wrapped, presence=presence)

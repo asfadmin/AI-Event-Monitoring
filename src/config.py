@@ -1,11 +1,11 @@
 """
  Summary
  -------
- Holds global variables
+ Holds global variables.
  
  Notes
  -----
- Created By:   Jason Herning
+ Created by Jason Herning.
 """
 
 from pathlib import Path

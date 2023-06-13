@@ -1,11 +1,11 @@
 """
  Summary
  -------
- Functions for synthetic interferogram generation
+ Functions for synthetic interferogram generation for training.
  
  Notes
  -----
- Created By:   Andrew Player
+ Created by Andrew Player.
 """
 
 import random

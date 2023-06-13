@@ -1,11 +1,11 @@
 """
  Summary
  -------
- gui apps
+ GUI plotting of data and interactive visualizations.
  
  Notes
  -----
- Created By:  Jason Herning, Andrew Player, and Robert Lawton
+ Created by Jason Herning, Andrew Player, and Robert Lawton.
 """
 
 
@@ -26,10 +26,6 @@ def show_dataset(masked: np.ndarray, wrapped: np.ndarray) -> None:
         The event-mask of the interferogram.
     wrapped : np.ndarray
         The wrapped interferogram.
-
-    Returns
-    --------
-    None
     """
 
     _, [axs_masked, axs_wrapped] = plt.subplots(1, 2)
@@ -59,10 +55,6 @@ def show_product(product_path: str, crop_size: int = 0, tile_size: int = 0) -> N
         This is an optional value that simulates the padding, tiling, and cropping
         that would happen if this was passed through a model with the give crop (output
         shape).
-
-    Returns
-    --------
-    None
     """
 
     arr_w, arr_uw, arr_c = get_product_arrays(product_path)
@@ -123,6 +115,11 @@ def show_product(product_path: str, crop_size: int = 0, tile_size: int = 0) -> N
 def interactive_interferogram(event_type: str = "quake") -> None:
     """
     GUI interface for interactive interferogram simulation.
+
+    Parameters
+    ----------
+    event_type : str
+        The type of the event, one of ``quake``, ``sill``, or ``dyke``.
     """
 
     from matplotlib.widgets import Slider

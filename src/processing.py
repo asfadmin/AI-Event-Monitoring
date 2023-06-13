@@ -1,11 +1,11 @@
 """
  Summary
  -------
- Functions for the pre and post-processing of interferogram arrays
+ Functions for the pre and post-processing of interferogram arrays.
  
  Notes
  ------
- Created By: Andrew Player
+ Created by Andrew Player.
 """
 
 from math import ceil
