@@ -1,8 +1,11 @@
 """
+ Summary
+ -------
+ Holds global variables
+ 
+ Notes
+ -----
  Created By:   Jason Herning
- File Name:    config.py
- Date Created: 01-27-2021
- Description:  Holds global variables
 """
 
 from pathlib import Path

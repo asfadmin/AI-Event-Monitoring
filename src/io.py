@@ -1,8 +1,11 @@
 """
- Created By:   Andrew Player
- File Name:    io.py
- Date Created: 05-01-2022
- Description:  Functions to handle file read/write.
+ Summary
+ -------
+ Functions to handle file read/write.
+ 
+ Notes
+ -----
+ Created By: Andrew Player
 """
 
 
@@ -55,12 +58,12 @@ def load_ts_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads event-mask and wrapped ndarrays from .npz file.
 
-    Parameters:
+    Parameters
     -----------
     load_path : Path
         The path to the data example that should be loaded.
 
-    Returns:
+    Returns
     --------
     mask : np.ndarray
         The array of the event-mask loaded from the .npz.
@@ -78,12 +81,12 @@ def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads event-mask and wrapped ndarrays from .npz file.
 
-    Parameters:
+    Parameters
     -----------
     load_path : Path
         The path to the data example that should be loaded.
 
-    Returns:
+    Returns
     --------
     mask : np.ndarray
         The array of the event-mask loaded from the .npz.
@@ -122,12 +125,12 @@ def get_image_array(image_path: str) -> np.ndarray:
     """
     Load a interferogram .tif from storage into an array.
 
-    Parameters:
+    Parameters
     -----------
     image_path : str
         The path to the interferogram .tif to be opened.
 
-    Returns:
+    Returns
     --------
     arr : np.ndarray
         The interferogram array.
@@ -146,12 +149,12 @@ def get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.nd
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
 
-    Parameters:
+    Parameters
     -----------
     product_path : str
         The path to the InSAR product folder containing the images.
 
-    Returns:
+    Returns
     --------
     wrapped : np.ndarray
         The array of the wrapped interferogram loaded from the .tif.
@@ -188,12 +191,12 @@ def get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.nd
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
 
-    Parameters:
+    Parameters
     -----------
     product_path : str
         The path to the InSAR product folder containing the images.
 
-    Returns:
+    Returns
     --------
     wrapped : np.ndarray
         The array of the wrapped interferogram loaded from the .tif.
@@ -235,7 +238,7 @@ def make_simulated_dataset(
     Generate a dataset containing pairs of wrapped interferograms from simulated
     deformation along with their event-masks
 
-    Parameters:
+    Parameters
     -----------
     name : str
         The name of the dataset to be generate. The saved name will be formatted
@@ -256,7 +259,7 @@ def make_simulated_dataset(
         If the model's output shape does not match its input shape, this should be set
         to match the output shape. The unwrapped interferogram will be cropped to this.
 
-    Returns:
+    Returns
     --------
     seed : int
         The generated or inputed seed.
@@ -387,7 +390,7 @@ def make_simulated_time_series_dataset(
     Generate a dataset containing pairs of wrapped interferograms from simulated
     deformation along with their event-masks
 
-    Parameters:
+    Parameters
     -----------
     name : str
         The name of the dataset to be generate. The saved name will be formatted
@@ -408,7 +411,7 @@ def make_simulated_time_series_dataset(
         If the model's output shape does not match its input shape, this should be set
         to match the output shape. The unwrapped interferogram will be cropped to this.
 
-    Returns:
+    Returns
     --------
     seed : int
         The generated or inputed seed.
@@ -486,14 +489,14 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
     """
     Split the dataset into train and test folders
 
-    Parameters:
+    Parameters
     -----------
     dataset_path : str
         The path to the dataset to be split
     split : float
         The train/test split, 0 < Split < 1, size(validation) <= split
 
-    Returns:
+    Returns
     --------
     num_train : int
         The number of elements that went to the training set.
@@ -543,7 +546,7 @@ def dataset_from_products(
     """
     Creates a dataset from a folder containing real interferogram products.
 
-    Parameters:
+    Parameters
     -----------
     dataset_name : str
         The name for the folder that will contain the dataset.
@@ -561,7 +564,7 @@ def dataset_from_products(
         Set point in wrapped array to 0 if the correlation is below this value at that
         point.
 
-    Returns:
+    Returns
     --------
     dataset_size : int
         The size of the dataset that was created.

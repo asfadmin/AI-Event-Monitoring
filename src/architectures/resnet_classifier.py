@@ -1,9 +1,11 @@
 """
  Created By:   Andrew Player
- File Name:    model.py
- Date Created: 01-25-2021
- Description:  Contains a network for sar classification
- References: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7041455/
+ Summary
+ -------
+ Contains a network for sar classification
+ References
+ ----------
+ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7041455/
 """
 
 
@@ -100,7 +102,7 @@ def create_resnetclassifier(
     """
     Creates a model for unwrapping 2D wrapped phase images.
 
-    References:
+    References
     -----------
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7041455/
     """

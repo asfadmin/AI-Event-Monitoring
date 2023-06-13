@@ -1,7 +1,11 @@
 """
+ Summary
+ -------
+ gui apps
+ 
+ Notes
+ -----
  Created By:  Jason Herning, Andrew Player, and Robert Lawton
- File Name:   gui.py
- Description: gui apps
 """
 
 
@@ -16,14 +20,14 @@ def show_dataset(masked: np.ndarray, wrapped: np.ndarray) -> None:
     """
     Plot the masked and wrapped arrays.
 
-    Parameters:
+    Parameters
     -----------
     masked : np.ndarray
         The event-mask of the interferogram.
     wrapped : np.ndarray
         The wrapped interferogram.
 
-    Returns:
+    Returns
     --------
     None
     """
@@ -43,7 +47,7 @@ def show_product(product_path: str, crop_size: int = 0, tile_size: int = 0) -> N
     """
     Plots the Wrapped, Unwrapped, and Correlation Images in the given product.
 
-    Parameters:
+    Parameters
     -----------
     product_path : str
         The path to the folder containing the ASF InSAR product to display.
@@ -56,7 +60,7 @@ def show_product(product_path: str, crop_size: int = 0, tile_size: int = 0) -> N
         that would happen if this was passed through a model with the give crop (output
         shape).
 
-    Returns:
+    Returns
     --------
     None
     """

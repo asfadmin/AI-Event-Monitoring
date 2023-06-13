@@ -1,8 +1,11 @@
 """
- Created By:   Andrew Player
- File Name:    eventnet.py
- Date Created: September 2022
- Description:  Basic convolutional model, for now, for classifying the images.
+ Summary
+ -------
+ Basic convolutional model, for now, for classifying the images.
+ 
+ Notes
+ ------
+ Created By: Andrew Player
 """
 
 from tensorflow import Tensor

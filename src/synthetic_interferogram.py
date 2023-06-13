@@ -1,8 +1,11 @@
 """
+ Summary
+ -------
+ Functions for synthetic interferogram generation
+ 
+ Notes
+ -----
  Created By:   Andrew Player
- File Name:    synthetic_interferogram.py
- Date Created: 05-01-2022
- Description:  Functions for synthetic interferogram generation
 """
 
 import random
@@ -18,14 +21,14 @@ def make_synthetic_interferogram(size: int, *gaussians: Gaussian2D) -> np.ndarra
     """
     Returns an array that simulates an unwrapped interferogram
 
-    Parameters:
+    Parameters
     -----------
     size : int
         The dimensional size of the desired interferogram.
     *gaussians : Gaussian2D
         An arbitrary number of guassians to be placed in the interferogram.
 
-    Returns:
+    Returns
     --------
     interferogram : np.ndarray(shape=(size, size))
         The simulated unwrapped interferogram array.
@@ -64,12 +67,12 @@ def generate_perlin(size: int) -> np.ndarray:
     """
     Generate an array with perlin noise.
 
-    Parameters:
+    Parameters
     -----------
     size : int
         The number of rows/cols.
 
-    Returns:
+    Returns
     --------
     perlin_array : np.ndarray
         The array containing the generated perlin noise.
@@ -96,7 +99,7 @@ def wrap_interferogram(
     """
     Wrap the inputed array to values between -pi and pi.
 
-    Parameters:
+    Parameters
     -----------
     interferogram : np.ndarray
         The unwrapped interferogram which should be wrapped.
@@ -108,7 +111,7 @@ def wrap_interferogram(
         The maximum noise value to be added to the wrapped interferogram
         using a uniform distribution.
 
-    Returns:
+    Returns
     --------
     wrapped_interferogram : np.ndarray(shape=interferogram.shape)
         The simulated wrapped interferogram array.
@@ -145,7 +148,7 @@ def make_random_dataset(
     """
     Generate a simulated wrapped interferogram along with an event-mask
 
-    Parameters:
+    Parameters
     -----------
     size : int
         The desired dimensional size of the interferogram pairs. This should match
@@ -189,7 +192,7 @@ def make_random_dataset(
         The maximum standard deviation of guassians in the y direction. This is
         how wide they can be in the y direction
 
-    Returns:
+    Returns
     --------
     interferogram : np.ndarray(shape=(size, size))
         The array of the generated simulated wrapped interferogram.

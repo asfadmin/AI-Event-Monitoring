@@ -1,8 +1,11 @@
 """
- Created By:   Andrew Player
- File Name:    processing.py
- Date Created: 01-25-2021
- Description:  Functions for the pre and post-processing of interferogram arrays
+ Summary
+ -------
+ Functions for the pre and post-processing of interferogram arrays
+ 
+ Notes
+ ------
+ Created By: Andrew Player
 """
 
 from math import ceil
@@ -23,7 +26,7 @@ def tile(
     """
     Tile a 2-dimensional array into an array of tiles of shape tile_shape.
 
-    Parameters:
+    Parameters
     -----------
     arr : np.ndarray
         The 2-dimensional array that should be tiled.
@@ -44,7 +47,7 @@ def tile(
     pad_value : float, Optional
         The value to fill the padded areas of the array with.
 
-    Returns:
+    Returns
     --------
     tiles : np.ndarray
         The array of tiles.
@@ -109,7 +112,7 @@ def pad(
     """
     Pad an array with a given value so that it can be tiled.
 
-    Parameters:
+    Parameters
     -----------
     arr : np.ndarray
         The array that should be padded.
@@ -123,7 +126,7 @@ def pad(
         If True, the array will be padded symmetrically; else, it will be padded
         on the end of each dimension.
 
-    Returns:
+    Returns
     --------
     arr_padded : np.ndarray
         The padded array.
@@ -148,7 +151,7 @@ def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     """
     Symmetrically crop the inputed array.
 
-    Parameters:
+    Parameters
     -----------
     arr : np.ndarray
         The 2-dimensional interferogram array to be cropped.
@@ -157,7 +160,7 @@ def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
         crop_shape in a direction does not divide 2, the extra value will be placed on
         the 0 side. This should match the models output shape.
 
-    Returns:
+    Returns
     --------
     cropped_arr : np.ndarray
         The cropped interferogram array.
@@ -176,7 +179,7 @@ def tiles_to_image(
     """
     Stich an array of 2-dimensional tiles into a single 2-dimensional array.
 
-    Parameters:
+    Parameters
     -----------
     arr : np.ndarray(shape=(rows*cols, tile_size, tile_size))
         The array of tiles to be stiched together.
@@ -192,7 +195,7 @@ def tiles_to_image(
         If the model was cropped, set this to the original tile size, else
         leave this false.
 
-    Returns:
+    Returns
     --------
     rebuilt_arr : np.ndarray(shape=(rows*tile_size, cols*tile_size))
         The stiched 2-dimensional array.
@@ -233,12 +236,12 @@ def blur2d(arr: np.ndarray):
     """
     Apply a 5x5 Gaussian Blur/Smoothing filter with a 2D keras convolution.
 
-    Parameters:
+    Parameters
     -----------
     arr : np.ndarray(shape=(rows*cols, tile_size, tile_size))
         The array containing the image data that should be blurred/smoothed.
 
-    Returns:
+    Returns
     --------
     convolved_array : np.ndarray(shape=arr.shape)
         The array containing the blurred image data.
