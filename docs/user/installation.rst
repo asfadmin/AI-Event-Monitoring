@@ -42,12 +42,12 @@ Clone the repository::
 
     git clone https://github.com/asfadmin/AI-Event-Monitoring.git
 
-Activate the conda environment from the environment.yaml file
+Activate the conda environment from the environment.yaml file::
 
     conda create env -f environment.yaml
     conda activate insar-eventnet
 
-Then, build and install the package
+Then, build and install the package::
 
     pip install .
 
