@@ -16,7 +16,6 @@ dependencies = [
     "astropy",
     "gdal",
     "flask",
-    "perlin-numpy@git+https://github.com/pvigier/perlin-numpy#egg=5e26837db14042e51166eb6cad4c0df2c1907016"
 ]
 classifiers = [
     "License :: OSI Approved :: BSD License",

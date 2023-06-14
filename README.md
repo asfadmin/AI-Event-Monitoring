@@ -18,29 +18,25 @@ The goal of this project is to create a deep learning model that can recognize a
 pip install insar-eventnet
 ```
 ## From source
-Clone the repository:
+Clone the repository
 ```
 git clone https://github.com/asfadmin/AI-Event-Monitoring.git
 ```
-Activate the conda environment from the environment.yaml file:
+Activate the conda environment from the environment.yaml file
 ```
 conda create env -f environment.yaml
 conda activate insar-eventnet
-```
-Once you are in the conda virtual environment, install perlin-numpy from its git source:
-```
-pip install git+https://github.com/pvigier/perlin-numpy
 ```
 then, install the insar-eventnet package and cli
 ```
 pip install .
 ```
 # Setup <a name="setup"></a>
-Run the setup command in your desired working directory:
+Run the setup command in your desired working directory
 ```
 insar-eventnet setup
 ```
-This will add the data directory which is structured like this:
+This will add the data directory which is structured like this
 ```
 data/
       └──input/
