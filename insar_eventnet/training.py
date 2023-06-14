@@ -17,10 +17,10 @@ from datetime import datetime
 
 import numpy as np
 
-from src.architectures.unet import create_unet
-from src.architectures.unet3d import create_unet3d
-from src.architectures.resnet import create_resnet
-from src.architectures.eventnet import create_eventnet
+from insar_eventnet.architectures.unet import create_unet
+from insar_eventnet.architectures.unet3d import create_unet3d
+from insar_eventnet.architectures.resnet import create_resnet
+from insar_eventnet.architectures.eventnet import create_eventnet
 
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import Sequence

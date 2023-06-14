@@ -2,8 +2,8 @@
 
 The goal of this project is to create a deep learning model that can recognize and mask significant deformation events in InSAR interferograms.
 
-## Table of Content 
-
+## Table of Contents
+- [Installation](#installation)
 - [Setup](#setup)
 - [Commands](#commands)
 - [Running Unit Tests](#tests)
@@ -11,19 +11,32 @@ The goal of this project is to create a deep learning model that can recognize a
 - [Simulated Interferograms](#sim)
 - [Preliminary Results](#results)
 - [References](#references)
-    
+
+# Installation <a name="installation"></a>
+## pip
+```
+pip install insar-eventnet
+```
+## From source
+Clone the repository
+```
+git clone https://github.com/asfadmin/AI-Event-Monitoring.git
+```
+Activate the conda environment from the environment.yaml file
+```
+conda create env -f environment.yaml
+conda activate insar-eventnet
+```
+then, install the insar-eventnet package and cli
+```
+pip install .
+```
 # Setup <a name="setup"></a>
-This project uses poetry for dependency management.</br>
-First, install poetry and then run these commands:
+Run the setup command in your desired working directory
 ```
-poetry install
-poetry shell
+insar-eventnet setup
 ```
-Once you are in the poetry virtual environment, you can run the setup command:
-```
-python aievents.py setup
-```
-This will add the data directory which is structured like this:
+This will add the data directory which is structured like this
 ```
 data/
       └──input/
@@ -41,64 +54,64 @@ You should now be ready to run everything.
 
 # Command line interface <a name="commands"></a>
 
-There are two command line interfaces, `inference.py` which utilizes the cloud API for inference, and `aievents.py` which runs the models locally.
+There are two command line interfaces, `inference.py` which utilizes the cloud API for inference, and `insar-eventnet` which runs the models locally.
 
 ## inference.py
 ### Running inference
 ```bash
-python inference.py predict-event [usgs-event-id] [product-name]
+python inference predict-event [usgs-event-id] [product-name]
 ```
 
 ## aievents.py
 
 ### For a List of Commands
 ```bash
-python aievents.py --help
+insar-eventnet --help
 ```
 
 ### For Detailed Usage Information
 ```bash
-python aievents.py [command] --help
+insar-eventnet [command] --help
 ```
 
 ### Viewing a Random Synthetic Masked/Wrapped Pair
 ```bash
-python aievents.py show-random
+insar-eventnet show-random
 ```
 
 ### Viewing a Random Simulated Masked/Wrapped Pair
 ```bash
-python aievents.py simulate
+insar-eventnet simulate
 ```
 
 ### Creating a Synthetic Masked/Wrapped Dataset
 ```bash
-python aievents.py make-synthetic-dataset [dataset-name] [dataset-size] --tile_size [nxn-size-of-images]
+insar-eventnet make-synthetic-dataset [dataset-name] [dataset-size] --tile_size [nxn-size-of-images]
 ```
 
 ### Creating a Simulated Masked/Wrapped Dataset
 ```bash
-python aievents.py make-simulated-dataset [dataset-name] [dataset-size] --tile_size [nxn-size-of-images]
+insar-eventnet make-simulated-dataset [dataset-name] [dataset-size] --tile_size [nxn-size-of-images]
 ```
 
 ### Viewing a Pair from a Dataset
 ```bash
-python aievents.py show [path/to/dataset.npz]
+insar-eventnet show [path/to/dataset.npz]
 ```
 
 ### Training a Model
 ```bash
-python aievents.py train-model [model-name] [path/to/training-set] [path/to/testing-set] --epochs [num-of-epochs]
+insar-eventnet train-model [model-name] [path/to/training-set] [path/to/testing-set] --epochs [num-of-epochs]
 ```
 
 ### Testing a Model
 ```bash
-python aievents.py test-model [path/to/model]
+insar-eventnet test-model [path/to/model]
 ```
 
 ### Mask a Real Interferogram
 ```bash
-python aievents.py mask [path/to/model] [path/to/product_folder] --tile_size [size-of-tiles-used-to-train]
+insar-eventnet mask [path/to/model] [path/to/product_folder] --tile_size [size-of-tiles-used-to-train]
 ```
 
 # Running Unit Tests <a name="tests"></a>

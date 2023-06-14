@@ -6,7 +6,7 @@
 
 import requests
 import click
-from src.config import SYNTHETIC_DIR, MASK_DIR
+from insar_eventnet.config import SYNTHETIC_DIR, MASK_DIR
 
 
 # ------------- #
@@ -80,7 +80,7 @@ def setup():
         └──tensorboard/
     """
 
-    from src.io import create_directories
+    from insar_eventnet.io import create_directories
 
     print("")
     create_directories()
@@ -117,7 +117,7 @@ def make_simulated_dataset_wrapper(
     amount      Number of simulated interferograms created.\n
     """
 
-    from src.io import split_dataset, make_simulated_dataset
+    from insar_eventnet.io import split_dataset, make_simulated_dataset
 
     print("")
 
@@ -173,7 +173,7 @@ def make_simulated_time_series_dataset_wrapper(
     amount      Number of simulated interferograms created.\n
     """
 
-    from src.io import split_dataset, make_simulated_time_series_dataset
+    from insar_eventnet.io import split_dataset, make_simulated_time_series_dataset
 
     print("")
 
@@ -241,7 +241,7 @@ def make_simulated_binary_dataset_wrapper(
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.io import split_dataset, make_simulated_dataset
+    from insar_eventnet.io import split_dataset, make_simulated_dataset
 
     seed, count, dir_name, _, _ = make_simulated_dataset(
         name, output_dir, amount, seed, tile_size, crop_size, model_path=model_path
@@ -269,7 +269,7 @@ def split_dataset_wrapper(dataset_path, split):
     split         decimal percent of the dataset for validation\n
     """
 
-    from src.io import split_dataset
+    from insar_eventnet.io import split_dataset
 
     num_train, num_validation = split_dataset(dataset_path, split)
 
@@ -313,7 +313,7 @@ def train_model_wrapper(
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.training import train
+    from insar_eventnet.training import train
 
     if model_type not in ["eventnet", "unet", "unet3d", "resnet", "resnet_classifier"]:
         print(
@@ -366,7 +366,7 @@ def test_masking_wrapper(
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     from tensorflow.keras.models import load_model
-    from src.inference import mask_simulated, plot_imgs
+    from insar_eventnet.inference import mask_simulated, plot_imgs
 
     mask_model = load_model(mask_model_path)
 
@@ -422,7 +422,7 @@ def test_binary_choice_wrapper(
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     from tensorflow.keras.models import load_model
-    from src.inference import test_binary_choice
+    from insar_eventnet.inference import test_binary_choice
 
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
@@ -471,7 +471,7 @@ def test_model_wrapper(
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.inference import test_model
+    from insar_eventnet.inference import test_model
 
     test_model(
         model_path,
@@ -521,7 +521,7 @@ def visualize_layers_wrapper(model_path, save_path, seed):
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.inference import visualize_layers
+    from insar_eventnet.inference import visualize_layers
 
     visualize_layers(model_path, save_path, seed)
 
@@ -550,7 +550,7 @@ def mask_wrapper(
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.inference import mask_and_plot
+    from insar_eventnet.inference import mask_and_plot
 
     mask_pred, _ = mask_and_plot(
         model_path, pres_model_path, image_path, tile_size, crop_size
@@ -571,7 +571,7 @@ def interactive_wrapper(event_type):
     atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
-    from src.gui import interactive_interferogram
+    from insar_eventnet.gui import interactive_interferogram
 
     interactive_interferogram(event_type)
 
@@ -592,9 +592,9 @@ def simulate_wrapper(
     atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
-    from src.gui import show_dataset
-    from src.sarsim import gen_simulated_deformation, gen_sim_noise
-    from src.processing import simulate_unet_cropping
+    from insar_eventnet.gui import show_dataset
+    from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
+    from insar_eventnet.processing import simulate_unet_cropping
 
     if not noise_only:
         _, masked, wrapped, event_is_present = gen_simulated_deformation(
@@ -623,8 +623,8 @@ def show_dataset_wrapper(file_path):
 
     from os import listdir
 
-    from src.gui import show_dataset
-    from src.io import load_dataset
+    from insar_eventnet.gui import show_dataset
+    from insar_eventnet.io import load_dataset
 
     filenames = listdir(file_path)
 
@@ -653,7 +653,7 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     from search.asf.alaska.edu.\n
     """
 
-    from src.gui import show_product
+    from insar_eventnet.gui import show_product
 
     show_product(product_path, crop_size, tile_size)
 
@@ -671,7 +671,7 @@ def sort_images_wrapper(images_path):
     import matplotlib.pyplot as plt
 
     from os import listdir, system
-    from src.io import get_image_array
+    from insar_eventnet.io import get_image_array
     from numpy import angle, exp, pi
     from pathlib import Path
 
@@ -715,7 +715,7 @@ def check_image_wrapper(image_path):
 
     import matplotlib.pyplot as plt
 
-    from src.io import get_image_array
+    from insar_eventnet.io import get_image_array
     from numpy import angle, exp, pi
 
     image, _ = get_image_array(image_path)
@@ -739,7 +739,7 @@ def check_images_wrapper(images_path):
     import matplotlib.pyplot as plt
 
     from os import listdir
-    from src.io import get_image_array
+    from insar_eventnet.io import get_image_array
     from numpy import angle, exp, pi
 
     for filename in listdir(images_path):
@@ -791,8 +791,8 @@ def create_model_wrapper(
 
     environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    from src.training import train
-    from src.io import split_dataset, make_simulated_dataset
+    from insar_eventnet.training import train
+    from insar_eventnet.io import split_dataset, make_simulated_dataset
 
     print("___________________________\n")
     print("Creating Mask Model Dataset")
@@ -902,7 +902,7 @@ def sagemaker_train_wrapper(
 
     from os import system
 
-    from src.training import train
+    from insar_eventnet.training import train
 
     root_dir = "/opt/ml"  # SageMaker expects things to happen here.
 
@@ -989,8 +989,8 @@ def sagemaker_server_wrapper():
     from flask import request
     from tensorflow.keras.models import load_model
 
-    from src.inference import mask_with_model
-    from src.io import get_image_array
+    from insar_eventnet.inference import mask_with_model
+    from insar_eventnet.io import get_image_array
 
     mask_model_path = "/opt/ml/model/models/mask_model"
     pres_model_path = "/opt/ml/model/models/pres_model"

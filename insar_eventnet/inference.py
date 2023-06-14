@@ -17,9 +17,9 @@ from pathlib import Path
 
 from tensorflow.keras.models import Model, load_model
 
-from src.io import get_product_arrays
-from src.processing import tile, tiles_to_image
-from src.sarsim import gen_simulated_deformation, gen_sim_noise
+from insar_eventnet.io import get_product_arrays
+from insar_eventnet.processing import tile, tiles_to_image
+from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
 
 
 def mask_and_plot(
@@ -296,7 +296,7 @@ def test_images_in_dir(
     """
 
     from os import listdir, path
-    from src.io import get_image_array
+    from insar_eventnet.io import get_image_array
 
     positives = 0
     negatives = 0
