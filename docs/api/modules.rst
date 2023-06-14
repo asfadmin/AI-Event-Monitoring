@@ -1,7 +1,7 @@
-src
-===
+insar_eventnet
+==============
 
 .. toctree::
    :maxdepth: 4
 
-   src
+   insar_eventnet
