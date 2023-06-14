@@ -180,9 +180,27 @@ class Okada:
         self.displacement = displacement_array
 
         shapes = (self.x_axis_shape[0], self.x_axis_shape[1])
-        x_grid = np.reshape(self.displacement[0,], shapes) * self.los_vector[0, 0]
-        y_grid = np.reshape(self.displacement[1,], shapes) * self.los_vector[1, 0]
-        z_grid = np.reshape(self.displacement[2,], shapes) * self.los_vector[2, 0]
+        x_grid = (
+            np.reshape(
+                self.displacement[0,],
+                shapes,
+            )
+            * self.los_vector[0, 0]
+        )
+        y_grid = (
+            np.reshape(
+                self.displacement[1,],
+                shapes,
+            )
+            * self.los_vector[1, 0]
+        )
+        z_grid = (
+            np.reshape(
+                self.displacement[2,],
+                shapes,
+            )
+            * self.los_vector[2, 0]
+        )
 
         self.los_displacement = x_grid + y_grid + z_grid
 
