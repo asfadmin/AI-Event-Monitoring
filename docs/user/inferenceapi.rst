@@ -11,7 +11,7 @@ The API is located at ``https://aevrv4z4vf.execute-api.us-west-2.amazonaws.com/t
 .. code-block:: json
 
     {
-        "usgs_event_id": <USGS Event ID>,
-        "product_name": <Product Name>
+        "usgs_event_id": "<USGS Event ID>",
+        "product_name": "<Product Name>"
     }
 
