@@ -8,7 +8,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "nbsphinx",
-    "nbsphinx_link"
+    "nbsphinx_link",
+    "sphinx_click"
 ]
 
 nbsphinx_execute = 'never'
