@@ -14,15 +14,21 @@ insar-eventnet
    user/inferenceapi
    user/installation
    user/cli
-   user/methods
    user/models
 
 .. toctree::
    :hidden:
    :glob:
    :caption: Examples
-   
+
    user/examples/*
+
+.. toctree::
+   :hidden:
+   :glob:
+   :caption: Notebooks
+
+   user/notebooks/*
    
 .. toctree::
    :hidden:

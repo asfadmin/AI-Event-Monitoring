@@ -1,5 +1,5 @@
 Use the Cloud Inference API
-=======================
+===========================
 
 The UNet and EventNet models are hosted in an Amazon SageMaker instance for convienient use without installing any library. For an example on how to use the API see: :doc:`examples/inference`.
 
