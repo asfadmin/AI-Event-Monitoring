@@ -180,9 +180,27 @@ class Okada:
         self.displacement = displacement_array
 
         shapes = (self.x_axis_shape[0], self.x_axis_shape[1])
-        x_grid = np.reshape(self.displacement[0,], shapes) * self.los_vector[0, 0]
-        y_grid = np.reshape(self.displacement[1,], shapes) * self.los_vector[1, 0]
-        z_grid = np.reshape(self.displacement[2,], shapes) * self.los_vector[2, 0]
+        x_grid = (
+            np.reshape(
+                self.displacement[0,],
+                shapes,
+            )
+            * self.los_vector[0, 0]
+        )
+        y_grid = (
+            np.reshape(
+                self.displacement[1,],
+                shapes,
+            )
+            * self.los_vector[1, 0]
+        )
+        z_grid = (
+            np.reshape(
+                self.displacement[2,],
+                shapes,
+            )
+            * self.los_vector[2, 0]
+        )
 
         self.los_displacement = x_grid + y_grid + z_grid
 
@@ -617,7 +635,7 @@ def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 
         The array that is meant to be used as a simulated dem with values in meters.
     """
 
-    from src.synthetic_interferogram import generate_perlin
+    from insar_eventnet.synthetic_interferogram import generate_perlin
 
     dem = np.zeros((size, size))
     dem = generate_perlin(dem.shape[0]) * alt_scale_max

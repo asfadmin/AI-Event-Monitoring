@@ -1,0 +1,17 @@
+name: insar-eventnet
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.8.5
+  - ipython
+  - tensorflow==2.8.1
+  - numpy==1.20.3
+  - matplotlib
+  - scipy
+  - click
+  - astropy
+  - pytest
+  - gdal
+  - flask
+  - geopy

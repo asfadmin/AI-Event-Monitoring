@@ -10,7 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from src.io import load_dataset, save_dataset
+from insar_eventnet.io import load_dataset, save_dataset
 
 
 @pytest.fixture(scope="function")

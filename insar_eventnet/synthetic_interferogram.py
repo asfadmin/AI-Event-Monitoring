@@ -10,7 +10,7 @@ from typing import Tuple
 
 import numpy as np
 from astropy.modeling.models import Gaussian2D
-from src.processing import simulate_unet_cropping
+from insar_eventnet.processing import simulate_unet_cropping
 
 
 def make_synthetic_interferogram(size: int, *gaussians: Gaussian2D) -> np.ndarray:

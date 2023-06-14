@@ -6,7 +6,7 @@
 """
 
 import numpy as np
-from src.processing import pad, tile
+from insar_eventnet.processing import pad, tile
 
 test_arr_3x3 = np.zeros((3, 3))
 test_arr_99x99 = np.zeros((99, 99))
