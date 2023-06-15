@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 project = "insar-eventnet"
 copyright = "2023, TODO"
@@ -14,10 +14,10 @@ extensions = [
     "sphinx_copybutton",
     "nbsphinx",
     "nbsphinx_link",
-    "sphinx_click"
+    "sphinx_click",
 ]
 
-nbsphinx_execute = 'never'
+nbsphinx_execute = "never"
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
