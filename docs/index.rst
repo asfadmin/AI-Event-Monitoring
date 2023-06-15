@@ -20,13 +20,6 @@ insar-eventnet
 .. toctree::
    :hidden:
    :glob:
-   :caption: Examples
-
-   user/examples/*
-
-.. toctree::
-   :hidden:
-   :glob:
    :caption: Notebooks
 
    user/notebooks/*
