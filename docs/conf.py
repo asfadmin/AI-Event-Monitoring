@@ -1,3 +1,8 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('..'))
+
 project = "insar-eventnet"
 copyright = "2023, TODO"
 author = "TODO"
