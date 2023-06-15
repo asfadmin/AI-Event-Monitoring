@@ -89,7 +89,7 @@ The following example creates a simulated dataset in ``data/working/synthetic/si
 .. note:: Notice the use of :func:`insar_eventnet.io:create_directories` to create the data directory which our simulated dataset is stored in.
 
 Generating Masks from Wrapped Interferograms
--------------------------------------------
+--------------------------------------------
 
 The :func:`insar_eventnet.inference:mask` can be used to infer masks and presence values.
 
