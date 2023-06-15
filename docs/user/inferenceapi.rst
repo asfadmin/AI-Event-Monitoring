@@ -1,7 +1,7 @@
 Use the Cloud Inference API
 ===========================
 
-The UNet and EventNet models are hosted in an Amazon SageMaker instance for convienient use without installing any library. For an example on how to use the API see: :doc:`examples/inference`.
+The UNet and EventNet models are hosted in an Amazon SageMaker instance for convienient use without installing any library.
 
 API Specification
 -----------------
@@ -15,3 +15,8 @@ The API is located at ``https://aevrv4z4vf.execute-api.us-west-2.amazonaws.com/t
         "product_name": "<Product Name>"
     }
 
+Using the API in Python
+-----------------------
+
+.. literalinclude:: /../examples/cloud_inference.py
+    :language: python
