@@ -4,6 +4,9 @@ permissions:
     contents: write
 jobs:
   docs:
+    defaults:
+        run:
+          shell: bash -el {0}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,7 +31,7 @@ jobs:
           activate-environment: insar-eventnet
           environment-file: environment.yaml
       - name: Install Additional Dependencies
-        run: conda install pip
+        run: conda install pip pandoc
       - name: Install dependencies
         run: |
           pip install sphinx furo sphinx_copybutton nbsphinx nbsphinx_link sphinx_click
