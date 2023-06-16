@@ -1,8 +1,11 @@
 """
- Created By:   Jason Herning
- File Name:    config.py
- Date Created: 01-27-2021
- Description:  Holds global variables
+ Summary
+ -------
+ Holds global variables.
+
+ Notes
+ -----
+ Created by Jason Herning.
 """
 
 from pathlib import Path

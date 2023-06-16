@@ -1,8 +1,11 @@
 """
- Created By:   Andrew Player
- File Name:    model.py
- Date Created: 01-25-2021
- Description:  Contains a network for sar classification
+ Summary
+ -------
+ Contains a network for sar classification
+
+ Notes
+ -----
+ Created By: Andrew Player
 """
 
 

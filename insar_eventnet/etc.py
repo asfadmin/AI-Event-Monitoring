@@ -1,7 +1,11 @@
 """
- Created By:  Jason Herning
- File Name:   etc.py
- Description: misc functions
+ Summary
+ -------
+ Misc functions.
+
+ Notes
+ -----
+ Created by Jason Herning.
 """
 
 import random
@@ -12,7 +16,7 @@ def new_seed():
     """
     Randomly generates a seed for use in synthetic interferogram dataset generation.
 
-    Returns:
+    Returns
     --------
     n/a : float
         Randomly generated seed for use as a random seed.

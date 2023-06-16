@@ -1,7 +1,12 @@
 """
- Created By:  Andrew Player
- File Name:   inference.py
- Description: Functions related to inference with the model
+ Summary
+ -------
+ Functions for performing inference, such as masking events, and binary classification
+ of events
+
+ Notes
+ -----
+ Created by Andrew Player.
 """
 
 import matplotlib.pyplot as plt
@@ -29,7 +34,7 @@ def mask_and_plot(
     """
     Generate a mask over potential events in a wrapped insar product and plot it.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model to use for generating the event-mask.
@@ -45,7 +50,7 @@ def mask_and_plot(
         to be equal to the output shape of the masking model and input shape of the
         presence model.
 
-    Returns:
+    Returns
     --------
     mask_pred : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
         The array containing the event-mask array as predicted by the model.
@@ -170,7 +175,7 @@ def mask_with_model(
     """
     Use a keras model prediction to mask events in a wrapped interferogram.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model to use for masking.
@@ -186,7 +191,7 @@ def mask_with_model(
         to be equal to the output shape of the masking model and input shape of the
         presence model.
 
-    Returns:
+    Returns
     --------
     mask : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
         The array containing the event-mask array as predicted by the model.
@@ -273,7 +278,7 @@ def test_images_in_dir(
     Helper for test_model(). Evaluates EventNet Models over a directory of real
     interferograms.
 
-    Parameters:
+    Parameters
     -----------
     mask_model : Keras Model
         The model for masking
@@ -288,10 +293,6 @@ def test_images_in_dir(
         If the models output shape is different than the input shape, this value needs
         to be equal to the output shape of the masking model and input shape of the
         presence model.
-
-    Returns:
-    --------
-    None
     """
 
     from os import listdir, path
@@ -371,7 +372,7 @@ def test_model(
     """
     Evaluate EventNet Models over a directory of real interferograms.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model to use for masking.
@@ -387,10 +388,6 @@ def test_model(
         If the models output shape is different than the input shape, this value needs
         to be qual to the output shape of the masking model and input shape of the
         presence model.
-
-    Returns:
-    --------
-    None
     """
 
     from os import path
@@ -451,7 +448,7 @@ def mask_simulated(
     """
     Predicts the event-mask on a synthetic wrapped interferogram and plots the results.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model that does the masking.
@@ -467,10 +464,6 @@ def mask_simulated(
         to be equal to the output shape.
     use_sim : bool, Optional
         Use simulated interferograms rather than synthetic interferograms
-
-    Returns:
-    --------
-    None
     """
 
     if crop_size == 0:
@@ -517,7 +510,7 @@ def test_binary_choice(
     """
     Evaluats a mask+binary model on the presence of events in simulated interferograms.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model that masks images.
@@ -542,10 +535,6 @@ def test_binary_choice(
         Run binary model on the rounded mask or the raw mask.
     positive_thresh : bool, Optional
         Threshold for the binary model to consider an image positive.
-
-    Returns:
-    --------
-    None
     """
 
     print(f"\nRunning tests over {count} Simulated Interferograms\n_______\n")
@@ -702,7 +691,7 @@ def visualize_layers(
     Make a prediction on a simulated interferogram and save tifs of the outputs of each
     layer in the model.
 
-    Parameters:
+    Parameters
     -----------
     model_path : str
         The path to the model to be visualized.
@@ -711,10 +700,6 @@ def visualize_layers(
     seed : int
         An integer value to seed the random function
         (the same seed results in the same image, all else equal).
-
-    Returns:
-    --------
-    None
     """
 
     model = load_model(model_path)

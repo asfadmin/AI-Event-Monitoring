@@ -1,0 +1,48 @@
+name: Docs
+on: [push, pull_request, workflow_dispatch]
+permissions:
+    contents: write
+jobs:
+  docs:
+    defaults:
+        run:
+          shell: bash -el {0}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if etc/example-environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('environment.yaml') }}
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.8.5
+          miniconda-version: 'latest'
+          mamba-version: "*"
+          channels: conda-forge,defaults
+          channel-priority: true
+          activate-environment: insar-eventnet
+          environment-file: environment.yaml
+      - name: Install Additional Dependencies
+        run: conda install pip pandoc
+      - name: Install dependencies
+        run: |
+          pip install sphinx furo sphinx_copybutton nbsphinx nbsphinx_link sphinx_click
+      - name: Sphinx build
+        run: |
+          sphinx-build docs docs/_build
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/
+          force_orphan: true

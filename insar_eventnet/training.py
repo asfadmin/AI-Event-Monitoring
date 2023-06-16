@@ -1,8 +1,11 @@
 """
- Created By:   Andrew Player
- File Name:    training.py
- Date Created: 01-25-2021
- Description:  Contains the code for training models
+ Summary
+ -------
+ Functions for training models.
+
+ Notes
+ -----
+ Created by Andrew Player.
 """
 
 import os
@@ -152,7 +155,7 @@ def train(
     """
     Trains a model.
 
-    Parameters:
+    Parameters
     -----------
     model_name : str
         The name for the saved model.
@@ -177,7 +180,7 @@ def train(
         The percentage of network nodes that will be randomly dropped out during the
         training process. This helps to mitigate overfitting.
 
-    Returns:
+    Returns
     --------
     history : any
         A history object containing the loss at each epoch of training.

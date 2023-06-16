@@ -147,3 +147,5 @@ dmypy.json
 
 # perlin-numpy
 perlin-numpy/
+
+docs/_build

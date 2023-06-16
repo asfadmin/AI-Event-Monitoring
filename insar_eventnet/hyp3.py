@@ -1,7 +1,11 @@
 """
- Created By:  Jason Herning
- File Name:   hyp3.py
- Description: functions for accessing hyp3.
+ Summary
+ -------
+ Functions for accessing Hyp3.
+
+ Notes
+ -----
+ Created by Jason Herning.
 """
 
 from getpass import getpass
@@ -14,7 +18,7 @@ def get_netrc_credentials() -> Tuple[str, str]:
     """
     Get earthdata credentials from a .netrc file in the projects root dir.
 
-    Returns:
+    Returns
     --------
     username : str
         The user's earthdata username.
@@ -34,7 +38,7 @@ def input_earthdata_login() -> Tuple[str, str]:
     """
     Get a user's earthdata credentials from command-line input.
 
-    Returns:
+    Returns
     --------
     username : str
         The user's earthdata username.
@@ -52,16 +56,12 @@ def write_netrc(username, password) -> None:
     """
     Write the earthdata username and password to a .netrc file.
 
-    Parameters:
+    Parameters
     -----------
     username : str
         The user's earthdata username.
     password : str
         The user's earthdata password.
-
-    Returns:
-    --------
-    None
     """
 
     with open(".netrc", "w+") as f:
@@ -79,7 +79,7 @@ def hyp3_login() -> HyP3:
     Pull the user's earthdata credentials from the .netrc file, else prompt them for it,
     and start a HyP3 session.
 
-    Returns:
+    Returns
     --------
     hyp3 : HyP3
         The hyp3 session class.
