@@ -15,6 +15,9 @@ from os import rename, listdir, walk
 from pathlib import Path
 from typing import Tuple
 from datetime import datetime
+from urllib.request import urlopen
+from io import BytesIO
+from zipfile import ZipFile
 
 from insar_eventnet.config import (
     AOI_DIR,
@@ -111,6 +114,11 @@ def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     return dataset_file["mask"], dataset_file["wrapped"], dataset_file["presence"]
 
 
+def initialize() -> None:
+    create_directories()
+    download_models("data/output")
+
+
 def create_directories() -> None:
     """
     Creates the directories for storing our data.
@@ -130,6 +138,22 @@ def create_directories() -> None:
             directory.mkdir(parents=True)
         except OSError:
             print(directory.__str__() + " already exists.")
+
+
+def download_models(path: str) -> None:
+    """
+    Downloads pretrained UNet masking model and EvetNet presence prediction model
+
+    Parameters
+    ----------
+    model_path: str
+    """
+
+    with urlopen(
+        "https://eventnetmodels.s3.us-west-2.amazonaws.com/models.zip"
+    ) as response:
+        with ZipFile(BytesIO(response.read())) as file:
+            file.extractall(path)
 
 
 def get_image_array(image_path: str) -> np.ndarray:

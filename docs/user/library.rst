@@ -93,13 +93,14 @@ Generating Masks from Wrapped Interferograms
 
 The :func:`insar_eventnet.inference:mask` can be used to infer masks and presence values.
 
-The following example uses the mask model located in ``models/masking_model`` and the presence model located in ``classification_model`` to infer and plot masks and presence values from the prompted path of a wrapped interferogram.
+The following example downloads models and uses them to infer and plot masks and presence values from the prompted path of a wrapped interferogram.
 
 .. code-block:: python
 
     from tensorflow.keras.models import load_model
     from insar_eventnet.inference import mask, plot_results
-    
+    from insar_eventnet.io import initialize
+        
     tile_size = 512
     crop_size = 512
 
@@ -109,6 +110,7 @@ The following example uses the mask model located in ``models/masking_model`` an
     image_name      = image_path.split('/')[-1].split('.')[0]
     output_path     = f'masks_inferred/{image_name}_mask.tif'
 
+    initialize()
     mask_model = load_model(mask_model_path)
     pres_model = load_model(pres_model_path)
 
@@ -126,4 +128,5 @@ The following example uses the mask model located in ``models/masking_model`` an
         print("Negative")
     
     plot_results(wrapped, mask, presence)
-
+.. note::
+    The initialize function both creates the directory structure and downloads models for the user.
