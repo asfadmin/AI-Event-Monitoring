@@ -93,6 +93,7 @@ def setup():
     print("Downloading models... this may take a second")
     download_models("data/output")
 
+
 @cli.command("download-models")
 def download_models():
     """
