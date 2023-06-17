@@ -64,7 +64,8 @@ def cli():
 @cli.command("setup")
 def setup():
     """
-    Create data directory subtree. This should be run before make-dataset.
+    Create data directory subtree and download models. This should be run before
+    make-dataset.
 
     \b
     data/
@@ -80,7 +81,7 @@ def setup():
         └──tensorboard/
     """
 
-    from insar_eventnet.io import create_directories
+    from insar_eventnet.io import create_directories, download_models
 
     print("")
     create_directories()
@@ -88,6 +89,20 @@ def setup():
     print("")
     click.echo("Data directory created")
     print("")
+
+    print("Downloading models... this may take a second")
+    download_models("data/output")
+
+@cli.command("download-models")
+def download_models():
+    """
+    Download models to data/output/models
+    """
+
+    from insar_eventnet.io import download_models
+
+    print("Downloading... this may take a second")
+    download_models("data/output")
 
 
 @cli.command("make-simulated-dataset")
