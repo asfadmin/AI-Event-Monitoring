@@ -1,6 +1,6 @@
 # AI-Event-Monitoring
 
-The goal of this project is to create a deep learning model that can recognize and mask significant deformation events in InSAR interferograms.
+The goal of this project is to create a deep learning model that can recognize and mask significant deformation events in InSAR interferograms. View the documentation [here](https://asfadmin.github.io/AI-Event-Monitoring/).
 
 ## Table of Contents
 - [Installation](#installation)
