@@ -2,7 +2,7 @@
 name = "insar-eventnet"
 version = "0.1.0"
 description = "A deep learning model that can recognize and mask significant deformation events in InSAR interferograms."
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "ASF AI Team", email = "uaf-ai-asf@alaska.edu"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.8"
