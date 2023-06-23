@@ -5,12 +5,13 @@ from insar_eventnet.io import initialize
 tile_size = 512
 crop_size = 512
 
-mask_model_path = "models/masking_model"
-pres_model_path = "models/classification_model"
-image_path = input("Image Path: ")
+mask_model_path = "data/output/models/mask_model"
+pres_model_path = "data/output/models/pres_model"
+image_path = input("Image Path: ") # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
 
+# The initialize function downloads the pretrained models
 initialize()
 mask_model = load_model(mask_model_path)
 pres_model = load_model(pres_model_path)
