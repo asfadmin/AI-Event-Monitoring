@@ -34,3 +34,13 @@ The following example downloads models and uses them to infer and plot masks and
     :language: python
 .. note::
     The initialize function both creates the directory structure and downloads models for the user.
+
+Training UNet and EventNet Models
+---------------------------------
+
+The :func:`insar_eventnet.training:train` function can be used to train models.
+
+The following example trains a new model off of a simulated dataset and then uses that model to run inference on an image.
+
+.. literalinclude:: /../examples/train_model.py
+    :language: python
