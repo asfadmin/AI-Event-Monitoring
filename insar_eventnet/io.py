@@ -11,7 +11,7 @@
 
 import numpy as np
 
-from os import rename, listdir, walk
+from os import rename, listdir, walk, path
 from pathlib import Path
 from typing import Tuple
 from datetime import datetime
@@ -116,7 +116,12 @@ def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 
 def initialize() -> None:
     create_directories()
-    download_models("data/output")
+    if not (
+        path.isdir("data/output/models/mask_model")
+        and path.isdir("data/output/models/pres_model")
+    ):
+        print("Downloading model... this might take a bit.")
+        download_models("data/output")
 
 
 def create_directories() -> None:
