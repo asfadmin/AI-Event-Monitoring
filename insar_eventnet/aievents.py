@@ -49,7 +49,8 @@ usesim_help = (
     " interferograms. Default is False."
 )
 numtrials_help = "Test the model over this many images. If 1, the images are plotted."
-
+silent_help = "Don't print to stdout"
+no_plot_help = "Don't plot images"
 
 # ------------------ #
 # CLI Implementation #
@@ -578,6 +579,116 @@ def mask_wrapper(
         out = Image.fromarray(mask_pred)
         out.save(dest_path)
 
+@cli.command("mask-image")
+@click.argument("mask_model_path", type=str)
+@click.argument("pres_model_path", type=str)
+@click.argument("image_path", type=str)
+@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
+@click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
+@click.option("-d", "--dest_path", type=str, default=None, help=outputdir_help)
+@click.option("-s", "--silent", type=bool, default=False, help=silent_help)
+@click.option("-p", "--no_plot", type=bool, default=False, help=no_plot_help)
+def mask_image_wrapper(
+    mask_model_path, pres_model_path, image_path, crop_size, tile_size, dest_path, silent, no_plot
+):
+    """
+    Mask events in the given interferogram tif using a model and plot it, with the
+    option to save.
+
+    ARGS:\n
+    mask_model_path     path to masking model.\n
+    pres_model_path     path to binary presence model.\n
+    image_path          path to interferogram tif to mask.\n
+    """
+
+    from insar_eventnet.inference import mask_image_path
+    from insar_eventnet.io import get_image_array
+    import matplotlib.pyplot as plt
+
+    mask, presence = mask_image_path(
+        mask_model_path = mask_model_path,
+        pres_model_path = pres_model_path,
+        image_path = image_path,
+        output_image_path = dest_path,
+        tile_size = tile_size,
+        crop_size = crop_size
+    )
+
+    if not silent:
+        if presence > 0.7:
+            print("Positive")
+        else:
+            print("Negative")
+
+    if not no_plot:
+        image, _ = get_image_array(image_path)
+
+        _, [axs_wrapped, axs_mask] = plt.subplots(1, 2, sharex=True, sharey=True)
+
+        axs_wrapped.set_title("Wrapped")
+        axs_mask.set_title("Segmentation Mask")
+
+        axs_wrapped.imshow(image, origin="lower", cmap="jet")
+        axs_mask.imshow(mask, origin="lower", cmap="jet")
+
+        plt.show()
+
+@cli.command("mask-directory")
+@click.argument("mask_model_path", type=str)
+@click.argument("pres_model_path", type=str)
+@click.argument("directory", type=str)
+@click.argument("output_directory", type=str)
+@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
+@click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
+@click.option("-s", "--silent", type=bool, default=False, help=silent_help)
+def mask_directory_wrapper(
+    mask_model_path, pres_model_path, directory, output_directory, crop_size, tile_size, silent
+):
+    """
+    Generate masks for a directory of tifs and output to a directory using a model.
+
+    ARGS:\n
+    mask_model_path     path to masking model.\n
+    pres_model_path     path to binary presence model.\n
+    directory           path to directory of interferogram tifs to mask.\n
+    """
+
+    from os import listdir, mkdir, isdir, isfile
+
+    from click import ClickException, confirm
+    from insar_eventnet.inference import mask_image_path
+    from insar_eventnet.io import get_image_array
+    import matplotlib.pyplot as plt
+
+    if isfile(directory):
+        raise ClickException(f"Expected {directory} to be a directory, however it is a file")
+    
+    if isfile(output_directory):
+        raise ClickException(f"Expected {output_directory} to be a directory, not a file")
+
+    if isdir(output_directory):
+        confirm(f"{output_directory} allready exists, do you wish to continue and possibly overwrite files in this directory?")
+
+    for image_path in listdir(directory):
+        if not image_path.endswith('.tif'):
+            continue
+
+        if not silent 
+
+        mask, presence = mask_image_path(
+            mask_model_path = mask_model_path,
+            pres_model_path = pres_model_path,
+            image_path = image_path,
+            output_image_path = ,
+            tile_size = tile_size,
+            crop_size = crop_size
+        )
+
+        if not silent:
+            if presence > 0.7:
+                print("Positive")
+            else:
+                print("Negative")
 
 @cli.command("interactive")
 @click.option("-e", "--event_type", type=str, default="quake", help="")
