@@ -653,33 +653,44 @@ def mask_directory_wrapper(
     directory           path to directory of interferogram tifs to mask.\n
     """
 
-    from os import listdir, mkdir, isdir, isfile
+    from os import listdir, mkdir, path
 
     from click import ClickException, confirm
     from insar_eventnet.inference import mask_image_path
     from insar_eventnet.io import get_image_array
     import matplotlib.pyplot as plt
 
-    if isfile(directory):
+    if path.isfile(directory):
         raise ClickException(f"Expected {directory} to be a directory, however it is a file")
     
-    if isfile(output_directory):
+    if path.isfile(output_directory):
         raise ClickException(f"Expected {output_directory} to be a directory, not a file")
 
-    if isdir(output_directory):
-        confirm(f"{output_directory} allready exists, do you wish to continue and possibly overwrite files in this directory?")
+    if path.isdir(output_directory):
+        confirm(f"{output_directory} already exists, do you wish to continue and possibly overwrite files in this directory?")
+    else:
+        mkdir(output_directory)
 
-    for image_path in listdir(directory):
-        if not image_path.endswith('.tif'):
+    if not output_directory.endswith('/'):
+        output_directory += '/'
+    
+    if not directory.endswith('/'):
+        directory += '/'
+
+    for image_name in listdir(directory):
+        if not image_name.endswith('.tif'):
             continue
+        
+        output_image_path = output_directory + image_name
 
-        if not silent 
+        if not silent:
+            print(f"Processing {image_name}")
 
         mask, presence = mask_image_path(
             mask_model_path = mask_model_path,
             pres_model_path = pres_model_path,
-            image_path = image_path,
-            output_image_path = ,
+            image_path = directory + image_name,
+            output_image_path = output_image_path,
             tile_size = tile_size,
             crop_size = crop_size
         )
