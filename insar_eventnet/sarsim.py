@@ -940,12 +940,12 @@ def gen_simulated_deformation(
         los_grid[no_masked_indices] = 0
     masked_grid[masked_indices] = 1
 
-    atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
+    # atmosphere_phase = aps_simulate(tile_size) * atmosphere_scalar
 
     coherence_mask = coherence_mask_simulate(tile_size, threshold=random_nums[8] * 0.3)
     coh_masked_indices = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
 
-    interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
+    interferogram = los_grid
 
     n_masked_indices = np.abs(interferogram) < np.pi * 5
     n_masked_indices2 = np.abs(interferogram) < np.pi * 7

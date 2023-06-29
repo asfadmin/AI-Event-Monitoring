@@ -1,16 +1,7 @@
 # Run inference using the cloud api
 import requests
-import click
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command("predict-event")
-@click.argument("usgs-event-id", type=str)
-@click.argument("product-name", type=str)
 def model_inference(usgs_event_id, product_name):
     url = "https://aevrv4z4vf.execute-api.us-west-2.amazonaws.com/test-3/predict-event"
 
@@ -20,5 +11,8 @@ def model_inference(usgs_event_id, product_name):
     print(r.json())
 
 
-if __name__ == "__main__":
-    cli()
+print(
+    model_inference(
+        "us6000jkpr", "S1AA_20230126T212437_20230219T212436_VVR024_INT80_G_weF_3603"
+    )
+)
