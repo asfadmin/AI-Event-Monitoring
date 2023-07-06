@@ -85,8 +85,8 @@ class DataGenerator(Sequence):
             # x = x.reshape((1, *x.shape, 1))
             x = X[self.train_feature].reshape(1, self.tile_size, self.tile_size, 1)
             y = X[self.output_feature].reshape(self.output_shape)
-
-        return x, y
+        
+        return x, y 
 
 
 def print_model_info(
@@ -231,13 +231,22 @@ def train(
     all_training_files = os.listdir(train_path)
     all_validation_files = os.listdir(test_path)
 
-    def filename_check(x):
-        "synth" in x or "sim" in x or "real" in x
+    print(f"{all_training_files}, {all_validation_files}")
 
-    training_partition = [item for item in all_training_files if filename_check(item)]
-    validation_partition = [
-        item for item in all_validation_files if filename_check(item)
-    ]
+    # I'm not sure the function of this so I'm bypassing this chek for now
+
+    # def filename_check(x):
+    #     "synth" in x or "sim" in x or "real" in x
+
+    # training_partition = [item for item in all_training_files if filename_check(item)]
+    # validation_partition = [
+    #     item for item in all_validation_files if filename_check(item)
+    # ]
+
+    training_partition = all_training_files
+    validation_partition = all_validation_files
+
+    print(f"{training_partition}, {validation_partition}")
 
     training_samples = len(training_partition)
     validation_samples = len(validation_partition)
