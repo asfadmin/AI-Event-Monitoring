@@ -579,6 +579,7 @@ def mask_wrapper(
         out = Image.fromarray(mask_pred)
         out.save(dest_path)
 
+
 @cli.command("mask-image")
 @click.argument("mask_model_path", type=str)
 @click.argument("pres_model_path", type=str)
@@ -589,7 +590,14 @@ def mask_wrapper(
 @click.option("-s", "--silent", type=bool, default=False, help=silent_help)
 @click.option("-p", "--no_plot", type=bool, default=False, help=no_plot_help)
 def mask_image_wrapper(
-    mask_model_path, pres_model_path, image_path, crop_size, tile_size, dest_path, silent, no_plot
+    mask_model_path,
+    pres_model_path,
+    image_path,
+    crop_size,
+    tile_size,
+    dest_path,
+    silent,
+    no_plot,
 ):
     """
     Mask events in the given interferogram tif using a model and plot it, with the
@@ -606,12 +614,12 @@ def mask_image_wrapper(
     import matplotlib.pyplot as plt
 
     mask, presence = mask_image_path(
-        mask_model_path = mask_model_path,
-        pres_model_path = pres_model_path,
-        image_path = image_path,
-        output_image_path = dest_path,
-        tile_size = tile_size,
-        crop_size = crop_size
+        mask_model_path=mask_model_path,
+        pres_model_path=pres_model_path,
+        image_path=image_path,
+        output_image_path=dest_path,
+        tile_size=tile_size,
+        crop_size=crop_size,
     )
 
     if not silent:
@@ -633,6 +641,7 @@ def mask_image_wrapper(
 
         plt.show()
 
+
 @cli.command("mask-directory")
 @click.argument("mask_model_path", type=str)
 @click.argument("pres_model_path", type=str)
@@ -642,7 +651,13 @@ def mask_image_wrapper(
 @click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
 @click.option("-s", "--silent", type=bool, default=False, help=silent_help)
 def mask_directory_wrapper(
-    mask_model_path, pres_model_path, directory, output_directory, crop_size, tile_size, silent
+    mask_model_path,
+    pres_model_path,
+    directory,
+    output_directory,
+    crop_size,
+    tile_size,
+    silent,
 ):
     """
     Generate masks for a directory of tifs and output to a directory using a model.
@@ -661,38 +676,44 @@ def mask_directory_wrapper(
     import matplotlib.pyplot as plt
 
     if path.isfile(directory):
-        raise ClickException(f"Expected {directory} to be a directory, however it is a file")
-    
+        raise ClickException(
+            f"Expected {directory} to be a directory, however it is a file"
+        )
+
     if path.isfile(output_directory):
-        raise ClickException(f"Expected {output_directory} to be a directory, not a file")
+        raise ClickException(
+            f"Expected {output_directory} to be a directory, not a file"
+        )
 
     if path.isdir(output_directory):
-        confirm(f"{output_directory} already exists, do you wish to continue and possibly overwrite files in this directory?")
+        confirm(
+            f"{output_directory} already exists, do you wish to continue and possibly overwrite files in this directory?"
+        )
     else:
         mkdir(output_directory)
 
-    if not output_directory.endswith('/'):
-        output_directory += '/'
-    
-    if not directory.endswith('/'):
-        directory += '/'
+    if not output_directory.endswith("/"):
+        output_directory += "/"
+
+    if not directory.endswith("/"):
+        directory += "/"
 
     for image_name in listdir(directory):
-        if not image_name.endswith('.tif'):
+        if not image_name.endswith(".tif"):
             continue
-        
+
         output_image_path = output_directory + image_name
 
         if not silent:
             print(f"Processing {image_name}")
 
         mask, presence = mask_image_path(
-            mask_model_path = mask_model_path,
-            pres_model_path = pres_model_path,
-            image_path = directory + image_name,
-            output_image_path = output_image_path,
-            tile_size = tile_size,
-            crop_size = crop_size
+            mask_model_path=mask_model_path,
+            pres_model_path=pres_model_path,
+            image_path=directory + image_name,
+            output_image_path=output_image_path,
+            tile_size=tile_size,
+            crop_size=crop_size,
         )
 
         if not silent:
@@ -700,6 +721,7 @@ def mask_directory_wrapper(
                 print("Positive")
             else:
                 print("Negative")
+
 
 @cli.command("interactive")
 @click.option("-e", "--event_type", type=str, default="quake", help="")

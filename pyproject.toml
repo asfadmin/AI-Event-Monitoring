@@ -30,4 +30,4 @@ classifiers = [
 [project.scripts]
 insar-eventnet = "insar_eventnet.aievents:cli"
 [tool.setuptools]
-packages = ["insar_eventnet"]
+packages = ["insar_eventnet", "insar_eventnet.architectures"]

@@ -1,7 +1,12 @@
 import matplotlib.pyplot as plt
 
 from insar_eventnet.config import SYNTHETIC_DIR
-from insar_eventnet.io import make_simulated_dataset, split_dataset, create_directories, get_image_array
+from insar_eventnet.io import (
+    make_simulated_dataset,
+    split_dataset,
+    create_directories,
+    get_image_array,
+)
 from insar_eventnet.training import train
 from insar_eventnet.inference import mask_image_path
 
@@ -51,7 +56,7 @@ mask_model, mask_history = train(
     use_wandb,
     using_aws,
     using_jupyter,
-    logs_dir
+    logs_dir,
 )
 
 # Now, create a dataset of simulated events with masks from UNet
@@ -65,13 +70,7 @@ amount = 1000
 split = 0.1
 
 name, count, dir_name, _, _ = make_simulated_dataset(
-    name,
-    SYNTHETIC_DIR,
-    amount,
-    seed,
-    tile_size,
-    crop_size,
-    model_path = mask_model_path
+    name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size, model_path=mask_model_path
 )
 
 dataset_path = SYNTHETIC_DIR.__str__ + "/" + dir_name
@@ -81,17 +80,17 @@ num_train, num_validation = split_dataset(dataset_path, split)
 # Now train the binary classification model
 
 model_name_bin = "pres_model_example"
-model_type     = "eventnet"
-dataset_path   = dataset_path
-input_shape    = crop_size
-epochs         = 5
-filters        = 64
-batch_size     = 1
-learning_rate  = 5e-3
-use_wandb      = False
-using_aws      = False
-using_jupyter  = False
-logs_dir       = ""
+model_type = "eventnet"
+dataset_path = dataset_path
+input_shape = crop_size
+epochs = 5
+filters = 64
+batch_size = 1
+learning_rate = 5e-3
+use_wandb = False
+using_aws = False
+using_jupyter = False
+logs_dir = ""
 
 binary_model, binary_history = train(
     model_name_bin,
@@ -105,7 +104,7 @@ binary_model, binary_history = train(
     use_wandb,
     using_aws,
     using_jupyter,
-    logs_dir
+    logs_dir,
 )
 
 # Now, we can run inference on these models!
