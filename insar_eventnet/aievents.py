@@ -672,8 +672,6 @@ def mask_directory_wrapper(
 
     from click import ClickException, confirm
     from insar_eventnet.inference import mask_image_path
-    from insar_eventnet.io import get_image_array
-    import matplotlib.pyplot as plt
 
     if path.isfile(directory):
         raise ClickException(

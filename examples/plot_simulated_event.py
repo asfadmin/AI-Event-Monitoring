@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 
-from insar_eventnet.config import SYNTHETIC_DIR
 from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
 
 seed = 232323

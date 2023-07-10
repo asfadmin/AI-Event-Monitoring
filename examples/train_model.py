@@ -1,6 +1,4 @@
 import matplotlib.pyplot as plt
-from os import environ
-environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from insar_eventnet.config import SYNTHETIC_DIR
 from insar_eventnet.io import (
