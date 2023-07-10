@@ -704,9 +704,6 @@ def mask_directory_wrapper(
 
         output_image_path = output_directory + image_name
 
-        if not silent:
-            print(f"Processing {image_name}")
-
         mask, presence = mask_image_path(
             mask_model_path=mask_model_path,
             pres_model_path=pres_model_path,
@@ -717,10 +714,10 @@ def mask_directory_wrapper(
         )
 
         if not silent:
+            presence_string = "negative"
             if presence > 0.7:
-                print("Positive")
-            else:
-                print("Negative")
+                presence_string = "positive"
+            print(f"{image_name}: {presence_string}")
 
 
 @cli.command("interactive")
