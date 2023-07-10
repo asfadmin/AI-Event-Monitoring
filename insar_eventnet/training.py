@@ -233,7 +233,8 @@ def train(
 
     print(f"{all_training_files}, {all_validation_files}")
 
-    # I'm not sure the function of this so I'm bypassing this chek for now
+    # I'm not sure why this is needed so I'm bypassing it for now because its not
+    # functioning properly and filtering out all input files
 
     # def filename_check(x):
     #     "synth" in x or "sim" in x or "real" in x
@@ -364,5 +365,6 @@ def train(
 
         except Exception as e:
             print(f"Error creating results log file:\nCaught {type(e)}: {e}")
+    sys.stdout = sys.__stdout__
 
     return model, history
