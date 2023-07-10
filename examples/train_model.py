@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+from os import environ
+environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from insar_eventnet.config import SYNTHETIC_DIR
 from insar_eventnet.io import (
@@ -73,7 +75,7 @@ name, count, dir_name, _, _ = make_simulated_dataset(
     name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size, model_path=mask_model_path
 )
 
-dataset_path = SYNTHETIC_DIR.__str__ + "/" + dir_name
+dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
 num_train, num_validation = split_dataset(dataset_path, split)
 
@@ -108,16 +110,12 @@ binary_model, binary_history = train(
 )
 
 # Now, we can run inference on these models!
-mask_model_path = "data/output/models/mask_model"
-pres_model_path = "data/output/models/pres_model"
+mask_model_path = "data/output/models/mask_model_example"
+pres_model_path = "data/output/models/pres_model_example"
 image_path = input("Image Path: ")  # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
 image, gdal_dataset = get_image_array(image_path)
-
-# The initialize function downloads the pretrained models
-pres_model_path = "data/output/models/checkpoints/" + model_name_bin
-image_path = input("Image Path: ")  # Prompt user for input interferogram
 
 mask, presence = mask_image_path(
     mask_model_path=mask_model_path,
