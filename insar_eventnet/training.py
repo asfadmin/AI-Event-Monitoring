@@ -231,13 +231,23 @@ def train(
     all_training_files = os.listdir(train_path)
     all_validation_files = os.listdir(test_path)
 
-    def filename_check(x):
-        "synth" in x or "sim" in x or "real" in x
+    print(f"{all_training_files}, {all_validation_files}")
 
-    training_partition = [item for item in all_training_files if filename_check(item)]
-    validation_partition = [
-        item for item in all_validation_files if filename_check(item)
-    ]
+    # I'm not sure why this is needed so I'm bypassing it for now because its not
+    # functioning properly and filtering out all input files
+
+    # def filename_check(x):
+    #     "synth" in x or "sim" in x or "real" in x
+
+    # training_partition = [item for item in all_training_files if filename_check(item)]
+    # validation_partition = [
+    #     item for item in all_validation_files if filename_check(item)
+    # ]
+
+    training_partition = all_training_files
+    validation_partition = all_validation_files
+
+    print(f"{training_partition}, {validation_partition}")
 
     training_samples = len(training_partition)
     validation_samples = len(validation_partition)
@@ -355,5 +365,6 @@ def train(
 
         except Exception as e:
             print(f"Error creating results log file:\nCaught {type(e)}: {e}")
+    sys.stdout = sys.__stdout__
 
     return model, history

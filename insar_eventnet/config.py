@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 # full Path to aiwater root
-PROJECT_DIR = Path(__file__).resolve().parents[1]
+PROJECT_DIR = Path.cwd().resolve()
 
 # Path configurations for data directory
 DATA_DIR = PROJECT_DIR / "data"

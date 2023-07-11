@@ -17,7 +17,7 @@ from pathlib import Path
 
 from tensorflow.keras.models import Model, load_model
 
-from insar_eventnet.io import get_product_arrays
+from insar_eventnet.io import get_product_arrays, get_image_array
 from insar_eventnet.processing import tile, tiles_to_image
 from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
 
@@ -165,6 +165,69 @@ def mask(
         out_dataset = gdal.Open(output_file, gdal.GA_Update)
         out_dataset.SetGeoTransform(w_dataset.GetGeoTransform())
         out_dataset.SetProjection(w_dataset.GetProjection())
+
+    return mask_pred, presence_guess
+
+
+def mask_image_path(
+    mask_model_path: str,
+    pres_model_path: str,
+    image_path: str,
+    output_image_path: str = None,
+    tile_size: int = 0,
+    crop_size: int = 0,
+) -> np.ndarray:
+    """
+    Generate a mask over potential events in a wrapped insar product.
+
+    Parameters:
+    -----------
+    mask_model_path : str
+        The path to the model to use for generating the event-mask.
+    pres_model_path : str
+        The path to the model that predicts the presence of an event in a mask.
+    image_path : str
+        The path to the InSAR product from ASF that should be masked.
+    output_image_path : str
+        The output path for the inferred mask image
+    tile_size : int
+        The width and height of the tiles that the image will be broken into, this needs
+        to match the input shape of the model.
+    crop_size : int, Optional
+        If the models output shape is different than the input shape, this value needs
+        to be equal to the output shape of the masking model and input shape of the
+        presence model.
+
+    Returns:
+    --------
+    mask_pred : np.ndarray(shape=(tile_size, tile_size) or (crop_size, crop_size))
+        The array containing the event-mask array as predicted by the model.
+    presence_guess : bool
+        True if there is an event else False.
+    """
+    mask_model = load_model(mask_model_path)
+    pres_model = load_model(pres_model_path)
+    image, gdal_dataset = get_image_array(image_path)
+
+    mask_pred, pres_mask, pres_vals = mask_with_model(
+        mask_model=mask_model,
+        pres_model=pres_model,
+        arr_w=image,
+        tile_size=tile_size,
+        crop_size=crop_size,
+    )
+
+    presence_guess = np.mean(pres_mask) > 0.0
+
+    if output_image_path is not None:
+        img = Image.fromarray(mask_pred)
+        img.save(output_image_path)
+
+        from osgeo import gdal
+
+        out_dataset = gdal.Open(output_image_path, gdal.GA_Update)
+        out_dataset.SetGeoTransform(gdal_dataset.GetGeoTransform())
+        out_dataset.SetProjection(gdal_dataset.GetProjection())
 
     return mask_pred, presence_guess
 
