@@ -678,7 +678,6 @@ def mask_directory_wrapper(
     from PIL import Image
     from click import ClickException, confirm
     from tensorflow.keras.models import load_model
-    import matplotlib.pyplot as plt
     import numpy as np
     from insar_eventnet.inference import mask_with_model
     from insar_eventnet.io import get_image_array
