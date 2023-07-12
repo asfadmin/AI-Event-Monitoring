@@ -51,6 +51,7 @@ usesim_help = (
 numtrials_help = "Test the model over this many images. If 1, the images are plotted."
 silent_help = "Don't print to stdout"
 no_plot_help = "Don't plot images"
+copy_image_help = "Copy original positive interferogram tifs alongside output masks"
 
 # ------------------ #
 # CLI Implementation #
@@ -649,7 +650,8 @@ def mask_image_wrapper(
 @click.argument("output_directory", type=str)
 @click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
 @click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
-@click.option("-s", "--silent", type=bool, default=False, help=silent_help)
+@click.option("-s", "--silent", is_flag=True, default=False, help=silent_help)
+@click.option("-c", "--copy_image", is_flag=True, default=False, help=copy_image_help)
 def mask_directory_wrapper(
     mask_model_path,
     pres_model_path,
@@ -658,6 +660,7 @@ def mask_directory_wrapper(
     crop_size,
     tile_size,
     silent,
+    copy_image,
 ):
     """
     Generate masks for a directory of tifs and output to a directory using a model.
@@ -669,9 +672,24 @@ def mask_directory_wrapper(
     """
 
     from os import listdir, mkdir, path
+    from shutil import copyfile
 
+    from json import dumps
+    from PIL import Image
     from click import ClickException, confirm
-    from insar_eventnet.inference import mask_image_path
+    from tensorflow.keras.models import load_model
+    import numpy as np
+    from insar_eventnet.inference import mask_with_model
+    from insar_eventnet.io import get_image_array
+
+    mask_model = load_model(mask_model_path)
+    pres_model = load_model(pres_model_path)
+
+    if not output_directory.endswith("/"):
+        output_directory += "/"
+
+    if not directory.endswith("/"):
+        directory += "/"
 
     if path.isfile(directory):
         raise ClickException(
@@ -690,32 +708,73 @@ def mask_directory_wrapper(
     else:
         mkdir(output_directory)
 
-    if not output_directory.endswith("/"):
-        output_directory += "/"
+    if not path.isdir(f"{output_directory}positive"):
+        mkdir(f"{output_directory}positive")
 
-    if not directory.endswith("/"):
-        directory += "/"
+    if not path.isdir(f"{output_directory}negative"):
+        mkdir(f"{output_directory}negative")
+
+    output = []
 
     for image_name in listdir(directory):
         if not image_name.endswith(".tif"):
             continue
 
-        output_image_path = output_directory + image_name
+        image_path = directory + image_name
+        image, gdal_dataset = get_image_array(image_path)
 
-        mask, presence = mask_image_path(
-            mask_model_path=mask_model_path,
-            pres_model_path=pres_model_path,
-            image_path=directory + image_name,
-            output_image_path=output_image_path,
+        mask_pred, pres_mask, pres_vals = mask_with_model(
+            mask_model=mask_model,
+            pres_model=pres_model,
+            arr_w=image,
             tile_size=tile_size,
             crop_size=crop_size,
         )
 
+        presence = np.mean(pres_mask) > 0.0
+
+        presence_string = "negative"
+        if presence:
+            presence_string = "positive"
+
+        image_output_dir = (
+            f"{output_directory}{presence_string}/{path.splitext(image_name)[0]}/"
+        )
+
+        if not path.isdir(image_output_dir):
+            mkdir(image_output_dir)
+
+        output_image_path = f"{image_output_dir}mask.tif"
+
+        img = Image.fromarray(mask_pred)
+        img.save(output_image_path)
+
+        from osgeo import gdal
+
+        out_dataset = gdal.Open(output_image_path, gdal.GA_Update)
+        out_dataset.SetGeoTransform(gdal_dataset.GetGeoTransform())
+        out_dataset.SetProjection(gdal_dataset.GetProjection())
+
         if not silent:
-            presence_string = "negative"
-            if presence > 0.7:
-                presence_string = "positive"
             print(f"{image_name}: {presence_string}")
+
+        if copy_image:
+            copyfile(image_path, f"{image_output_dir}wrapped.tif")
+
+        metadata = {
+            "image_name": image_name,
+            "presence": presence.item(),
+            "image_path": image_path,
+            "mask_path": f"{image_output_dir}mask.tif",
+        }
+
+        output.append(metadata)
+
+        with open(f"{image_output_dir}metadata.json", "w") as metadata_file:
+            metadata_file.write(dumps(metadata))
+
+    with open(f"{output_directory}output.json", "w") as output_file:
+        output_file.write(dumps(output))
 
 
 @cli.command("interactive")
