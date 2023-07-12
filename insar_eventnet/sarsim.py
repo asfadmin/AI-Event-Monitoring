@@ -141,9 +141,7 @@ class Okada:
 
         self.x_axis_shape = x_axis.shape
         self.y_axis_shape = y_axis.shape
-        self.grid_x = ijk_bases[
-            0,
-        ]
+        self.grid_x = ijk_bases[0,]
         self.grid_y = ijk_bases[1, :]
 
     def chinnery(self, f):
@@ -189,27 +187,21 @@ class Okada:
         shapes = (self.x_axis_shape[0], self.x_axis_shape[1])
         x_grid = (
             np.reshape(
-                self.displacement[
-                    0,
-                ],
+                self.displacement[0,],
                 shapes,
             )
             * self.los_vector[0, 0]
         )
         y_grid = (
             np.reshape(
-                self.displacement[
-                    1,
-                ],
+                self.displacement[1,],
                 shapes,
             )
             * self.los_vector[1, 0]
         )
         z_grid = (
             np.reshape(
-                self.displacement[
-                    2,
-                ],
+                self.displacement[2,],
                 shapes,
             )
             * self.los_vector[2, 0]
@@ -652,9 +644,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
 
     ph_turbs_m = np.zeros(ph_turbs.shape)
     for atm_n, atm in enumerate(ph_turbs):
-        ph_turbs_m[
-            atm_n,
-        ] = rescale_atmosphere(atm, mean_m)
+        ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
 
     ph_turbs_m = ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
 
@@ -776,9 +766,7 @@ def aps_simulate(size: int = 512):
 
     ph_turb = atmosphere_turb(1, lons_mg, lats_mg, mean_m=0.02)
 
-    return ph_turb[
-        0,
-    ]
+    return ph_turb[0,]
 
 
 def coherence_mask_simulate(size: int = 512, threshold: float = 0.3):
@@ -957,7 +945,7 @@ def gen_simulated_deformation(
     coherence_mask = coherence_mask_simulate(tile_size, threshold=random_nums[8] * 0.3)
     coh_masked_indices = coherence_mask[0, 0:tile_size, 0:tile_size] == 0
 
-    interferogram = los_grid
+    interferogram = los_grid + atmosphere_phase[0:tile_size, 0:tile_size]
 
     n_masked_indices = np.abs(interferogram) < np.pi * 5
     n_masked_indices2 = np.abs(interferogram) < np.pi * 7

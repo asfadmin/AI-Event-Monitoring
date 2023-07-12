@@ -85,8 +85,8 @@ class DataGenerator(Sequence):
             # x = x.reshape((1, *x.shape, 1))
             x = X[self.train_feature].reshape(1, self.tile_size, self.tile_size, 1)
             y = X[self.output_feature].reshape(self.output_shape)
-        
-        return x, y 
+
+        return x, y
 
 
 def print_model_info(
