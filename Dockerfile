@@ -13,4 +13,4 @@ COPY . /opt/ml/code
 WORKDIR /opt/ml/code
 
 RUN pip3 install .
-ENTRYPOINT ["insar-eventnet"]
+ENTRYPOINT ["sagemaker"]
