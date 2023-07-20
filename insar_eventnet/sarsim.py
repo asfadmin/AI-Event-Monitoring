@@ -1209,34 +1209,6 @@ def gen_simulated_time_series(
         )  # Normalize
 
         phases[i] = [phase_step, wrapped_phase_step]
-        if i == 0:
-            print(f"DISPLACEMENT STEP: {displacement_step}")
-            print(f"TOPO PHASE: {topo_phase}")
-            print(f"TURB PHASE: {turb_phase}")
-            print(f"PHASE STEP: {phase_step}")
-            print(f"WRAPPED PAHSE STEP: {wrapped_phase_step}")
 
-            import matplotlib.pyplot as plt
-            _, [phase, displacement, topo, turb, Pstep, WPstep] = plt.subplots(1, 6, sharex=True, sharey=True)
-
-            phase.set_title("PHASE")
-            #Smask.set_title("mask")
-            displacement.set_title("displacement")
-            topo.set_title("topo phase")
-            turb.set_title("turb phase")
-            Pstep.set_title("phase step")
-            WPstep.set_title("Wrapped phase step")
-
-            phase.imshow(los_displacement, origin="lower", cmap="jet")
-            #mask.imshow(mask, origin="lower", cmap="jet")
-            displacement.imshow(displacement_step, origin="lower", cmap="jet")
-            topo.imshow(topo_phase, origin="lower", cmap="jet")
-            turb.imshow(turb_phase, origin="lower", cmap="jet")
-            Pstep.imshow(phase_step, origin="lower", cmap="jet")
-            WPstep.imshow(wrapped_phase_step, origin="lower", cmap="jet")
-            plt.show()
-
-
-    
     return phases, mask
 
