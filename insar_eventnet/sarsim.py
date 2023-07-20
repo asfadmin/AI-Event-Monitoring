@@ -1191,14 +1191,17 @@ def gen_simulated_time_series(
     phases = np.zeros((n_interferograms, 2, tile_size, tile_size))
 
     for i in range(n_interferograms):
-        displacement_step = los_displacement / n_interferograms
+
+        displacement_step = (los_displacement / 3) / (n_interferograms / 2)
 
         topo_phase = np.abs(
             atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi
         )
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar * 0.3
 
-        phase_step = scalar * displacement_step + topo_phase + turb_phase
+        phase_step = scalar * displacement_step  * i + topo_phase + turb_phase
+        if(i > n_interferograms / 2):
+            phase_step = phase_step + displacement_step * (i - n_interferograms)
         wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
 
         phase_step = (phase_step + np.abs(np.min(phase_step))) / np.max(
@@ -1206,8 +1209,34 @@ def gen_simulated_time_series(
         )  # Normalize
 
         phases[i] = [phase_step, wrapped_phase_step]
+        if i == 0:
+            print(f"DISPLACEMENT STEP: {displacement_step}")
+            print(f"TOPO PHASE: {topo_phase}")
+            print(f"TURB PHASE: {turb_phase}")
+            print(f"PHASE STEP: {phase_step}")
+            print(f"WRAPPED PAHSE STEP: {wrapped_phase_step}")
 
+            import matplotlib.pyplot as plt
+            _, [phase, displacement, topo, turb, Pstep, WPstep] = plt.subplots(1, 6, sharex=True, sharey=True)
+
+            phase.set_title("PHASE")
+            #Smask.set_title("mask")
+            displacement.set_title("displacement")
+            topo.set_title("topo phase")
+            turb.set_title("turb phase")
+            Pstep.set_title("phase step")
+            WPstep.set_title("Wrapped phase step")
+
+            phase.imshow(los_displacement, origin="lower", cmap="jet")
+            #mask.imshow(mask, origin="lower", cmap="jet")
+            displacement.imshow(displacement_step, origin="lower", cmap="jet")
+            topo.imshow(topo_phase, origin="lower", cmap="jet")
+            turb.imshow(turb_phase, origin="lower", cmap="jet")
+            Pstep.imshow(phase_step, origin="lower", cmap="jet")
+            WPstep.imshow(wrapped_phase_step, origin="lower", cmap="jet")
+            plt.show()
+
+
+    
     return phases, mask
 
-
-#test test test
