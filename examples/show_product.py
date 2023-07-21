@@ -1,0 +1,66 @@
+# This example demonstrates plotting a products wrapped, unwrapped and correlation
+# arrays
+
+from insar_eventnet.io import get_product_arrays
+from insar_eventnet.processing import tile, simulate_unet_cropping, tiles_to_image
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+product_path = input("Product Path:")
+crop_size = 0
+tile_size = 0
+
+arr_w, arr_uw, arr_c = get_product_arrays(product_path)
+
+tiled_arr_uw, tile_rows, tile_cols = tile(
+    arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size
+)
+
+cutoff_value = 0.2
+correlation_cutoff_indecies = arr_c < cutoff_value
+arr_c[correlation_cutoff_indecies] = np.NAN
+
+if crop_size:
+    cropped_arr_uw = np.zeros((tile_rows * tile_cols, crop_size, crop_size))
+
+    # Simulate UNET Cropping
+    count = 0
+    for tile_ in tiled_arr_uw:
+        cropped_tile = simulate_unet_cropping(tile_, (crop_size, crop_size))
+        cropped_arr_uw[count] = cropped_tile
+        count += 1
+
+    rebuilt_arr_uw = tiles_to_image(
+        cropped_arr_uw,
+        tile_rows,
+        tile_cols,
+        arr_uw.shape,
+        (crop_size > 0),
+        tile_size,
+    )
+
+    _, [
+        axs_wrapped,
+        axs_correlation,
+        axs_unwrapped,
+        axs_tiled_unwrapped,
+    ] = plt.subplots(1, 4)
+
+else:
+    _, [axs_wrapped, axs_correlation, axs_unwrapped] = plt.subplots(1, 3)
+
+axs_wrapped.set_title("wrapped")
+axs_wrapped.imshow(arr_w, origin="lower", cmap="jet")
+
+axs_correlation.set_title("correlation")
+axs_correlation.imshow(arr_c, origin="lower", cmap="jet")
+
+axs_unwrapped.set_title("unwrapped")
+axs_unwrapped.imshow(arr_uw, origin="lower", cmap="jet")
+
+if crop_size:
+    axs_tiled_unwrapped.set_title("tiled_unwrapped")
+    axs_tiled_unwrapped.imshow(rebuilt_arr_uw, origin="lower", cmap="jet")
+
+plt.show()

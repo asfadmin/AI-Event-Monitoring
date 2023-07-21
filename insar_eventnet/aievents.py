@@ -378,85 +378,6 @@ def test_masking_wrapper(
     model_path      path to model that should be tested.\n
     """
 
-    from numpy import mean, abs
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-    from insar_eventnet.inference import mask_simulated, plot_imgs
-
-    mask_model = load_model(mask_model_path)
-
-    wrapped, mask, mask_pred, mask_pred_rounded, presence = mask_simulated(
-        mask_model,
-        seed,
-        tile_size,
-        crop_size,
-        verbose=verbose,
-        noise_only=noise_only,
-        gaussian_only=gaussian_only,
-        event_type=event_type,
-    )
-
-    mean_absolute_error = mean(abs(mask - mask_pred_rounded))
-
-    print(f"Mean Absolute Error: {mean_absolute_error}\n")
-
-    plot_imgs(wrapped, mask, mask_pred, mask_pred_rounded)
-
-
-@cli.command("test-binary-choice")
-@click.argument("mask_model_path", type=str)
-@click.argument("pres_model_path", type=str)
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-@click.option("-n", "--num_trials", type=int, default=0, help=numtrials_help)
-@click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
-@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
-@click.option("-p", "--plot", type=bool, default=False, help="")
-@click.option("-c", "--use_rounded", type=bool, default=False, help="")
-@click.option("-r", "--threshold", type=float, default=0.5, help="")
-def test_binary_choice_wrapper(
-    mask_model_path,
-    pres_model_path,
-    seed,
-    num_trials,
-    tile_size,
-    crop_size,
-    plot,
-    use_rounded,
-    threshold,
-):
-    """
-    Predicts on a wrapped interferogram & event-mask pair and plots the results
-
-    ARGS:\n
-    model_path       path to model that does the masking.\n
-    pres_model_path  path to model that predicts whether there is an event.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-    from insar_eventnet.inference import test_binary_choice
-
-    mask_model = load_model(mask_model_path)
-    pres_model = load_model(pres_model_path)
-
-    test_binary_choice(
-        mask_model,
-        pres_model,
-        seed,
-        tile_size,
-        crop_size,
-        count=num_trials,
-        plot=plot,
-        use_rounded_mask=use_rounded,
-        positive_thresh=threshold,
-    )
-
 
 @cli.command("test-model")
 @click.argument("model_path", type=str)
@@ -500,48 +421,6 @@ def test_model_wrapper(
         save_images,
         output_dir,
     )
-
-
-@cli.command("model-summary")
-@click.argument("model_path", type=str)
-def model_summary_wrapper(model_path):
-    """
-    Prints the model summary.
-
-    ARGS:\n
-    model_path      path to model.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-
-    model = load_model(model_path)
-    model.summary()
-
-
-@cli.command("visualize-layers")
-@click.argument("model_path", type=str)
-@click.argument("save_path", type=str)
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-def visualize_layers_wrapper(model_path, save_path, seed):
-    """
-    Visualize the feature maps of the model for a random synthetic interferogram.
-
-    ARGS:\n
-    model_path          path to model.\n
-    save_path           path to folder to save the tifs to.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.inference import visualize_layers
-
-    visualize_layers(model_path, save_path, seed)
 
 
 @cli.command("mask")
@@ -785,9 +664,125 @@ def interactive_wrapper(event_type):
     atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
-    from insar_eventnet.gui import interactive_interferogram
+    from matplotlib.widgets import Slider
+    import matplotlib.pyplot as plt
 
-    interactive_interferogram(event_type)
+    from insar_eventnet.sarsim import gen_simulated_deformation
+
+    kwargs = {
+        "source_x": 22000,
+        "source_y": 22000,
+        "strike": 180,
+        "dip": 45,
+        "length": 1000,
+        "rake": 90,
+        "slip": 1,
+        "top_depth": 3000,
+        "bottom_depth": 6000,
+        "width": 3000,
+        "depth": 3000,
+        "opening": 0.5,
+    }
+
+    fig, [axs_unwrapped, axs_wrapped] = plt.subplots(
+        1, 2, sharex=True, sharey=True, tight_layout=True
+    )
+
+    axs_unwrapped.set_title("unwrapped")
+    axs_unwrapped.set_position([0.05, 0.45, 0.5, 0.5])
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.set_position([0.5, 0.45, 0.5, 0.5])
+
+    axs_slip = plt.axes([0.375, 0.36, 0.25, 0.02])
+    slider_slip = Slider(axs_slip, "slip", 0.0, 10.0, valinit=kwargs["slip"])
+
+    axs_strike = plt.axes([0.375, 0.33, 0.25, 0.02])
+    slider_strike = Slider(axs_strike, "strike", 0.0, 180.0, valinit=kwargs["strike"])
+
+    axs_dip = plt.axes([0.375, 0.30, 0.25, 0.02])
+    slider_dip = Slider(axs_dip, "dip", 0.0, 90.0, valinit=kwargs["dip"])
+
+    axs_rake = plt.axes([0.375, 0.27, 0.25, 0.02])
+    slider_rake = Slider(axs_rake, "rake", -180.0, 180.0, valinit=kwargs["rake"])
+
+    axs_opening = plt.axes([0.375, 0.24, 0.25, 0.02])
+    slider_opening = Slider(
+        axs_opening, "opening", 0.0, 10.0, valinit=kwargs["opening"]
+    )
+
+    axs_top_depth = plt.axes([0.375, 0.21, 0.25, 0.02])
+    slider_top_depth = Slider(
+        axs_top_depth, "top_depth", 0.0, 45000.0, valinit=kwargs["top_depth"]
+    )
+
+    axs_bottom_depth = plt.axes([0.375, 0.18, 0.25, 0.02])
+    slider_bottom_depth = Slider(
+        axs_bottom_depth, "bottom_depth", 0.0, 45000.0, valinit=kwargs["bottom_depth"]
+    )
+
+    axs_width = plt.axes([0.375, 0.15, 0.25, 0.02])
+    slider_width = Slider(axs_width, "width", 100.0, 10000.0, valinit=kwargs["width"])
+
+    axs_length = plt.axes([0.375, 0.12, 0.25, 0.02])
+    slider_length = Slider(
+        axs_length, "length", 100.0, 10000.0, valinit=kwargs["length"]
+    )
+
+    axs_source_x = plt.axes([0.375, 0.09, 0.25, 0.02])
+    slider_source_x = Slider(
+        axs_source_x, "source_x", 0.0, 45000.0, valinit=kwargs["source_x"]
+    )
+
+    axs_source_y = plt.axes([0.375, 0.06, 0.25, 0.02])
+    slider_source_y = Slider(
+        axs_source_y, "source_y", 0.0, 45000.0, valinit=kwargs["source_y"]
+    )
+
+    unwrapped, masked, wrapped, presence = gen_simulated_deformation(
+        seed=100000, tile_size=512, event_type=event_type, **kwargs
+    )
+
+    axs_wrapped.imshow(wrapped, origin="lower", cmap="jet")
+    axs_unwrapped.imshow(unwrapped, origin="lower", cmap="jet")
+
+    def update(val):
+        kwargs = {
+            "source_x": slider_source_x.val,
+            "source_y": slider_source_y.val,
+            "strike": slider_strike.val,
+            "dip": slider_dip.val,
+            "length": slider_length.val,
+            "rake": slider_rake.val,
+            "slip": slider_slip.val,
+            "top_depth": slider_top_depth.val,
+            "bottom_depth": slider_bottom_depth.val,
+            "width": slider_width.val,
+            "depth": slider_top_depth.val,
+            "opening": slider_opening.val,
+        }
+
+        unwrapped, masked, wrapped, presence = gen_simulated_deformation(
+            seed=100000, tile_size=512, event_type=event_type, **kwargs
+        )
+
+        axs_wrapped.imshow(wrapped, origin="lower", cmap="jet")
+        axs_unwrapped.imshow(unwrapped, origin="lower", cmap="jet")
+
+        fig.canvas.draw()
+
+    slider_source_x.on_changed(update)
+    slider_source_y.on_changed(update)
+    slider_strike.on_changed(update)
+    slider_dip.on_changed(update)
+    slider_length.on_changed(update)
+    slider_rake.on_changed(update)
+    slider_slip.on_changed(update)
+    slider_top_depth.on_changed(update)
+    slider_bottom_depth.on_changed(update)
+    slider_width.on_changed(update)
+    slider_opening.on_changed(update)
+
+    plt.show()
 
 
 @cli.command("simulate")
@@ -867,9 +862,65 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     from search.asf.alaska.edu.\n
     """
 
-    from insar_eventnet.gui import show_product
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    show_product(product_path, crop_size, tile_size)
+    from insar_eventnet.io import get_product_arrays
+    from insar_eventnet.processing import tile, simulate_unet_cropping, tiles_to_image
+
+    arr_w, arr_uw, arr_c = get_product_arrays(product_path)
+
+    tiled_arr_uw, tile_rows, tile_cols = tile(
+        arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size
+    )
+
+    cutoff_value = 0.2
+    correlation_cutoff_indecies = arr_c < cutoff_value
+    arr_c[correlation_cutoff_indecies] = np.NAN
+
+    if crop_size:
+        cropped_arr_uw = np.zeros((tile_rows * tile_cols, crop_size, crop_size))
+
+        # Simulate UNET Cropping
+        count = 0
+        for tile_ in tiled_arr_uw:
+            cropped_tile = simulate_unet_cropping(tile_, (crop_size, crop_size))
+            cropped_arr_uw[count] = cropped_tile
+            count += 1
+
+        rebuilt_arr_uw = tiles_to_image(
+            cropped_arr_uw,
+            tile_rows,
+            tile_cols,
+            arr_uw.shape,
+            (crop_size > 0),
+            tile_size,
+        )
+
+        _, [
+            axs_wrapped,
+            axs_correlation,
+            axs_unwrapped,
+            axs_tiled_unwrapped,
+        ] = plt.subplots(1, 4)
+
+    else:
+        _, [axs_wrapped, axs_correlation, axs_unwrapped] = plt.subplots(1, 3)
+
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.imshow(arr_w, origin="lower", cmap="jet")
+
+    axs_correlation.set_title("correlation")
+    axs_correlation.imshow(arr_c, origin="lower", cmap="jet")
+
+    axs_unwrapped.set_title("unwrapped")
+    axs_unwrapped.imshow(arr_uw, origin="lower", cmap="jet")
+
+    if crop_size:
+        axs_tiled_unwrapped.set_title("tiled_unwrapped")
+        axs_tiled_unwrapped.imshow(rebuilt_arr_uw, origin="lower", cmap="jet")
+
+    plt.show()
 
 
 @cli.command("sort-images-by-size")

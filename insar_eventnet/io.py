@@ -34,7 +34,7 @@ from insar_eventnet.sarsim import (
     gen_sim_noise,
     gen_simulated_time_series,
 )
-from insar_eventnet.synthetic_interferogram import simulate_unet_cropping
+from insar_eventnet.processing import simulate_unet_cropping
 
 
 def save_dataset(
