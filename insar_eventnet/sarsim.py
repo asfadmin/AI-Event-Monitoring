@@ -13,6 +13,7 @@
 
 import numpy as np
 from time import perf_counter
+import random
 
 
 class Okada:
@@ -1190,9 +1191,13 @@ def gen_simulated_time_series(
 
     phases = np.zeros((n_interferograms, 2, tile_size, tile_size))
 
+    inflection = random.random() * 0.6 + 0.2                                    #set the inflection point to a point between 0.2 and 0.8
+    inflection_point = n_interferograms * inflection
+    rate = inflection_point + (n_interferograms - inflection_point) * 2         
+    displacement_step = los_displacement / rate
+
     for i in range(n_interferograms):
 
-        displacement_step = (los_displacement / 3) / (n_interferograms / 2)
 
         topo_phase = np.abs(
             atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi
@@ -1200,9 +1205,10 @@ def gen_simulated_time_series(
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar * 0.3
 
         phase_step = scalar * displacement_step  * i + topo_phase + turb_phase
-        if(i > n_interferograms / 2):
+        if(i > inflection_point):
             phase_step = phase_step + displacement_step * (i - n_interferograms)
         wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
+        print(phase_step.max())
 
         phase_step = (phase_step + np.abs(np.min(phase_step))) / np.max(
             (phase_step + np.abs(np.min(phase_step)))
