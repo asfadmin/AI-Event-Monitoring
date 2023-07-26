@@ -9,20 +9,12 @@
 """
 
 
-from tensorflow import Tensor
-from tensorflow.keras.layers import (
-    Conv2D,
-    Conv2DTranspose,
-    Input,
-    concatenate,
-    Activation,
-)
+from tensorflow import Tensor, keras
+from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import mixed_precision
 
-policy = mixed_precision.Policy("mixed_float16")
-mixed_precision.set_global_policy(policy)
+policy = keras.mixed_precision.Policy("mixed_float16")
+keras.mixed_precision.set_global_policy(policy)
 
 
 def conv2d_block(
@@ -32,7 +24,7 @@ def conv2d_block(
     UNET style 2D-Convolution Block for encoding / generating feature maps.
     """
 
-    x = Conv2D(
+    x = layers.Conv2D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size),
         strides=(strides, strides),
@@ -41,7 +33,7 @@ def conv2d_block(
         activation="relu",
     )(input_tensor)
 
-    x = Conv2D(
+    x = layers.Conv2D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size),
         kernel_initializer="he_normal",
@@ -59,13 +51,13 @@ def transpose_block(
     Learned Upscaling for decoding
     """
 
-    x = Conv2DTranspose(
+    x = layers.Conv2DTranspose(
         filters=num_filters, kernel_size=(2, 2), strides=(2, 2), padding="same"
     )(input_tensor)
 
     x = conv2d_block(x, num_filters)
 
-    y = concatenate([x, concat_tensor])
+    y = layers.concatenate([x, concat_tensor])
 
     return y
 
@@ -80,7 +72,7 @@ def create_unet(
     Creates a U-Net style model
     """
 
-    input = Input(shape=(tile_size, tile_size, 1))
+    input = layers.Input(shape=(tile_size, tile_size, 1))
 
     # --------------------------------- #
     # Feature Map Generation            #
@@ -118,11 +110,11 @@ def create_unet(
     # Output Layer                      #
     # --------------------------------- #
 
-    output = Conv2D(name="last_layer", kernel_size=(1, 1), filters=1, padding="same")(
-        u12
-    )
+    output = layers.Conv2D(
+        name="last_layer", kernel_size=(1, 1), filters=1, padding="same"
+    )(u12)
 
-    output = Activation("linear", dtype="float32")(output)
+    output = layers.Activation("linear", dtype="float32")(output)
 
     # --------------------------------- #
     # Model Creation and Compilation    #
@@ -134,7 +126,7 @@ def create_unet(
     model.compile(
         loss="huber",
         metrics=["mean_squared_error", "mean_absolute_error"],
-        optimizer=Adam(learning_rate=learning_rate),
+        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
     )
 
     return model

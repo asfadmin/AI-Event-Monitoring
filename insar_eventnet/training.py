@@ -8,25 +8,20 @@
  Created by Andrew Player.
 """
 
+import math
 import os
 import sys
-
-from math import ceil
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 import numpy as np
+import wandb
+from tensorflow import keras
 
-from insar_eventnet.architectures.unet import create_unet
-from insar_eventnet.architectures.unet3d import create_unet3d
-from insar_eventnet.architectures.resnet import create_resnet
-from insar_eventnet.architectures.eventnet import create_eventnet
-
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.utils import Sequence
+from insar_eventnet.architectures import eventnet, resnet, unet, unet3d
 
 
-class DataGenerator(Sequence):
+class DataGenerator(keras.utils.Sequence):
 
     """
     Dataset Generator for sequencially passing files from storange into the model.
@@ -203,9 +198,6 @@ def train(
     # try:
 
     if use_wandb:
-        import wandb
-        from wandb.keras import WandbCallback
-
         wandb.init(
             project="InSAR Event Monitor",
             config={
@@ -252,8 +244,8 @@ def train(
     training_samples = len(training_partition)
     validation_samples = len(validation_partition)
 
-    training_steps = ceil(training_samples / batch_size)
-    validation_steps = ceil(validation_samples / batch_size)
+    training_steps = math.ceil(training_samples / batch_size)
+    validation_steps = math.ceil(validation_samples / batch_size)
 
     training_generator = DataGenerator(
         training_partition,
@@ -273,23 +265,23 @@ def train(
     )
 
     if model_type == "eventnet":
-        model = create_eventnet(
+        model = eventnet.create_eventnet(
             model_name=model_name,
             tile_size=input_shape,
             num_filters=num_filters,
             label_count=1,
         )
     elif model_type == "unet":
-        model = create_unet(
+        model = unet.create_unet(
             model_name=model_name,
             tile_size=input_shape,
             num_filters=num_filters,
             learning_rate=learning_rate,
         )
     elif model_type == "unet3d":
-        model = create_unet3d()
+        model = unet3d.create_unet3d()
     elif model_type == "resnet":
-        model = create_resnet(
+        model = resnet.create_resnet(
             model_name=model_name,
             tile_size=input_shape,
             num_filters=num_filters,
@@ -300,9 +292,11 @@ def train(
             f'Invalid model type! Expected "unet", "resnet", or "eventnet" but got {model_type}.'
         )
 
-    early_stopping = EarlyStopping(monitor="loss", patience=2, verbose=1)
+    early_stopping = keras.callbacks.EarlyStopping(
+        monitor="loss", patience=2, verbose=1
+    )
 
-    best_checkpoint = ModelCheckpoint(
+    best_checkpoint = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_path,
         monitor="val_loss",
         mode="min",
@@ -315,7 +309,7 @@ def train(
     callbacks = [best_checkpoint, early_stopping]
 
     if use_wandb:
-        callbacks.append(WandbCallback())
+        callbacks.append(wandb.keras.WandbCallback())
 
     history = model.fit(
         training_generator,

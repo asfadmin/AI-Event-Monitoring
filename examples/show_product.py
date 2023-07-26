@@ -1,19 +1,18 @@
 # This example demonstrates plotting a products wrapped, unwrapped and correlation
 # arrays
 
-from insar_eventnet.io import get_product_arrays
-from insar_eventnet.processing import tile, simulate_unet_cropping, tiles_to_image
-
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
+from insar_eventnet import io, processing
 
 product_path = input("Product Path:")
 crop_size = 0
 tile_size = 0
 
-arr_w, arr_uw, arr_c = get_product_arrays(product_path)
+arr_w, arr_uw, arr_c = io.get_product_arrays(product_path)
 
-tiled_arr_uw, tile_rows, tile_cols = tile(
+tiled_arr_uw, tile_rows, tile_cols = processing.tile(
     arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size
 )
 
@@ -27,11 +26,11 @@ if crop_size:
     # Simulate UNET Cropping
     count = 0
     for tile_ in tiled_arr_uw:
-        cropped_tile = simulate_unet_cropping(tile_, (crop_size, crop_size))
+        cropped_tile = processing.simulate_unet_cropping(tile_, (crop_size, crop_size))
         cropped_arr_uw[count] = cropped_tile
         count += 1
 
-    rebuilt_arr_uw = tiles_to_image(
+    rebuilt_arr_uw = processing.tiles_to_image(
         cropped_arr_uw,
         tile_rows,
         tile_cols,

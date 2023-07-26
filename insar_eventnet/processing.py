@@ -12,6 +12,8 @@ from math import ceil
 from typing import Tuple
 
 import numpy as np
+import tensorflow
+from tensorflow import keras
 
 
 def tile(
@@ -247,12 +249,9 @@ def blur2d(arr: np.ndarray):
         The array containing the blurred image data.
     """
 
-    from tensorflow import constant, float32
-    from tensorflow.keras.backend import conv2d
-
     size = arr.shape[0]
     arr = arr.reshape((1, size, size, 1))
-    tensor = constant(arr, dtype=float32)
+    tensor = tensorflow.constant(arr, dtype=tensorflow.float32)
 
     kernel_array = np.reshape(
         np.asarray(
@@ -267,9 +266,11 @@ def blur2d(arr: np.ndarray):
         / 273,
         (5, 5, 1, 1),
     )
-    kernel_tensor = constant(kernel_array, dtype=float32)
+    kernel_tensor = tensorflow.constant(kernel_array, dtype=tensorflow.float32)
 
-    convolved_tensor = conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
+    convolved_tensor = keras.backends.conv2d(
+        tensor, kernel_tensor, (1, 1, 1, 1), padding="same"
+    )
 
     convolved_array = np.reshape(convolved_tensor.numpy(), (size, size))
 

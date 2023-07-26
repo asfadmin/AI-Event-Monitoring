@@ -9,15 +9,15 @@
  Created by Andrew Player.
 """
 
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-
+from osgeo import gdal
 from PIL import Image
+from tensorflow.keras import models
 
-from tensorflow.keras.models import load_model
-
-from insar_eventnet.io import get_image_array
-from insar_eventnet.processing import tile, tiles_to_image
+from insar_eventnet import io
 
 
 def mask(
@@ -56,9 +56,9 @@ def mask(
     presence_guess : bool
         True if there is an event else False.
     """
-    mask_model = load_model(mask_model_path)
-    pres_model = load_model(pres_model_path)
-    image, gdal_dataset = get_image_array(image_path)
+    mask_model = models.load_model(mask_model_path)
+    pres_model = models.load_model(pres_model_path)
+    image, gdal_dataset = io.get_image_array(image_path)
 
     mask_pred, pres_mask, pres_vals = mask_with_model(
         mask_model=mask_model,
@@ -73,8 +73,6 @@ def mask(
     if output_image_path is not None:
         img = Image.fromarray(mask_pred)
         img.save(output_image_path)
-
-        from osgeo import gdal
 
         out_dataset = gdal.Open(output_image_path, gdal.GA_Update)
         out_dataset.SetGeoTransform(gdal_dataset.GetGeoTransform())
@@ -114,7 +112,7 @@ def mask_with_model(
         If even a single tile has 1s that means an event has been identified.
     """
 
-    tiled_arr_w, w_rows, w_cols = tile(
+    tiled_arr_w, w_rows, w_cols = models.tile(
         arr_w,
         (tile_size, tile_size),
         x_offset=0,
@@ -154,11 +152,11 @@ def mask_with_model(
 
     mask_tiles = mask_tiles.reshape((w_rows * w_cols, tile_size, tile_size))
 
-    mask = tiles_to_image(mask_tiles, w_rows, w_cols, arr_w.shape)
+    mask = models.tiles_to_image(mask_tiles, w_rows, w_cols, arr_w.shape)
 
     mask[arr_w == 0] = 0
 
-    pres_mask = tiles_to_image(pres_tiles, w_rows, w_cols, arr_w.shape)
+    pres_mask = models.tiles_to_image(pres_tiles, w_rows, w_cols, arr_w.shape)
 
     return mask, pres_mask, pres_vals
 
@@ -209,9 +207,6 @@ def test_images_in_dir(
         presence model.
     """
 
-    from os import listdir, path
-    from insar_eventnet.io import get_image_array
-
     positives = 0
     negatives = 0
 
@@ -221,17 +216,17 @@ def test_images_in_dir(
     print("tag  | label    | guess    | confidence")
     print("---------------------------------------")
 
-    for filename in listdir(directory):
+    for filename in os.listdir(directory):
         if "unw_phase" in filename:
             try:
-                arr_uw, dataset = get_image_array(path.join(directory, filename))
+                arr_uw, dataset = io.get_image_array(os.path.join(directory, filename))
                 arr_w = np.angle(np.exp(1j * (arr_uw)))
             except Exception as e:
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
         elif "wrapped" in filename:
             try:
-                arr_w, dataset = get_image_array(path.join(directory, filename))
+                arr_w, dataset = io.get_image_array(os.path.join(directory, filename))
             except Exception as e:
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
@@ -263,8 +258,6 @@ def test_images_in_dir(
             filename = f"{output_dir}/{tag}_mask.tif"
             img = Image.fromarray(mask)
             img.save(filename)
-
-            from osgeo import gdal
 
             out_dataset = gdal.Open(filename, gdal.GA_Update)
             out_dataset.SetGeoTransform(dataset.GetGeoTransform())
@@ -304,17 +297,15 @@ def test_model(
         presence model.
     """
 
-    from os import path
-
     try:
-        mask_model = load_model(mask_model_path)
-        pres_model = load_model(pres_model_path)
+        mask_model = models.load_model(mask_model_path)
+        pres_model = models.load_model(pres_model_path)
     except Exception as e:
         print(f"Caught {type(e)}: {e}")
         return
 
-    positive_dir = path.join(images_dir, "Positives")
-    negative_dir = path.join(images_dir, "Negatives")
+    positive_dir = os.path.join(images_dir, "Positives")
+    negative_dir = os.path.join(images_dir, "Negatives")
 
     true_positives, false_negatives = test_images_in_dir(
         mask_model,

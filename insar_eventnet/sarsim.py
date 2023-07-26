@@ -11,8 +11,13 @@
  Created by Andrew Player.
 """
 
+import time
+
 import numpy as np
-from time import perf_counter
+import numpy.ma as ma
+from geopy import distance
+
+from insar_eventnet import synthetic_interferogram
 
 
 class Okada:
@@ -511,9 +516,6 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
         pixel_spacing : dict
             size of each pixel (ie also the spacing between them) in 'x' and 'y' direction.
         """
-
-        from geopy import distance
-
         ny, nx = lons_mg.shape
 
         pixel_spacing = {}
@@ -670,10 +672,8 @@ def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 
         The array that is meant to be used as a simulated dem with values in meters.
     """
 
-    from insar_eventnet.synthetic_interferogram import generate_perlin
-
     dem = np.zeros((size, size))
-    dem = generate_perlin(dem.shape[0]) * alt_scale_max
+    dem = synthetic_interferogram.generate_perlin(dem.shape[0]) * alt_scale_max
 
     neg_indices = dem < np.max(dem) / 1.75
 
@@ -710,9 +710,6 @@ def atm_topo_simulate(
     ph_turb : np.ndarray
         The array containing the turbulent atmospheric error.
     """
-
-    import numpy as np
-    import numpy.ma as ma
 
     # Sentinel-1 Wavelength in meters
     s1_lambda = 0.0547
@@ -924,9 +921,9 @@ def gen_simulated_deformation(
         source_y = kwargs["source_y"]
         length = kwargs["length"]
 
-    start = perf_counter()
+    start = time.perf_counter()
     Event = Okada(event_type, (source_x, source_y), tile_size=tile_size, **kwargs)
-    end = perf_counter()
+    end = time.perf_counter()
 
     los_grid = (
         Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5] * 0.5

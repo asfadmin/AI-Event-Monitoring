@@ -1,3 +1,24 @@
+"""
+ Summary
+ -------
+ Amazon SageMaker CLI
+
+ Notes
+ ------
+ Created by Andrew Player.
+"""
+
+import json
+import os
+
+import flask
+import numpy as np
+import requests
+from tensorflow.keras import models
+
+from insar_eventnet import inference, io
+
+
 def sagemaker_server():
     """
     Masks events in the given wrapped interferogram using a tensorflow model and plots
@@ -9,18 +30,6 @@ def sagemaker_server():
     image_path       path to wrapped interferogram to mask.\n
     """
 
-    import os
-    import json
-    import requests
-
-    import numpy as np
-    import flask
-    from flask import request
-    from tensorflow.keras.models import load_model
-
-    from insar_eventnet.inference import mask_with_model
-    from insar_eventnet.io import get_image_array
-
     mask_model_path = "/opt/ml/model/models/mask_model"
     pres_model_path = "/opt/ml/model/models/pres_model"
 
@@ -28,8 +37,8 @@ def sagemaker_server():
     print(os.listdir("/opt/ml/model"))
     print(os.listdir("/opt/ml/model/models"))
 
-    mask_model = load_model(mask_model_path)
-    pres_model = load_model(pres_model_path)
+    mask_model = models.load_model(mask_model_path)
+    pres_model = models.load_model(pres_model_path)
 
     try:
         event_list_res = requests.get(
@@ -120,17 +129,17 @@ def sagemaker_server():
         status = 200
 
         try:
-            content = request.json
+            content = flask.request.json
 
             usgs_event_id = content["usgs_event_id"]
             granule_name = content["product_name"]
 
             image_path = get_image_from_sarviews(usgs_event_id, granule_name)
 
-            image, dataset = get_image_array(image_path)
+            image, dataset = io.get_image_array(image_path)
             wrapped_image = np.angle(np.exp(1j * image))
 
-            masked, presence_mask, presence_vals = mask_with_model(
+            masked, presence_mask, presence_vals = inference.mask_with_model(
                 mask_model, pres_model, wrapped_image, tile_size=512
             )
 

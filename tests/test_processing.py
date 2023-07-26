@@ -6,6 +6,7 @@
 """
 
 import numpy as np
+
 from insar_eventnet.processing import pad, tile
 
 test_arr_3x3 = np.zeros((3, 3))

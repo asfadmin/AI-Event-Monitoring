@@ -8,21 +8,12 @@
  Created By: Andrew Player
 """
 
-from tensorflow import Tensor
-from tensorflow.keras.layers import (
-    Conv2D,
-    Input,
-    LeakyReLU,
-    Dense,
-    GlobalAveragePooling2D,
-)
+from tensorflow import Tensor, keras
+from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras import mixed_precision
 
-
-policy = mixed_precision.Policy("mixed_float16")
-mixed_precision.set_global_policy(policy)
+policy = keras.mixed_precision.Policy("mixed_float16")
+keras.mixed_precision.set_global_policy(policy)
 
 
 def conv2d_block(
@@ -32,7 +23,7 @@ def conv2d_block(
     2D-Convolution Block for encoding / generating feature maps.
     """
 
-    x = Conv2D(
+    x = layers.Conv2D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size),
         strides=(strides, strides),
@@ -40,7 +31,7 @@ def conv2d_block(
         padding="same",
     )(input_tensor)
 
-    x = LeakyReLU()(x)
+    x = layers.LeakyReLU()(x)
 
     return x
 
@@ -56,7 +47,7 @@ def create_eventnet(
     Creates a basic convolutional network
     """
 
-    input = Input(shape=(tile_size, tile_size, 1))
+    input = layers.Input(shape=(tile_size, tile_size, 1))
 
     # # --------------------------------- #
     # # Feature Map Generation            #
@@ -72,7 +63,7 @@ def create_eventnet(
 
     # TODO: Try Global Average Pooling
 
-    g1 = GlobalAveragePooling2D(keepdims=True, data_format="channels_last")(c3)
+    g1 = layers.GlobalAveragePooling2D(keepdims=True, data_format="channels_last")(c3)
 
     # f0 = Flatten()(c3)
     # d0 = Dense(512, activation='relu')(f0)
@@ -81,7 +72,7 @@ def create_eventnet(
     # Output Layer                      #
     # --------------------------------- #
 
-    output = Dense(label_count, activation="sigmoid")(g1)
+    output = layers.Dense(label_count, activation="sigmoid")(g1)
 
     # --------------------------------- #
     # Model Creation and Compilation    #
@@ -90,7 +81,7 @@ def create_eventnet(
     model = Model(inputs=[input], outputs=[output], name=model_name)
 
     model.compile(
-        optimizer=SGD(learning_rate=learning_rate),
+        optimizer=keras.optimizers.SGD(learning_rate=learning_rate),
         loss="mean_squared_error",
         metrics=["acc", "mean_absolute_error"],
     )
