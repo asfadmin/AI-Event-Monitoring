@@ -32,3 +32,5 @@ insar-eventnet = "insar_eventnet.aievents:cli"
 sagemaker = "insar_eventnet.sagemaker:sagemaker_server"
 [tool.setuptools]
 packages = ["insar_eventnet", "insar_eventnet.architectures"]
+[tool.isort]
+profile = "black"
