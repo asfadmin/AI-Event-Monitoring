@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 from hyp3_sdk import HyP3
 
-from insar_eventnet.inference import mask_image_path
-from insar_eventnet.io import initialize, get_image_array
+from insar_eventnet import inference, io
 
 hyp3 = HyP3(prompt=True)
 
@@ -21,12 +20,12 @@ pres_model_path = "data/output/models/pres_model"
 image_path = input("Image Path: ")  # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
-image, gdal_dataset = get_image_array(image_path)
+image, gdal_dataset = io.get_image_array(image_path)
 
 # The initialize function downloads the pretrained models
-initialize()
+io.initialize()
 
-mask, presence = mask_image_path(
+mask, presence = inference.mask_image_path(
     mask_model_path=mask_model_path,
     pres_model_path=pres_model_path,
     image_path=image_path,

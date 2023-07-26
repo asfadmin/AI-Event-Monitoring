@@ -13,22 +13,12 @@
 """
 
 
-from tensorflow import Tensor
-from tensorflow.keras.layers import (
-    Conv2D,
-    MaxPooling2D,
-    Input,
-    concatenate,
-    BatchNormalization,
-    Dense,
-    Activation,
-)
+from tensorflow import Tensor, keras
+from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras import mixed_precision
 
-policy = mixed_precision.Policy("mixed_float16")
-mixed_precision.set_global_policy(policy)
+policy = keras.mixed_precision.Policy("mixed_float16")
+keras.mixed_precision.set_global_policy(policy)
 
 
 def conv_block(input_tensor: Tensor, num_filters: int, mul: int = 4) -> Tensor:
@@ -36,65 +26,65 @@ def conv_block(input_tensor: Tensor, num_filters: int, mul: int = 4) -> Tensor:
     2D-Convolution Block with a connecting convolution for short-term memory.
     """
 
-    c = Conv2D(
+    c = layers.Conv2D(
         filters=num_filters,
         kernel_size=(1, 1),
         kernel_initializer="he_normal",
         padding="same",
     )(input_tensor)
-    c = BatchNormalization()(c)
-    c1 = Activation("relu")(c)
+    c = layers.BatchNormalization()(c)
+    c1 = layers.Activation("relu")(c)
 
-    c2 = Conv2D(
+    c2 = layers.Conv2D(
         filters=num_filters,
         kernel_size=(3, 3),
         kernel_initializer="he_normal",
         padding="same",
     )(c1)
-    c2 = BatchNormalization()(c2)
-    c2 = Activation("relu")(c2)
+    c2 = layers.BatchNormalization()(c2)
+    c2 = layers.Activation("relu")(c2)
 
-    c3 = Conv2D(
+    c3 = layers.Conv2D(
         filters=num_filters * 4,
         kernel_size=(1, 1),
         kernel_initializer="he_normal",
         padding="same",
     )(c2)
-    c3 = BatchNormalization()(c3)
-    c3 = Activation("relu")(c3)
+    c3 = layers.BatchNormalization()(c3)
+    c3 = layers.Activation("relu")(c3)
 
-    return concatenate([c3, c])
+    return layers.concatenate([c3, c])
 
 
 def identity_block(input_tensor: Tensor, num_filters: int):
-    c = Conv2D(
+    c = layers.Conv2D(
         filters=num_filters,
         kernel_size=(1, 1),
         kernel_initializer="he_normal",
         padding="same",
     )(input_tensor)
-    c = BatchNormalization()(c)
-    c1 = Activation("relu")(c)
+    c = layers.BatchNormalization()(c)
+    c1 = layers.Activation("relu")(c)
 
-    c2 = Conv2D(
+    c2 = layers.Conv2D(
         filters=num_filters,
         kernel_size=(3, 3),
         kernel_initializer="he_normal",
         padding="same",
     )(c1)
-    c2 = BatchNormalization()(c2)
-    c2 = Activation("relu")(c2)
+    c2 = layers.BatchNormalization()(c2)
+    c2 = layers.Activation("relu")(c2)
 
-    c3 = Conv2D(
+    c3 = layers.Conv2D(
         filters=num_filters,
         kernel_size=(1, 1),
         kernel_initializer="he_normal",
         padding="same",
     )(c2)
-    c3 = BatchNormalization()(c3)
-    c3 = Activation("relu")(c3)
+    c3 = layers.BatchNormalization()(c3)
+    c3 = layers.Activation("relu")(c3)
 
-    return concatenate([c3, input_tensor])
+    return layers.concatenate([c3, input_tensor])
 
 
 def create_resnetclassifier(
@@ -111,21 +101,21 @@ def create_resnetclassifier(
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7041455/
     """
 
-    input = Input(shape=(tile_size, tile_size, 1))
+    input = layers.Input(shape=(tile_size, tile_size, 1))
 
     # --------------------------------- #
     # Res Blocks and Convolutions       #
     # --------------------------------- #
 
-    c1 = Conv2D(
+    c1 = layers.Conv2D(
         filters=num_filters,
         kernel_size=(7, 7),
         strides=(2, 2),
         kernel_initializer="he_normal",
         padding="same",
     )(input)
-    a1 = Activation("relu")(c1)
-    p1 = MaxPooling2D((3, 3), strides=(2, 2))(a1)
+    a1 = layers.Activation("relu")(c1)
+    p1 = layers.MaxPooling2D((3, 3), strides=(2, 2))(a1)
 
     c2 = conv_block(p1, num_filters)
 
@@ -155,8 +145,8 @@ def create_resnetclassifier(
     # Output Layer                      #
     # --------------------------------- #
 
-    d0 = Dense(1000, activation="relu")(i12)
-    output = Dense(1, activation="sigmoid")(d0)
+    d0 = layers.Dense(1000, activation="relu")(i12)
+    output = layers.Dense(1, activation="sigmoid")(d0)
 
     # --------------------------------- #
     # Mode Creation and Compilation     #
@@ -166,7 +156,7 @@ def create_resnetclassifier(
 
     model.compile(
         loss="mean_squared_error",
-        optimizer=SGD(learning_rate=learning_rate),
+        optimizer=keras.optimizers.SGD(learning_rate=learning_rate),
         metrics=["acc", "mean_absolute_error"],
     )
 

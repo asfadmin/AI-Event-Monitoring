@@ -8,7 +8,7 @@
  Created by Jason Herning.
 """
 
-from getpass import getpass
+import getpass
 from typing import Tuple
 
 from hyp3_sdk import HyP3, exceptions
@@ -48,7 +48,7 @@ def input_earthdata_login() -> Tuple[str, str]:
 
     print("Enter your NASA EarthData username: ", end="")
     username = input()
-    password = getpass()
+    password = getpass.getpass()
     return username, password
 
 

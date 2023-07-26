@@ -8,11 +8,10 @@
  Created by Jason Herning.
 """
 
-from pathlib import Path
-
+import pathlib
 
 # full Path to aiwater root
-PROJECT_DIR = Path.cwd().resolve()
+PROJECT_DIR = pathlib.Path.cwd().resolve()
 
 # Path configurations for data directory
 DATA_DIR = PROJECT_DIR / "data"
