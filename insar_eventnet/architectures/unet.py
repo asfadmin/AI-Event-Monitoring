@@ -45,7 +45,7 @@ def conv2d_block(
 
 
 def transpose_block(
-    input_tensor: Tensor, concat_tensor: Tensor, num_filters: int, kernel_size: int = 3
+    input_tensor: Tensor, concat_tensor: Tensor, num_filters: int
 ) -> Tensor:
     """
     Learned Upscaling for decoding
@@ -57,9 +57,7 @@ def transpose_block(
 
     x = conv2d_block(x, num_filters)
 
-    y = layers.concatenate([x, concat_tensor])
-
-    return y
+    return layers.concatenate([x, concat_tensor])
 
 
 def create_unet(

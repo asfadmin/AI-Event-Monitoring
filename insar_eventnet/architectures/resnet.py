@@ -63,9 +63,7 @@ def res4_block(input_tensor: Tensor, num_filters: int) -> Tensor:
 
     r3 = res_block(input_tensor=r2, num_filters=num_filters)
 
-    r4 = res_block(input_tensor=r3, num_filters=num_filters)
-
-    return r4
+    return res_block(input_tensor=r3, num_filters=num_filters)
 
 
 def full_block(input_tensor: Tensor, num_filters: int) -> Tensor:
@@ -83,9 +81,7 @@ def full_block(input_tensor: Tensor, num_filters: int) -> Tensor:
 
     m1 = layers.MaxPooling2D(pool_size=(2, 2), strides=2)(c1)
 
-    r1 = res4_block(input_tensor=m1, num_filters=num_filters * 2)
-
-    return r1
+    return res4_block(input_tensor=m1, num_filters=num_filters * 2)
 
 
 def create_resnet(

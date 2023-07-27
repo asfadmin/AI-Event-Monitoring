@@ -170,9 +170,7 @@ def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
 
     startx = arr.shape[1] // 2 - ceil(crop_shape[1] / 2)
     starty = arr.shape[0] // 2 - ceil(crop_shape[0] / 2)
-    cropped_arr = arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
-
-    return cropped_arr
+    return arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
 
 
 def tiles_to_image(
@@ -229,9 +227,7 @@ def tiles_to_image(
     start_col = ceil((x_padded - x) / 2)
     end_col = start_col + x
 
-    rebuilt_arr = rebuilt_arr[start_row:end_row, start_col:end_col]
-
-    return rebuilt_arr
+    return rebuilt_arr[start_row:end_row, start_col:end_col]
 
 
 def blur2d(arr: np.ndarray):
@@ -272,6 +268,4 @@ def blur2d(arr: np.ndarray):
         tensor, kernel_tensor, (1, 1, 1, 1), padding="same"
     )
 
-    convolved_array = np.reshape(convolved_tensor.numpy(), (size, size))
-
-    return convolved_array
+    return np.reshape(convolved_tensor.numpy(), (size, size))

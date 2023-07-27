@@ -89,9 +89,7 @@ def sagemaker_server():
         os.system(f"unzip -qq {product_name}")
         os.system(f"ls {granule_name}")
 
-        image_path = granule_name + "/" + granule_name + "_unw_phase.tif"
-
-        return image_path
+        return granule_name + "/" + granule_name + "_unw_phase.tif"
 
     app = flask.Flask(__name__)
 

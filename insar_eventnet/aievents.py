@@ -156,11 +156,10 @@ def make_simulated_dataset_wrapper(
         output_dir.__str__() + "/" + dir_name, split
     )
 
-    try:
-        log_file = open(output_dir.__str__() + "/" + dir_name + "/parameters.txt", "w")
+    with open(
+        output_dir.__str__() + "/" + dir_name + "/parameters.txt", "w"
+    ) as log_file:
         log_file.write(dataset_info)
-    except Exception as e:
-        print(f"{type(e)}: {e}")
 
     print("")
     print(f"Data Type Distribution: {distribution}")
@@ -449,7 +448,7 @@ def mask_image_wrapper(
     image_path          path to interferogram tif to mask.\n
     """
 
-    mask, presence = inference.mask_image_path(
+    mask, presence = inference.mask(
         mask_model_path=mask_model_path,
         pres_model_path=pres_model_path,
         image_path=image_path,
@@ -689,7 +688,7 @@ def interactive_wrapper(event_type):
     axs_wrapped.imshow(wrapped, origin="lower", cmap="jet")
     axs_unwrapped.imshow(unwrapped, origin="lower", cmap="jet")
 
-    def update(val):
+    def update():
         kwargs = {
             "source_x": slider_source_x.val,
             "source_y": slider_source_y.val,
@@ -811,13 +810,11 @@ def show_product_wrapper(product_path, crop_size, tile_size):
         cropped_arr_uw = np.zeros((tile_rows * tile_cols, crop_size, crop_size))
 
         # Simulate UNET Cropping
-        count = 0
-        for tile_ in tiled_arr_uw:
+        for count, tile_ in enumerate(tiled_arr_uw):
             cropped_tile = processing.simulate_unet_cropping(
                 tile_, (crop_size, crop_size)
             )
             cropped_arr_uw[count] = cropped_tile
-            count += 1
 
         rebuilt_arr_uw = processing.tiles_to_image(
             cropped_arr_uw,
@@ -1087,8 +1084,8 @@ def sagemaker_train_wrapper(
         print(f"Caught {type(e)}: {e}. Continuing Anyway...")
 
     try:
-        json_file = open(config_dir + "/hyperparameters.json", "r")
-        hyperparameters = json.load(json_file)
+        with open(config_dir + "/hyperparameters.json", "r") as json_file:
+            hyperparameters = json.load(json_file)
 
         print(f"Read hyperparameters: {hyperparameters}")
 
