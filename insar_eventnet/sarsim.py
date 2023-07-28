@@ -1195,7 +1195,7 @@ def gen_simulated_time_series(
     inflection_rate = random.random() * 2 + 2                                   #set the inflection rate to be between 2 and 4
     inflection_point = n_interferograms * inflection
     step_size = inflection_point + (n_interferograms - inflection_point) * inflection_rate
-    displacement_step = los_displacement / step_size
+    displacement = los_displacement / step_size
 
     for i in range(n_interferograms):
 
@@ -1203,12 +1203,12 @@ def gen_simulated_time_series(
             atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi
         )
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar * 0.3
+        displacement_step = displacement * i
+        if(i > inflection_point):
+            displacement_step = displacement_step + displacement * inflection_rate * (i - inflection_point)
 
         phase_step = scalar * displacement_step  * i + topo_phase + turb_phase
-        if(i > inflection_point):
-            phase_step = phase_step + displacement_step * inflection_rate * (i - inflection_point)
         wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
-        print(phase_step.max())
 
         phase_step = (phase_step + np.abs(np.min(phase_step))) / np.max(
             (phase_step + np.abs(np.min(phase_step)))
