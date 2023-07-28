@@ -11,14 +11,9 @@
  Created by Andrew Player.
 """
 import random
-import time
 from time import perf_counter
 
 import numpy as np
-import numpy.ma as ma
-from geopy import distance
-
-from insar_eventnet import synthetic_interferogram
 
 
 class Okada:
