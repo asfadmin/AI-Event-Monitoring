@@ -25,7 +25,7 @@ image, gdal_dataset = io.get_image_array(image_path)
 # The initialize function downloads the pretrained models
 io.initialize()
 
-mask, presence = inference.mask_image_path(
+mask, presence = inference.mask(
     mask_model_path=mask_model_path,
     pres_model_path=pres_model_path,
     image_path=image_path,

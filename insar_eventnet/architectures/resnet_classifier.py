@@ -21,7 +21,7 @@ policy = keras.mixed_precision.Policy("mixed_float16")
 keras.mixed_precision.set_global_policy(policy)
 
 
-def conv_block(input_tensor: Tensor, num_filters: int, mul: int = 4) -> Tensor:
+def conv_block(input_tensor: Tensor, num_filters: int) -> Tensor:
     """
     2D-Convolution Block with a connecting convolution for short-term memory.
     """

@@ -24,11 +24,9 @@ if crop_size:
     cropped_arr_uw = np.zeros((tile_rows * tile_cols, crop_size, crop_size))
 
     # Simulate UNET Cropping
-    count = 0
-    for tile_ in tiled_arr_uw:
+    for count, tile_ in enumerate(tiled_arr_uw):
         cropped_tile = processing.simulate_unet_cropping(tile_, (crop_size, crop_size))
         cropped_arr_uw[count] = cropped_tile
-        count += 1
 
     rebuilt_arr_uw = processing.tiles_to_image(
         cropped_arr_uw,

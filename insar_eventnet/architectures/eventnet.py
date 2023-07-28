@@ -31,9 +31,7 @@ def conv2d_block(
         padding="same",
     )(input_tensor)
 
-    x = layers.LeakyReLU()(x)
-
-    return x
+    return layers.LeakyReLU()(x)
 
 
 def create_eventnet(

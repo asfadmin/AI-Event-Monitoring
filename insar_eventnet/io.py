@@ -9,6 +9,7 @@
 """
 
 
+import contextlib
 import os
 from datetime import datetime
 from io import BytesIO
@@ -152,9 +153,8 @@ def download_models(path: str) -> None:
 
     with request.urlopen(
         "https://eventnetmodels.s3.us-west-2.amazonaws.com/models.zip"
-    ) as response:
-        with ZipFile(BytesIO(response.read())) as file:
-            file.extractall(path)
+    ) as response, ZipFile(BytesIO(response.read())) as file:
+        file.extractall(path)
 
 
 def get_image_array(image_path: str) -> np.ndarray:
@@ -339,9 +339,7 @@ def make_simulated_dataset(
         event_type = ""
         gaussian_only = False
 
-        if count < quake_count:
-            event_type = "quake"
-        elif count < dyke_count:
+        if (count < quake_count) or (count < dyke_count):
             event_type = "quake"
         elif count < sill_count:
             event_type = "dyke"
@@ -416,7 +414,6 @@ def make_simulated_time_series_dataset(
     seed: int,
     tile_size: int,
     crop_size: int,
-    model_path: str = "",
 ) -> Tuple[int, int, str]:
     """
     Generate a dataset containing pairs of wrapped interferograms from simulated
@@ -559,10 +556,8 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
                 num_train += 1
                 new_path = train_dir / filename
 
-            try:
+            with contextlib.suppress(OSError):
                 os.rename(old_path, new_path)
-            except OSError:
-                pass
         break
 
     return num_train, num_validation
@@ -604,11 +599,9 @@ def dataset_from_products(
 
     dataset_size = 0
     for _, products, _ in os.walk(product_path):
-        progress = 0
         product_count = len(products)
 
-        for product in products:
-            progress += 1
+        for progress, product in enumerate(products):
             print(f"{progress}/{product_count} | {product_path + '/' + product}")
 
             wrapped, masked = get_dataset_arrays(product_path + "/" + product)

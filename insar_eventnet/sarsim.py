@@ -44,7 +44,7 @@ class Okada:
         self.tile_size = tile_size
         self.params = kwargs
 
-        self.gen_coordiantes()
+        self.gen_coordinates()
 
         self.los_vector = np.array([[0.38213591], [-0.08150437], [0.92050485]])
 
@@ -126,7 +126,7 @@ class Okada:
 
         self.compute_displacement()
 
-    def gen_coordiantes(self):
+    def gen_coordinates(self):
         x_axis, y_axis = np.meshgrid(  # Coordinate Axes
             np.arange(0, self.tile_size)
             * 90,  # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)), # 90m/pixel in x direction
@@ -284,7 +284,7 @@ class Okada:
                 - np.log(self.R + eta)
             )
 
-    def compute_I_4(self, W, L):
+    def compute_I_4(self, W):
         eta = self.eta - W
 
         if np.cos(self.dip) > 10e-8:
@@ -404,9 +404,7 @@ class Okada:
             + (I_4 * np.sin(self.dip))
         )
 
-        displacements = np.asarray([x_direction, y_direction, z_direction])
-
-        return displacements
+        return np.asarray([x_direction, y_direction, z_direction])
 
     def dip_slip_displacement(self, W, L):
         xi, eta = self.update_params_WL(W, L)
@@ -425,9 +423,7 @@ class Okada:
             (self.d_tilda * q_rrx) + (np.sin(self.dip) * arctan) - (I_5 * sc_dip)
         )
 
-        displacements = np.asarray([x_direction, y_direction, z_direction])
-
-        return displacements
+        return np.asarray([x_direction, y_direction, z_direction])
 
     def tensile_displacement(self, W, L):
         xi, eta = self.update_params_WL(W, L)
@@ -448,12 +444,10 @@ class Okada:
             (self.y_tilda * q_rrx) + (np.cos(self.dip) * q_rre_arctan) - (I_5 * s_d)
         )
 
-        displacements = np.asarray([x_direction, y_direction, z_direction])
-
-        return displacements
+        return np.asarray([x_direction, y_direction, z_direction])
 
 
-def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
+def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02):
     """
     A function to create synthetic turbulent atmospheres based on the  methods in Lohman Simons 2005, or using Andy Hooper and Lin Shen's fft method.
     Note that due to memory issues, when using the covariance (Lohman) method, largers ones are made by interpolateing smaller ones.
@@ -518,13 +512,14 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
         """
         ny, nx = lons_mg.shape
 
-        pixel_spacing = {}
-        pixel_spacing["x"] = distance.distance(
-            (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-1, 0], lons_mg[-1, 1])
-        ).meters
-        pixel_spacing["y"] = distance.distance(
-            (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-2, 0], lons_mg[-1, 0])
-        ).meters
+        pixel_spacing = {
+            "x": distance.distance(
+                (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-1, 0], lons_mg[-1, 1])
+            ).meters,
+            "y": distance.distance(
+                (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-2, 0], lons_mg[-1, 0])
+            ).meters,
+        }
 
         X, Y = np.meshgrid(
             pixel_spacing["x"] * np.arange(0, nx), pixel_spacing["y"] * np.arange(0, ny)
@@ -595,10 +590,7 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
         y = np.fft.ifft2(y_tmp2)
 
         APS = np.real(y)
-        APS = APS / np.std(APS) * std_long
-        APS = APS * 0.01
-
-        return APS
+        return (APS / np.std(APS)) * std_long * 0.01
 
     def rescale_atmosphere(atm, atm_mean=0.02, atm_sigma=0.005):
         """
@@ -648,12 +640,10 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
     for atm_n, atm in enumerate(ph_turbs):
         ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
 
-    ph_turbs_m = ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
-
-    return ph_turbs_m
+    return ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
 
 
-def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 500):
+def gen_fake_topo(size: int = 512, alt_scale_max: int = 500):
     """
     Generate fake topography (a dem in meters) for generating simulated atmospheric topographic error.
 
@@ -681,9 +671,7 @@ def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 
 
     non_zero_indices = dem > 0
 
-    dem[non_zero_indices] = dem[non_zero_indices] - np.min(dem[non_zero_indices])
-
-    return dem
+    return dem[non_zero_indices] - np.min(dem[non_zero_indices])
 
 
 def atm_topo_simulate(
@@ -795,11 +783,9 @@ def coherence_mask_simulate(size: int = 512, threshold: float = 0.3):
     mask_coh_values = (mask_coh_values - np.min(mask_coh_values)) / np.max(
         mask_coh_values - np.min(mask_coh_values)
     )
-    mask_coh = np.where(
+    return np.where(
         mask_coh_values > threshold, np.ones(lons_mg.shape), np.zeros(lons_mg.shape)
     )
-
-    return mask_coh
 
 
 def gen_simulated_deformation(

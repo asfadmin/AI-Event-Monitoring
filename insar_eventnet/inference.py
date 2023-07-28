@@ -144,11 +144,9 @@ def mask_with_model(
     pres_vals = pres_model.predict(mask_tiles, batch_size=1)
     pres_tiles = np.zeros((w_rows * w_cols, tile_size, tile_size))
 
-    index = 0
-    for val in pres_vals:
+    for index, val in enumerate(pres_vals):
         if val >= 0.75:
             pres_tiles[index] = 1
-        index += 1
 
     mask_tiles = mask_tiles.reshape((w_rows * w_cols, tile_size, tile_size))
 

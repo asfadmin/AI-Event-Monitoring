@@ -22,7 +22,6 @@ def conv3d_block(
     num_filters: int,
     kernel_size: int = 3,
     strides: int = 1,
-    strides_up: int = 1,
 ) -> Tensor:
     """
     UNET style 3D-Convolution Block for encoding / generating feature maps.
@@ -38,7 +37,7 @@ def conv3d_block(
         data_format="channels_last",
     )(input_tensor)
 
-    x = layers.Conv3D(
+    return layers.Conv3D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size, kernel_size),
         kernel_initializer="he_normal",
@@ -47,15 +46,11 @@ def conv3d_block(
         data_format="channels_last",
     )(x)
 
-    return x
-
 
 def transpose_block(
     input_tensor: Tensor,
     concat_tensor: Tensor,
     num_filters: int,
-    kernel_size: int = 3,
-    strides_up: int = 2,
 ) -> Tensor:
     """
     Learned Upscaling for decoding
@@ -71,9 +66,7 @@ def transpose_block(
 
     x = conv3d_block(x, num_filters)
 
-    y = layers.concatenate([x, concat_tensor], axis=-1)
-
-    return y
+    return layers.concatenate([x, concat_tensor], axis=-1)
 
 
 def create_unet3d(

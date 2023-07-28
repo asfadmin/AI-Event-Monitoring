@@ -74,7 +74,6 @@ num_train, num_validation = io.split_dataset(dataset_path, split)
 
 model_name_bin = "pres_model_example"
 model_type = "eventnet"
-dataset_path = dataset_path
 input_shape = crop_size
 epochs = 5
 filters = 64
@@ -108,7 +107,7 @@ image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
 image, gdal_dataset = io.get_image_array(image_path)
 
-mask, presence = inference.mask_image_path(
+mask, presence = inference.mask(
     mask_model_path=mask_model_path,
     pres_model_path=pres_model_path,
     image_path=image_path,
