@@ -11,9 +11,10 @@
  Created by Andrew Player.
 """
 
-import numpy as np
-from time import perf_counter
 import random
+from time import perf_counter
+
+import numpy as np
 
 
 class Okada:
@@ -1191,23 +1192,30 @@ def gen_simulated_time_series(
 
     phases = np.zeros((n_interferograms, 2, tile_size, tile_size))
 
-    inflection = random.random() * 0.6 + 0.2                                    #set the inflection point to a point between 0.2 and 0.8
-    inflection_rate = random.random() * 2 + 2                                   #set the inflection rate to be between 2 and 4
+    inflection = (
+        random.random() * 0.6 + 0.2
+    )  # set the inflection point to a point between 0.2 and 0.8
+    inflection_rate = (
+        random.random() * 2 + 2
+    )  # set the inflection rate to be between 2 and 4
     inflection_point = n_interferograms * inflection
-    step_size = inflection_point + (n_interferograms - inflection_point) * inflection_rate
+    step_size = (
+        inflection_point + (n_interferograms - inflection_point) * inflection_rate
+    )
     displacement = los_displacement / step_size
 
     for i in range(n_interferograms):
-
         topo_phase = np.abs(
             atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi
         )
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar * 0.3
         displacement_step = displacement * i
-        if(i > inflection_point):
-            displacement_step = displacement_step + displacement * inflection_rate * (i - inflection_point)
+        if i > inflection_point:
+            displacement_step = displacement_step + displacement * inflection_rate * (
+                i - inflection_point
+            )
 
-        phase_step = scalar * displacement_step  * i + topo_phase + turb_phase
+        phase_step = scalar * displacement_step * i + topo_phase + turb_phase
         wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
 
         phase_step = (phase_step + np.abs(np.min(phase_step))) / np.max(
@@ -1217,4 +1225,3 @@ def gen_simulated_time_series(
         phases[i] = [phase_step, wrapped_phase_step]
 
     return phases, mask
-
