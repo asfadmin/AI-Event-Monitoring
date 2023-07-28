@@ -1,14 +1,7 @@
 import matplotlib.pyplot as plt
 
+from insar_eventnet import inference, io, training
 from insar_eventnet.config import SYNTHETIC_DIR
-from insar_eventnet.io import (
-    make_simulated_dataset,
-    split_dataset,
-    create_directories,
-    get_image_array,
-)
-from insar_eventnet.training import train
-from insar_eventnet.inference import mask_image_path
 
 # First generate a simulated dataset
 
@@ -20,15 +13,15 @@ tile_size = 512
 crop_size = 512
 split = 0.2  # Training/Testing split
 
-create_directories()  # Initialize directory structure for training data
+io.create_directories()  # Initialize directory structure for training data
 
-name, count, dir_name, distribution, dataset_info = make_simulated_dataset(
+name, count, dir_name, distribution, dataset_info = io.make_simulated_dataset(
     dataset_name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size
 )
 
 dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
-num_train, num_validation = split_dataset(dataset_path, split)
+num_train, num_validation = io.split_dataset(dataset_path, split)
 
 # Then train a unet masking model on the simulated dataset
 
@@ -44,7 +37,7 @@ using_aws = False
 using_jupyter = False
 logs_dir = ""
 
-mask_model, mask_history = train(
+mask_model, mask_history = training.train(
     model_name,
     dataset_path,
     model_type,
@@ -69,19 +62,18 @@ mask_model_path = "data/output/models/checkpoints/" + model_name
 amount = 1000
 split = 0.1
 
-name, count, dir_name, _, _ = make_simulated_dataset(
+name, count, dir_name, _, _ = io.make_simulated_dataset(
     name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size, model_path=mask_model_path
 )
 
 dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
-num_train, num_validation = split_dataset(dataset_path, split)
+num_train, num_validation = io.split_dataset(dataset_path, split)
 
 # Now train the binary classification model
 
 model_name_bin = "pres_model_example"
 model_type = "eventnet"
-dataset_path = dataset_path
 input_shape = crop_size
 epochs = 5
 filters = 64
@@ -92,7 +84,7 @@ using_aws = False
 using_jupyter = False
 logs_dir = ""
 
-binary_model, binary_history = train(
+binary_model, binary_history = training.train(
     model_name_bin,
     dataset_path,
     model_type,
@@ -113,9 +105,9 @@ pres_model_path = "data/output/models/pres_model_example"
 image_path = input("Image Path: ")  # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
-image, gdal_dataset = get_image_array(image_path)
+image, gdal_dataset = io.get_image_array(image_path)
 
-mask, presence = mask_image_path(
+mask, presence = inference.mask(
     mask_model_path=mask_model_path,
     pres_model_path=pres_model_path,
     image_path=image_path,

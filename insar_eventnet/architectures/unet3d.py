@@ -9,20 +9,12 @@
 """
 
 
-from tensorflow import Tensor
-from tensorflow.keras.layers import (
-    Input,
-    concatenate,
-    Activation,
-    Conv3D,
-    Conv3DTranspose,
-)
+from tensorflow import Tensor, keras
+from tensorflow.keras import layers
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import mixed_precision
 
-policy = mixed_precision.Policy("mixed_float16")
-mixed_precision.set_global_policy(policy)
+policy = keras.mixed_precision.Policy("mixed_float16")
+keras.mixed_precision.set_global_policy(policy)
 
 
 def conv3d_block(
@@ -30,13 +22,12 @@ def conv3d_block(
     num_filters: int,
     kernel_size: int = 3,
     strides: int = 1,
-    strides_up: int = 1,
 ) -> Tensor:
     """
     UNET style 3D-Convolution Block for encoding / generating feature maps.
     """
 
-    x = Conv3D(
+    x = layers.Conv3D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size, kernel_size),
         strides=(strides, strides, strides),
@@ -46,7 +37,7 @@ def conv3d_block(
         data_format="channels_last",
     )(input_tensor)
 
-    x = Conv3D(
+    return layers.Conv3D(
         filters=num_filters,
         kernel_size=(kernel_size, kernel_size, kernel_size),
         kernel_initializer="he_normal",
@@ -55,21 +46,17 @@ def conv3d_block(
         data_format="channels_last",
     )(x)
 
-    return x
-
 
 def transpose_block(
     input_tensor: Tensor,
     concat_tensor: Tensor,
     num_filters: int,
-    kernel_size: int = 3,
-    strides_up: int = 2,
 ) -> Tensor:
     """
     Learned Upscaling for decoding
     """
 
-    x = Conv3DTranspose(
+    x = layers.Conv3DTranspose(
         filters=num_filters,
         kernel_size=(2, 2, 2),
         strides=(2, 2, 2),
@@ -79,9 +66,7 @@ def transpose_block(
 
     x = conv3d_block(x, num_filters)
 
-    y = concatenate([x, concat_tensor], axis=-1)
-
-    return y
+    return layers.concatenate([x, concat_tensor], axis=-1)
 
 
 def create_unet3d(
@@ -95,7 +80,7 @@ def create_unet3d(
     Creates a 3D U-Net style model
     """
 
-    input = Input(shape=(tile_size, tile_size, temporal_steps, 1))
+    input = layers.Input(shape=(tile_size, tile_size, temporal_steps, 1))
 
     # --------------------------------- #
     # Feature Map Generation            #
@@ -128,7 +113,7 @@ def create_unet3d(
     # Output Layer                      #
     # --------------------------------- #
 
-    output = Conv3D(
+    output = layers.Conv3D(
         name="last_layer",
         kernel_size=(1, 1, 1),
         strides=(1, 1, 1),
@@ -137,7 +122,7 @@ def create_unet3d(
         data_format="channels_last",
     )(u11)
 
-    output = Activation("linear", dtype="float32")(output)
+    output = layers.Activation("linear", dtype="float32")(output)
 
     # --------------------------------- #
     # Model Creation and Compilation    #
@@ -149,7 +134,7 @@ def create_unet3d(
     model.compile(
         loss="huber",
         metrics=["mean_squared_error", "mean_absolute_error"],
-        optimizer=Adam(learning_rate=learning_rate),
+        optimizer=keras.optimisers.Adam(learning_rate=learning_rate),
     )
 
     return model

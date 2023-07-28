@@ -3,11 +3,26 @@
  File Name:   aievents.py
  Description: CLI Interface
 """
+import json
+import os
+import time
+from json import dumps
+from os import listdir, mkdir, path, system
+from pathlib import Path
+from shutil import copyfile
 
-import requests
 import click
-from insar_eventnet.config import SYNTHETIC_DIR, MASK_DIR
+import matplotlib.pyplot as plt
+import numpy as np
+import PIL
+import requests
+from matplotlib import widgets
+from osgeo import gdal
+from PIL import Image
+from tensorflow.keras import models
 
+from insar_eventnet import gui, inference, io, processing, sarsim, training
+from insar_eventnet.config import MASK_DIR, SYNTHETIC_DIR
 
 # ------------- #
 # Help Strings  #
@@ -51,6 +66,7 @@ usesim_help = (
 numtrials_help = "Test the model over this many images. If 1, the images are plotted."
 silent_help = "Don't print to stdout"
 no_plot_help = "Don't plot images"
+copy_image_help = "Copy original positive interferogram tifs alongside output masks"
 
 # ------------------ #
 # CLI Implementation #
@@ -63,7 +79,7 @@ def cli():
 
 
 @cli.command("setup")
-def setup():
+def setup_wrapper():
     """
     Create data directory subtree and download models. This should be run before
     make-dataset.
@@ -82,29 +98,25 @@ def setup():
         └──tensorboard/
     """
 
-    from insar_eventnet.io import create_directories, download_models
-
     print("")
-    create_directories()
+    io.create_directories()
 
     print("")
     click.echo("Data directory created")
     print("")
 
     print("Downloading models... this may take a second")
-    download_models("data/output")
+    io.download_models("data/output")
 
 
 @cli.command("download-models")
-def download_models():
+def download_models_wrapper():
     """
     Download models to data/output/models
     """
 
-    from insar_eventnet.io import download_models
-
     print("Downloading... this may take a second")
-    download_models("data/output")
+    io.download_models("data/output")
 
 
 @cli.command("make-simulated-dataset")
@@ -134,23 +146,20 @@ def make_simulated_dataset_wrapper(
     amount      Number of simulated interferograms created.\n
     """
 
-    from insar_eventnet.io import split_dataset, make_simulated_dataset
-
     print("")
 
-    name, count, dir_name, distribution, dataset_info = make_simulated_dataset(
+    name, count, dir_name, distribution, dataset_info = io.make_simulated_dataset(
         name, output_dir, amount, seed, tile_size, crop_size
     )
 
-    num_train, num_validation = split_dataset(
+    num_train, num_validation = io.split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
-    try:
-        log_file = open(output_dir.__str__() + "/" + dir_name + "/parameters.txt", "w")
+    with open(
+        output_dir.__str__() + "/" + dir_name + "/parameters.txt", "w"
+    ) as log_file:
         log_file.write(dataset_info)
-    except Exception as e:
-        print(f"{type(e)}: {e}")
 
     print("")
     print(f"Data Type Distribution: {distribution}")
@@ -190,8 +199,6 @@ def make_simulated_time_series_dataset_wrapper(
     amount      Number of simulated interferograms created.\n
     """
 
-    from insar_eventnet.io import split_dataset, make_simulated_time_series_dataset
-
     print("")
 
     (
@@ -200,11 +207,11 @@ def make_simulated_time_series_dataset_wrapper(
         dir_name,
         distribution,
         dataset_info,
-    ) = make_simulated_time_series_dataset(
+    ) = io.make_simulated_time_series_dataset(
         name, output_dir, amount, seed, tile_size, crop_size
     )
 
-    num_train, num_validation = split_dataset(
+    num_train, num_validation = io.split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
@@ -254,17 +261,13 @@ def make_simulated_binary_dataset_wrapper(
     amount           Number of simulated interferograms created.\n
     """
 
-    from os import environ
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.io import split_dataset, make_simulated_dataset
-
-    seed, count, dir_name, _, _ = make_simulated_dataset(
+    seed, count, dir_name, _, _ = io.make_simulated_dataset(
         name, output_dir, amount, seed, tile_size, crop_size, model_path=model_path
     )
 
-    num_train, num_validation = split_dataset(
+    num_train, num_validation = io.split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
@@ -286,9 +289,7 @@ def split_dataset_wrapper(dataset_path, split):
     split         decimal percent of the dataset for validation\n
     """
 
-    from insar_eventnet.io import split_dataset
-
-    num_train, num_validation = split_dataset(dataset_path, split)
+    num_train, num_validation = io.split_dataset(dataset_path, split)
 
     print(
         f"\nSplit {dataset_path} into train and validation sets of size {num_train} and {num_validation}.\n"
@@ -326,11 +327,7 @@ def train_model_wrapper(
     test_path       path to validation data.\n
     """
 
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.training import train
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     if model_type not in ["eventnet", "unet", "unet3d", "resnet", "resnet_classifier"]:
         print(
@@ -338,7 +335,7 @@ def train_model_wrapper(
         )
         return
 
-    train(
+    training.train(
         model_name,
         dataset_path,
         model_type,
@@ -348,112 +345,6 @@ def train_model_wrapper(
         batch_size,
         learning_rate,
         using_aws,
-    )
-
-
-@cli.command("test-masking")
-@click.argument("mask_model_path", type=str)
-@click.option("-e", "--event_type", type=str, default="", help="")
-@click.option("-n", "--noise_only", type=bool, default=False, help="")
-@click.option("-g", "--gaussian_only", type=bool, default=False, help="")
-@click.option("-v", "--verbose", type=bool, default=False, help="")
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-@click.option("-t", "--tile_size", type=int, default=1024, help=tilesize_help)
-@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
-def test_masking_wrapper(
-    mask_model_path,
-    event_type,
-    noise_only,
-    gaussian_only,
-    verbose,
-    seed,
-    tile_size,
-    crop_size,
-):
-    """
-    Predicts on a wrapped interferogram & event-mask pair and plots the results
-
-    ARGS:\n
-    model_path      path to model that should be tested.\n
-    """
-
-    from numpy import mean, abs
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-    from insar_eventnet.inference import mask_simulated, plot_imgs
-
-    mask_model = load_model(mask_model_path)
-
-    wrapped, mask, mask_pred, mask_pred_rounded, presence = mask_simulated(
-        mask_model,
-        seed,
-        tile_size,
-        crop_size,
-        verbose=verbose,
-        noise_only=noise_only,
-        gaussian_only=gaussian_only,
-        event_type=event_type,
-    )
-
-    mean_absolute_error = mean(abs(mask - mask_pred_rounded))
-
-    print(f"Mean Absolute Error: {mean_absolute_error}\n")
-
-    plot_imgs(wrapped, mask, mask_pred, mask_pred_rounded)
-
-
-@cli.command("test-binary-choice")
-@click.argument("mask_model_path", type=str)
-@click.argument("pres_model_path", type=str)
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-@click.option("-n", "--num_trials", type=int, default=0, help=numtrials_help)
-@click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
-@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
-@click.option("-p", "--plot", type=bool, default=False, help="")
-@click.option("-c", "--use_rounded", type=bool, default=False, help="")
-@click.option("-r", "--threshold", type=float, default=0.5, help="")
-def test_binary_choice_wrapper(
-    mask_model_path,
-    pres_model_path,
-    seed,
-    num_trials,
-    tile_size,
-    crop_size,
-    plot,
-    use_rounded,
-    threshold,
-):
-    """
-    Predicts on a wrapped interferogram & event-mask pair and plots the results
-
-    ARGS:\n
-    model_path       path to model that does the masking.\n
-    pres_model_path  path to model that predicts whether there is an event.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-    from insar_eventnet.inference import test_binary_choice
-
-    mask_model = load_model(mask_model_path)
-    pres_model = load_model(pres_model_path)
-
-    test_binary_choice(
-        mask_model,
-        pres_model,
-        seed,
-        tile_size,
-        crop_size,
-        count=num_trials,
-        plot=plot,
-        use_rounded_mask=use_rounded,
-        positive_thresh=threshold,
     )
 
 
@@ -484,13 +375,9 @@ def test_model_wrapper(
                      contain the images.\n
     """
 
-    from os import environ
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.inference import test_model
-
-    test_model(
+    inference.test_model(
         model_path,
         pres_model_path,
         images_dir,
@@ -499,48 +386,6 @@ def test_model_wrapper(
         save_images,
         output_dir,
     )
-
-
-@cli.command("model-summary")
-@click.argument("model_path", type=str)
-def model_summary_wrapper(model_path):
-    """
-    Prints the model summary.
-
-    ARGS:\n
-    model_path      path to model.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from tensorflow.keras.models import load_model
-
-    model = load_model(model_path)
-    model.summary()
-
-
-@cli.command("visualize-layers")
-@click.argument("model_path", type=str)
-@click.argument("save_path", type=str)
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-def visualize_layers_wrapper(model_path, save_path, seed):
-    """
-    Visualize the feature maps of the model for a random synthetic interferogram.
-
-    ARGS:\n
-    model_path          path to model.\n
-    save_path           path to folder to save the tifs to.\n
-    """
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.inference import visualize_layers
-
-    visualize_layers(model_path, save_path, seed)
 
 
 @cli.command("mask")
@@ -563,20 +408,14 @@ def mask_wrapper(
     image_path       path to wrapped interferogram to mask.\n
     """
 
-    from os import environ
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.inference import mask_and_plot
-
-    mask_pred, _ = mask_and_plot(
+    mask_pred, _ = inference.mask_and_plot(
         model_path, pres_model_path, image_path, tile_size, crop_size
     )
 
     if dest_path != "":
-        from PIL import Image
-
-        out = Image.fromarray(mask_pred)
+        out = PIL.Image.fromarray(mask_pred)
         out.save(dest_path)
 
 
@@ -609,11 +448,7 @@ def mask_image_wrapper(
     image_path          path to interferogram tif to mask.\n
     """
 
-    from insar_eventnet.inference import mask_image_path
-    from insar_eventnet.io import get_image_array
-    import matplotlib.pyplot as plt
-
-    mask, presence = mask_image_path(
+    mask, presence = inference.mask(
         mask_model_path=mask_model_path,
         pres_model_path=pres_model_path,
         image_path=image_path,
@@ -629,7 +464,7 @@ def mask_image_wrapper(
             print("Negative")
 
     if not no_plot:
-        image, _ = get_image_array(image_path)
+        image, _ = io.get_image_array(image_path)
 
         _, [axs_wrapped, axs_mask] = plt.subplots(1, 2, sharex=True, sharey=True)
 
@@ -649,7 +484,8 @@ def mask_image_wrapper(
 @click.argument("output_directory", type=str)
 @click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
 @click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
-@click.option("-s", "--silent", type=bool, default=False, help=silent_help)
+@click.option("-s", "--silent", is_flag=True, default=False, help=silent_help)
+@click.option("-c", "--copy_image", is_flag=True, default=False, help=copy_image_help)
 def mask_directory_wrapper(
     mask_model_path,
     pres_model_path,
@@ -658,6 +494,7 @@ def mask_directory_wrapper(
     crop_size,
     tile_size,
     silent,
+    copy_image,
 ):
     """
     Generate masks for a directory of tifs and output to a directory using a model.
@@ -668,27 +505,8 @@ def mask_directory_wrapper(
     directory           path to directory of interferogram tifs to mask.\n
     """
 
-    from os import listdir, mkdir, path
-
-    from click import ClickException, confirm
-    from insar_eventnet.inference import mask_image_path
-
-    if path.isfile(directory):
-        raise ClickException(
-            f"Expected {directory} to be a directory, however it is a file"
-        )
-
-    if path.isfile(output_directory):
-        raise ClickException(
-            f"Expected {output_directory} to be a directory, not a file"
-        )
-
-    if path.isdir(output_directory):
-        confirm(
-            f"{output_directory} already exists, do you wish to continue and possibly overwrite files in this directory?"
-        )
-    else:
-        mkdir(output_directory)
+    mask_model = models.load_model(mask_model_path)
+    pres_model = models.load_model(pres_model_path)
 
     if not output_directory.endswith("/"):
         output_directory += "/"
@@ -696,26 +514,88 @@ def mask_directory_wrapper(
     if not directory.endswith("/"):
         directory += "/"
 
+    if path.isfile(directory):
+        raise click.ClickException(
+            f"Expected {directory} to be a directory, however it is a file"
+        )
+
+    if path.isfile(output_directory):
+        raise click.ClickException(
+            f"Expected {output_directory} to be a directory, not a file"
+        )
+
+    if path.isdir(output_directory):
+        click.confirm(
+            f"{output_directory} already exists, do you wish to continue and possibly overwrite files in this directory?"
+        )
+    else:
+        mkdir(output_directory)
+
+    if not path.isdir(f"{output_directory}positive"):
+        mkdir(f"{output_directory}positive")
+
+    if not path.isdir(f"{output_directory}negative"):
+        mkdir(f"{output_directory}negative")
+
+    output = []
+
     for image_name in listdir(directory):
         if not image_name.endswith(".tif"):
             continue
 
-        output_image_path = output_directory + image_name
+        image_path = directory + image_name
+        image, gdal_dataset = io.get_image_array(image_path)
 
-        mask, presence = mask_image_path(
-            mask_model_path=mask_model_path,
-            pres_model_path=pres_model_path,
-            image_path=directory + image_name,
-            output_image_path=output_image_path,
+        mask_pred, pres_mask, pres_vals = inference.mask_with_model(
+            mask_model=mask_model,
+            pres_model=pres_model,
+            arr_w=image,
             tile_size=tile_size,
             crop_size=crop_size,
         )
 
+        presence = np.mean(pres_mask) > 0.0
+
+        presence_string = "negative"
+        if presence:
+            presence_string = "positive"
+
+        image_output_dir = (
+            f"{output_directory}{presence_string}/{path.splitext(image_name)[0]}/"
+        )
+
+        if not path.isdir(image_output_dir):
+            mkdir(image_output_dir)
+
+        output_image_path = f"{image_output_dir}mask.tif"
+
+        img = Image.fromarray(mask_pred)
+        img.save(output_image_path)
+
+        out_dataset = gdal.Open(output_image_path, gdal.GA_Update)
+        out_dataset.SetGeoTransform(gdal_dataset.GetGeoTransform())
+        out_dataset.SetProjection(gdal_dataset.GetProjection())
+
         if not silent:
-            presence_string = "negative"
-            if presence > 0.7:
-                presence_string = "positive"
             print(f"{image_name}: {presence_string}")
+
+        if copy_image:
+            copyfile(image_path, f"{image_output_dir}wrapped.tif")
+
+        metadata = {
+            "image_name": image_name,
+            "presence": presence.item(),
+            "image_path": image_path,
+            "mask_path": f"{image_output_dir}mask.tif",
+        }
+
+        output.append(metadata)
+
+        with open(f"{image_output_dir}metadata.json", "w") as metadata_file:
+            metadata_file.write(dumps(metadata))
+
+    with open(f"{output_directory}output.json", "w") as output_file:
+        output_file.write(dumps(output))
 
 
 @cli.command("interactive")
@@ -726,9 +606,126 @@ def interactive_wrapper(event_type):
     atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
-    from insar_eventnet.gui import interactive_interferogram
+    kwargs = {
+        "source_x": 22000,
+        "source_y": 22000,
+        "strike": 180,
+        "dip": 45,
+        "length": 1000,
+        "rake": 90,
+        "slip": 1,
+        "top_depth": 3000,
+        "bottom_depth": 6000,
+        "width": 3000,
+        "depth": 3000,
+        "opening": 0.5,
+    }
 
-    interactive_interferogram(event_type)
+    fig, [axs_unwrapped, axs_wrapped] = plt.subplots(
+        1, 2, sharex=True, sharey=True, tight_layout=True
+    )
+
+    axs_unwrapped.set_title("unwrapped")
+    axs_unwrapped.set_position([0.05, 0.45, 0.5, 0.5])
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.set_position([0.5, 0.45, 0.5, 0.5])
+
+    axs_slip = plt.axes([0.375, 0.36, 0.25, 0.02])
+    slider_slip = widgets.Slider(axs_slip, "slip", 0.0, 10.0, valinit=kwargs["slip"])
+
+    axs_strike = plt.axes([0.375, 0.33, 0.25, 0.02])
+    slider_strike = widgets.Slider(
+        axs_strike, "strike", 0.0, 180.0, valinit=kwargs["strike"]
+    )
+
+    axs_dip = plt.axes([0.375, 0.30, 0.25, 0.02])
+    slider_dip = widgets.Slider(axs_dip, "dip", 0.0, 90.0, valinit=kwargs["dip"])
+
+    axs_rake = plt.axes([0.375, 0.27, 0.25, 0.02])
+    slider_rake = widgets.Slider(
+        axs_rake, "rake", -180.0, 180.0, valinit=kwargs["rake"]
+    )
+
+    axs_opening = plt.axes([0.375, 0.24, 0.25, 0.02])
+    slider_opening = widgets.Slider(
+        axs_opening, "opening", 0.0, 10.0, valinit=kwargs["opening"]
+    )
+
+    axs_top_depth = plt.axes([0.375, 0.21, 0.25, 0.02])
+    slider_top_depth = widgets.Slider(
+        axs_top_depth, "top_depth", 0.0, 45000.0, valinit=kwargs["top_depth"]
+    )
+
+    axs_bottom_depth = plt.axes([0.375, 0.18, 0.25, 0.02])
+    slider_bottom_depth = widgets.Slider(
+        axs_bottom_depth, "bottom_depth", 0.0, 45000.0, valinit=kwargs["bottom_depth"]
+    )
+
+    axs_width = plt.axes([0.375, 0.15, 0.25, 0.02])
+    slider_width = widgets.Slider(
+        axs_width, "width", 100.0, 10000.0, valinit=kwargs["width"]
+    )
+
+    axs_length = plt.axes([0.375, 0.12, 0.25, 0.02])
+    slider_length = widgets.Slider(
+        axs_length, "length", 100.0, 10000.0, valinit=kwargs["length"]
+    )
+
+    axs_source_x = plt.axes([0.375, 0.09, 0.25, 0.02])
+    slider_source_x = widgets.Slider(
+        axs_source_x, "source_x", 0.0, 45000.0, valinit=kwargs["source_x"]
+    )
+
+    axs_source_y = plt.axes([0.375, 0.06, 0.25, 0.02])
+    slider_source_y = widgets.Slider(
+        axs_source_y, "source_y", 0.0, 45000.0, valinit=kwargs["source_y"]
+    )
+
+    unwrapped, masked, wrapped, presence = sarsim.gen_simulated_deformation(
+        seed=100000, tile_size=512, event_type=event_type, **kwargs
+    )
+
+    axs_wrapped.imshow(wrapped, origin="lower", cmap="jet")
+    axs_unwrapped.imshow(unwrapped, origin="lower", cmap="jet")
+
+    def update():
+        kwargs = {
+            "source_x": slider_source_x.val,
+            "source_y": slider_source_y.val,
+            "strike": slider_strike.val,
+            "dip": slider_dip.val,
+            "length": slider_length.val,
+            "rake": slider_rake.val,
+            "slip": slider_slip.val,
+            "top_depth": slider_top_depth.val,
+            "bottom_depth": slider_bottom_depth.val,
+            "width": slider_width.val,
+            "depth": slider_top_depth.val,
+            "opening": slider_opening.val,
+        }
+
+        unwrapped, masked, wrapped, presence = sarsim.gen_simulated_deformation(
+            seed=100000, tile_size=512, event_type=event_type, **kwargs
+        )
+
+        axs_wrapped.imshow(wrapped, origin="lower", cmap="jet")
+        axs_unwrapped.imshow(unwrapped, origin="lower", cmap="jet")
+
+        fig.canvas.draw()
+
+    slider_source_x.on_changed(update)
+    slider_source_y.on_changed(update)
+    slider_strike.on_changed(update)
+    slider_dip.on_changed(update)
+    slider_length.on_changed(update)
+    slider_rake.on_changed(update)
+    slider_slip.on_changed(update)
+    slider_top_depth.on_changed(update)
+    slider_bottom_depth.on_changed(update)
+    slider_width.on_changed(update)
+    slider_opening.on_changed(update)
+
+    plt.show()
 
 
 @cli.command("simulate")
@@ -747,23 +744,19 @@ def simulate_wrapper(
     atmospheric turbulence, atmospheric topographic error, and incoherence masking.
     """
 
-    from insar_eventnet.gui import show_dataset
-    from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
-    from insar_eventnet.processing import simulate_unet_cropping
-
     if not noise_only:
-        _, masked, wrapped, event_is_present = gen_simulated_deformation(
+        _, masked, wrapped, event_is_present = processing.gen_simulated_deformation(
             seed, tile_size, verbose, event_type=event_type
         )
     else:
-        _, masked, wrapped, event_is_present = gen_sim_noise(
+        _, masked, wrapped, event_is_present = sarsim.gen_sim_noise(
             seed, tile_size, gaussian_only=gauss_only
         )
 
     if crop_size < tile_size and crop_size != 0:
-        masked = simulate_unet_cropping(masked, (crop_size, crop_size))
+        masked = processing.simulate_unet_cropping(masked, (crop_size, crop_size))
 
-    show_dataset(masked, wrapped)
+    gui.show_dataset(masked, wrapped)
 
 
 @cli.command("show")
@@ -776,12 +769,7 @@ def show_dataset_wrapper(file_path):
     file_path       path to the .npz files to show.\n
     """
 
-    from os import listdir
-
-    from insar_eventnet.gui import show_dataset
-    from insar_eventnet.io import load_dataset
-
-    filenames = listdir(file_path)
+    filenames = os.listdir(file_path)
 
     def filename_check(x):
         "synth" in x or "sim" in x or "real" in x
@@ -789,10 +777,10 @@ def show_dataset_wrapper(file_path):
     data_filenames = [item for item in filenames if filename_check(item)]
 
     for filename in data_filenames:
-        mask, wrapped, presence = load_dataset(file_path + "/" + filename)
+        mask, wrapped, presence = io.load_dataset(file_path + "/" + filename)
         print(f"Showing dataset {filename}")
         print(f"Presence:       {presence}")
-        show_dataset(mask, wrapped)
+        gui.show_dataset(mask, wrapped)
 
 
 @cli.command("show-product")
@@ -808,9 +796,59 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     from search.asf.alaska.edu.\n
     """
 
-    from insar_eventnet.gui import show_product
+    arr_w, arr_uw, arr_c = io.get_product_arrays(product_path)
 
-    show_product(product_path, crop_size, tile_size)
+    tiled_arr_uw, tile_rows, tile_cols = processing.tile(
+        arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size
+    )
+
+    cutoff_value = 0.2
+    correlation_cutoff_indecies = arr_c < cutoff_value
+    arr_c[correlation_cutoff_indecies] = np.NAN
+
+    if crop_size:
+        cropped_arr_uw = np.zeros((tile_rows * tile_cols, crop_size, crop_size))
+
+        # Simulate UNET Cropping
+        for count, tile_ in enumerate(tiled_arr_uw):
+            cropped_tile = processing.simulate_unet_cropping(
+                tile_, (crop_size, crop_size)
+            )
+            cropped_arr_uw[count] = cropped_tile
+
+        rebuilt_arr_uw = processing.tiles_to_image(
+            cropped_arr_uw,
+            tile_rows,
+            tile_cols,
+            arr_uw.shape,
+            (crop_size > 0),
+            tile_size,
+        )
+
+        _, [
+            axs_wrapped,
+            axs_correlation,
+            axs_unwrapped,
+            axs_tiled_unwrapped,
+        ] = plt.subplots(1, 4)
+
+    else:
+        _, [axs_wrapped, axs_correlation, axs_unwrapped] = plt.subplots(1, 3)
+
+    axs_wrapped.set_title("wrapped")
+    axs_wrapped.imshow(arr_w, origin="lower", cmap="jet")
+
+    axs_correlation.set_title("correlation")
+    axs_correlation.imshow(arr_c, origin="lower", cmap="jet")
+
+    axs_unwrapped.set_title("unwrapped")
+    axs_unwrapped.imshow(arr_uw, origin="lower", cmap="jet")
+
+    if crop_size:
+        axs_tiled_unwrapped.set_title("tiled_unwrapped")
+        axs_tiled_unwrapped.imshow(rebuilt_arr_uw, origin="lower", cmap="jet")
+
+    plt.show()
 
 
 @cli.command("sort-images-by-size")
@@ -823,26 +861,19 @@ def sort_images_wrapper(images_path):
     images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
     """
 
-    import matplotlib.pyplot as plt
-
-    from os import listdir, system
-    from insar_eventnet.io import get_image_array
-    from numpy import angle, exp, pi
-    from pathlib import Path
-
     Path("{images_path}/Small").mkdir(parents=True, exist_ok=True)
     Path("{images_path}/Medium").mkdir(parents=True, exist_ok=True)
     Path("{images_path}/Large").mkdir(parents=True, exist_ok=True)
 
     for filename in listdir(images_path):
         if filename.endswith(".tif"):
-            image, _ = get_image_array(f"{images_path}/{filename}")
+            image, _ = io.get_image_array(f"{images_path}/{filename}")
 
-            image = angle(exp(1j * (image)))
+            image = np.angle(np.exp(1j * (image)))
 
             print(f"\n{filename}\n")
 
-            plt.imshow(image, cmap="jet", vmin=-pi, vmax=pi)
+            plt.imshow(image, cmap="jet", vmin=-np.pi, vmax=np.pi)
             plt.show()
 
             size = input("Size? (S/M/L): ").lower()
@@ -868,16 +899,11 @@ def check_image_wrapper(image_path):
     images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
     """
 
-    import matplotlib.pyplot as plt
+    image, _ = io.get_image_array(image_path)
 
-    from insar_eventnet.io import get_image_array
-    from numpy import angle, exp, pi
+    image = np.angle(np.exp(1j * (image)))
 
-    image, _ = get_image_array(image_path)
-
-    image = angle(exp(1j * (image)))
-
-    plt.imshow(image, cmap="jet", vmin=-pi, vmax=pi)
+    plt.imshow(image, cmap="jet", vmin=-np.pi, vmax=np.pi)
     plt.show()
 
 
@@ -891,21 +917,15 @@ def check_images_wrapper(images_path):
     images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
     """
 
-    import matplotlib.pyplot as plt
-
-    from os import listdir
-    from insar_eventnet.io import get_image_array
-    from numpy import angle, exp, pi
-
-    for filename in listdir(images_path):
+    for filename in os.listdir(images_path):
         if filename.endswith(".tif"):
-            image, _ = get_image_array(f"{images_path}/{filename}")
+            image, _ = io.get_image_array(f"{images_path}/{filename}")
 
-            image = angle(exp(1j * (image)))
+            image = np.angle(np.exp(1j * (image)))
 
             print(f"\n{filename}\n")
 
-            plt.imshow(image, cmap="jet", vmin=-pi, vmax=pi)
+            plt.imshow(image, cmap="jet", vmin=-np.pi, vmax=np.pi)
             plt.show()
 
 
@@ -940,14 +960,7 @@ def create_model_wrapper(
     dataset_size    number of samples in dataset.\n
     """
 
-    import time
-
-    from os import environ
-
-    environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-    from insar_eventnet.training import train
-    from insar_eventnet.io import split_dataset, make_simulated_dataset
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     print("___________________________\n")
     print("Creating Mask Model Dataset")
@@ -957,13 +970,13 @@ def create_model_wrapper(
 
     output_dir = SYNTHETIC_DIR
 
-    _, count, dir_name = make_simulated_dataset(
+    _, count, dir_name = io.make_simulated_dataset(
         mask_dataset_name, output_dir, dataset_size, seed, input_shape, input_shape
     )
 
     dataset_path = output_dir.__str__() + "/" + dir_name
 
-    split_dataset(dataset_path, val_split)
+    io.split_dataset(dataset_path, val_split)
 
     print("______________________\n")
     print("Training Masking Model")
@@ -974,7 +987,7 @@ def create_model_wrapper(
     using_wandb = False
     using_jupyter = False
 
-    train(
+    training.train(
         model_name + "_masking",
         dataset_path,
         mask_model_type,
@@ -995,7 +1008,7 @@ def create_model_wrapper(
     pres_dataset_name = "tmp_dataset_presence_" + str(time.time()).strip(".")[0]
     mask_model_path = "models/checkpoints/" + model_name + "_masking"
 
-    _, count, dir_name = make_simulated_dataset(
+    _, count, dir_name = io.make_simulated_dataset(
         pres_dataset_name,
         output_dir,
         dataset_size,
@@ -1007,12 +1020,12 @@ def create_model_wrapper(
 
     dataset_path = output_dir.__str__() + "/" + dir_name
 
-    split_dataset(dataset_path, val_split)
+    io.split_dataset(dataset_path, val_split)
 
     print("_________________\n")
     print("Training EventNet")
     print("_________________")
-    train(
+    training.train(
         model_name + "_presence",
         dataset_path,
         pres_model_type,
@@ -1053,12 +1066,6 @@ def sagemaker_train_wrapper(
     model.
     """
 
-    import json
-
-    from os import system
-
-    from insar_eventnet.training import train
-
     root_dir = "/opt/ml"  # SageMaker expects things to happen here.
 
     input_dir = root_dir + "/input"  # SageMaker uploads things here.
@@ -1072,13 +1079,13 @@ def sagemaker_train_wrapper(
     checkpoint_dir = output_dir + "/best_checkpoint"
 
     try:
-        system(f"mkdir {output_dir} {checkpoint_dir} {logs_dir}")
+        os.system(f"mkdir {output_dir} {checkpoint_dir} {logs_dir}")
     except Exception as e:
         print(f"Caught {type(e)}: {e}. Continuing Anyway...")
 
     try:
-        json_file = open(config_dir + "/hyperparameters.json", "r")
-        hyperparameters = json.load(json_file)
+        with open(config_dir + "/hyperparameters.json", "r") as json_file:
+            hyperparameters = json.load(json_file)
 
         print(f"Read hyperparameters: {hyperparameters}")
 
@@ -1088,12 +1095,12 @@ def sagemaker_train_wrapper(
         batch_size = int(hyperparameters["batch_size"])
         learning_rate = float(hyperparameters["learning_rate"])
 
-        system(f"cp -r {config_dir} {output_dir}")
+        os.system(f"cp -r {config_dir} {output_dir}")
 
     except Exception as e:
         print(f"Caught {type(e)}: {e}\n Using default hyperparameters.")
 
-    train(
+    training.train(
         model_name,
         dataset_dir,
         model_type,
@@ -1120,169 +1127,3 @@ def model_inference(usgs_event_id, product_name):
         url, json={"usgs_event_id": usgs_event_id, "product_name": product_name}
     )
     print(r.json())
-
-
-# TODO: Will require implementing a basic server to SageMaker's spec
-@cli.command("serve")
-def sagemaker_server_wrapper():
-    """
-    Masks events in the given wrapped interferogram using a tensorflow model and plots
-    it, with the option to save.
-
-    ARGS:\n
-    model_path       path to model to mask with.\n
-    pres_model_path  path to model that predicts whether there is an event.\n
-    image_path       path to wrapped interferogram to mask.\n
-    """
-
-    import os
-    import json
-    import requests
-
-    import numpy as np
-    import flask
-    from flask import request
-    from tensorflow.keras.models import load_model
-
-    from insar_eventnet.inference import mask_with_model
-    from insar_eventnet.io import get_image_array
-
-    mask_model_path = "/opt/ml/model/models/mask_model"
-    pres_model_path = "/opt/ml/model/models/pres_model"
-
-    print(os.listdir("/opt/ml"))
-    print(os.listdir("/opt/ml/model"))
-    print(os.listdir("/opt/ml/model/models"))
-
-    mask_model = load_model(mask_model_path)
-    pres_model = load_model(pres_model_path)
-
-    try:
-        event_list_res = requests.get(
-            "https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events"
-        )
-        event_list_res.status_code
-
-    except requests.exceptions.RequestException as e:
-        print("Could not connect to event list API. Using test event list.")
-        raise SystemExit(e)
-
-    def get_image_from_sarviews(
-        usgs_event_id: str = "us6000jkpr",
-        granule_name: str = "S1AA_20230126T212437_20230219T212436_VVR024_INT80_G_weF_3603",
-    ):
-        product_name = granule_name + ".zip"
-
-        event_list = event_list_res.json()
-        event_obj = next(
-            (
-                item
-                for item in event_list
-                if ("usgs_event_id" in item)
-                and (item["usgs_event_id"] == usgs_event_id)
-            ),
-            None,
-        )
-        event_id = event_obj["event_id"]
-
-        event_get_res = requests.get(
-            f"https://gm3385dq6j.execute-api.us-west-2.amazonaws.com/events/{event_id}"
-        )
-        event_get_res.status_code
-
-        event_get_list = event_get_res.json()
-        event_obj = next(
-            (
-                item
-                for item in event_get_list["products"]
-                if item["files"]["product_name"] == product_name
-            ),
-            None,
-        )
-
-        product_url = event_obj["files"]["product_url"]
-
-        os.system(f"wget --quiet {product_url}")
-        os.system(f"unzip -qq {product_name}")
-        os.system(f"ls {granule_name}")
-
-        image_path = granule_name + "/" + granule_name + "_unw_phase.tif"
-
-        return image_path
-
-    app = flask.Flask(__name__)
-
-    @app.route("/ping", methods=["GET"])
-    def ping():
-        """
-        SageMaker expects a ping endpoint to test the server.
-        This confirms that the container is working.
-        """
-
-        try:
-            response = {
-                "presense": True,
-            }
-
-            return flask.Response(
-                response=json.dumps(response), status=200, mimetype="application/json"
-            )
-
-        except Exception as e:
-            print(f"Caught {type(e)}: {e}")
-
-            return flask.Response(
-                response=json.dumps({"error": str(e)}),
-                status=500,
-                mimetype="application/json",
-            )
-
-    @app.route("/invocations", methods=["POST"])
-    def invocations():
-        """
-        Main route for inference through SageMaker.
-        """
-
-        status = 200
-
-        try:
-            content = request.json
-
-            usgs_event_id = content["usgs_event_id"]
-            granule_name = content["product_name"]
-
-            image_path = get_image_from_sarviews(usgs_event_id, granule_name)
-
-            image, dataset = get_image_array(image_path)
-            wrapped_image = np.angle(np.exp(1j * image))
-
-            masked, presence_mask, presence_vals = mask_with_model(
-                mask_model, pres_model, wrapped_image, tile_size=512
-            )
-
-            if np.mean(presence_mask) > 0.0:
-                presense = True
-            else:
-                presense = False
-
-            result = {
-                "presense": presense,
-            }
-
-        except Exception as err:
-            status = 500
-
-            result = {"error": str(err), "presense": 2}
-
-            print("invocations() err: {}".format(err))
-
-        return flask.Response(
-            response=json.dumps(result), status=status, mimetype="application/json"
-        )
-
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-
-
-if __name__ == "__main__":
-    cli()

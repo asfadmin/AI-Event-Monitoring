@@ -9,15 +9,18 @@
 """
 
 
-import numpy as np
-
-from os import rename, listdir, walk, path
+import contextlib
+import os
+from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Tuple
-from datetime import datetime
-from urllib.request import urlopen
-from io import BytesIO
+from urllib import request
 from zipfile import ZipFile
+
+import numpy as np
+from osgeo import gdal
+from tensorflow.keras import models
 
 from insar_eventnet.config import (
     AOI_DIR,
@@ -28,13 +31,7 @@ from insar_eventnet.config import (
     SYNTHETIC_DIR,
     TENSORBOARD_DIR,
 )
-from insar_eventnet.processing import tile
-from insar_eventnet.sarsim import (
-    gen_simulated_deformation,
-    gen_sim_noise,
-    gen_simulated_time_series,
-)
-from insar_eventnet.synthetic_interferogram import simulate_unet_cropping
+from insar_eventnet.processing import processing, sarsim
 
 
 def save_dataset(
@@ -117,8 +114,8 @@ def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 def initialize() -> None:
     create_directories()
     if not (
-        path.isdir("data/output/models/mask_model")
-        and path.isdir("data/output/models/pres_model")
+        os.path.isdir("data/output/models/mask_model")
+        and os.path.isdir("data/output/models/pres_model")
     ):
         print("Downloading model... this might take a bit.")
         download_models("data/output")
@@ -154,11 +151,10 @@ def download_models(path: str) -> None:
     model_path: str
     """
 
-    with urlopen(
+    with request.urlopen(
         "https://eventnetmodels.s3.us-west-2.amazonaws.com/models.zip"
-    ) as response:
-        with ZipFile(BytesIO(response.read())) as file:
-            file.extractall(path)
+    ) as response, ZipFile(BytesIO(response.read())) as file:
+        file.extractall(path)
 
 
 def get_image_array(image_path: str) -> np.ndarray:
@@ -175,8 +171,6 @@ def get_image_array(image_path: str) -> np.ndarray:
     arr : np.ndarray
         The interferogram array.
     """
-
-    from osgeo import gdal
 
     dataset = gdal.Open(image_path, gdal.GA_ReadOnly)
     band = dataset.GetRasterBand(1)
@@ -208,7 +202,7 @@ def get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.nd
     correlation_path = ""
     unwrapped_path = ""
 
-    for filename in listdir(product_path):
+    for filename in os.listdir(product_path):
         if filename[-8:] == "corr.tif":
             correlation_path = product_path + "/" + filename
         elif filename[-17:] == "wrapped_phase.tif":
@@ -249,7 +243,7 @@ def get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.nd
     wrapped_path = ""
     masked_path = ""
 
-    for filename in listdir(product_path):
+    for filename in os.listdir(product_path):
         f_len = len(filename)
         if filename[f_len - 8 : f_len] == "sked.tif":
             masked_path = product_path + "/" + filename
@@ -319,9 +313,7 @@ def make_simulated_dataset(
     dir_name = f"{name}_amount{amount}_seed{seed}"
 
     if model_path != "":
-        from tensorflow.keras.models import load_model
-
-        model = load_model(model_path)
+        model = models.load_model(model_path)
 
     save_directory = Path(output_dir) / dir_name
     if not save_directory.is_dir():
@@ -347,9 +339,7 @@ def make_simulated_dataset(
         event_type = ""
         gaussian_only = False
 
-        if count < quake_count:
-            event_type = "quake"
-        elif count < dyke_count:
+        if (count < quake_count) or (count < dyke_count):
             event_type = "quake"
         elif count < sill_count:
             event_type = "dyke"
@@ -358,11 +348,11 @@ def make_simulated_dataset(
             event_type = "gaussian_noise" if gaussian_only else "mixed_noise"
 
         if count < sill_count:
-            unwrapped, masked, wrapped, presence = gen_simulated_deformation(
+            unwrapped, masked, wrapped, presence = sarsim.gen_simulated_deformation(
                 seed=current_seed, tile_size=tile_size, event_type=event_type
             )
         else:
-            unwrapped, masked, wrapped, presence = gen_sim_noise(
+            unwrapped, masked, wrapped, presence = sarsim.gen_sim_noise(
                 seed=current_seed, tile_size=tile_size, gaussian_only=gaussian_only
             )
 
@@ -391,7 +381,7 @@ def make_simulated_dataset(
                 masked_pred[zeros] = 0
 
         if crop_size < tile_size:
-            masked = simulate_unet_cropping(masked, (crop_size, crop_size))
+            masked = processing.simulate_unet_cropping(masked, (crop_size, crop_size))
 
         if count % 10 == 0 and count != 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
@@ -424,7 +414,6 @@ def make_simulated_time_series_dataset(
     seed: int,
     tile_size: int,
     crop_size: int,
-    model_path: str = "",
 ) -> Tuple[int, int, str]:
     """
     Generate a dataset containing pairs of wrapped interferograms from simulated
@@ -483,7 +472,7 @@ def make_simulated_time_series_dataset(
         current_seed = seeds[count]
 
         if count < quake_count:
-            phases, mask = gen_simulated_time_series(
+            phases, mask = sarsim.gen_simulated_time_series(
                 seed=current_seed, tile_size=tile_size
             )
 
@@ -491,7 +480,7 @@ def make_simulated_time_series_dataset(
 
             presence = 1
         else:
-            phases, mask = gen_simulated_time_series(
+            phases, mask = sarsim.gen_simulated_time_series(
                 seed=current_seed, tile_size=tile_size, noise_only=True
             )
 
@@ -555,7 +544,7 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
 
     num_train = 0
     num_validation = 0
-    for _, _, filenames in walk(dataset_path):
+    for _, _, filenames in os.walk(dataset_path):
         for filename in filenames:
             old_path = Path(dataset_path) / filename
 
@@ -567,10 +556,8 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
                 num_train += 1
                 new_path = train_dir / filename
 
-            try:
-                rename(old_path, new_path)
-            except OSError:
-                pass
+            with contextlib.suppress(OSError):
+                os.rename(old_path, new_path)
         break
 
     return num_train, num_validation
@@ -611,21 +598,19 @@ def dataset_from_products(
         save_directory.mkdir()
 
     dataset_size = 0
-    for _, products, _ in walk(product_path):
-        progress = 0
+    for _, products, _ in os.walk(product_path):
         product_count = len(products)
 
-        for product in products:
-            progress += 1
+        for progress, product in enumerate(products):
             print(f"{progress}/{product_count} | {product_path + '/' + product}")
 
             wrapped, masked = get_dataset_arrays(product_path + "/" + product)
 
-            tiled_wrapped, w_rows, w_cols = tile(
+            tiled_wrapped, w_rows, w_cols = processing.tile(
                 wrapped, (tile_size, tile_size), even_pad=True, crop_size=crop_size
             )
 
-            tiled_masked, _, _ = tile(
+            tiled_masked, _, _ = processing.tile(
                 masked, (tile_size, tile_size), even_pad=True, crop_size=crop_size
             )
 

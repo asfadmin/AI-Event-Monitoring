@@ -4,8 +4,8 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 project = "insar-eventnet"
-copyright = "2023, TODO"
-author = "TODO"
+copyright = "2023, BSD 3-Clause License"
+author = "ASF AI Team"
 
 extensions = [
     "sphinx.ext.autodoc",

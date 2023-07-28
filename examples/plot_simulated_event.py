@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
 
-from insar_eventnet.sarsim import gen_simulated_deformation, gen_sim_noise
+from insar_eventnet import sarsim
 
 seed = 232323
 tile_size = 512
 event_type = "quake"
 
 # Generate simulated positive (deformation) interferogram
-unwrapped_def, masked_def, wrapped_def, presence_def = gen_simulated_deformation(
+unwrapped_def, masked_def, wrapped_def, presence_def = sarsim.gen_simulated_deformation(
     seed=seed, tile_size=tile_size, event_type=event_type
 )
 # Generate simulated negative (noise only) interferogram
-unwrapped_mix, masked_mix, wrapped_mix, presence_mix = gen_sim_noise(
+unwrapped_mix, masked_mix, wrapped_mix, presence_mix = sarsim.gen_sim_noise(
     seed=seed, tile_size=tile_size
 )
 

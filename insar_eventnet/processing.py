@@ -12,6 +12,8 @@ from math import ceil
 from typing import Tuple
 
 import numpy as np
+import tensorflow
+from tensorflow import keras
 
 
 def tile(
@@ -168,9 +170,7 @@ def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
 
     startx = arr.shape[1] // 2 - ceil(crop_shape[1] / 2)
     starty = arr.shape[0] // 2 - ceil(crop_shape[0] / 2)
-    cropped_arr = arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
-
-    return cropped_arr
+    return arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
 
 
 def tiles_to_image(
@@ -227,9 +227,7 @@ def tiles_to_image(
     start_col = ceil((x_padded - x) / 2)
     end_col = start_col + x
 
-    rebuilt_arr = rebuilt_arr[start_row:end_row, start_col:end_col]
-
-    return rebuilt_arr
+    return rebuilt_arr[start_row:end_row, start_col:end_col]
 
 
 def blur2d(arr: np.ndarray):
@@ -247,12 +245,9 @@ def blur2d(arr: np.ndarray):
         The array containing the blurred image data.
     """
 
-    from tensorflow import constant, float32
-    from tensorflow.keras.backend import conv2d
-
     size = arr.shape[0]
     arr = arr.reshape((1, size, size, 1))
-    tensor = constant(arr, dtype=float32)
+    tensor = tensorflow.constant(arr, dtype=tensorflow.float32)
 
     kernel_array = np.reshape(
         np.asarray(
@@ -267,10 +262,10 @@ def blur2d(arr: np.ndarray):
         / 273,
         (5, 5, 1, 1),
     )
-    kernel_tensor = constant(kernel_array, dtype=float32)
+    kernel_tensor = tensorflow.constant(kernel_array, dtype=tensorflow.float32)
 
-    convolved_tensor = conv2d(tensor, kernel_tensor, (1, 1, 1, 1), padding="same")
+    convolved_tensor = keras.backends.conv2d(
+        tensor, kernel_tensor, (1, 1, 1, 1), padding="same"
+    )
 
-    convolved_array = np.reshape(convolved_tensor.numpy(), (size, size))
-
-    return convolved_array
+    return np.reshape(convolved_tensor.numpy(), (size, size))
