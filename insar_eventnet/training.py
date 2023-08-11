@@ -220,6 +220,12 @@ def train(
     train_path = dataset_path + "/train"
     test_path = dataset_path + "/validation"
 
+    # raise an exception if datasets are empty
+    if len(train_path) == 0:
+        raise FileNotFoundError("Training dataset is empty")
+    if len(test_path) == 0:
+        raise FileNotFoundError("Validation dataset is empty")
+
     all_training_files = os.listdir(train_path)
     all_validation_files = os.listdir(test_path)
 
