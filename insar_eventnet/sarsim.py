@@ -10,14 +10,10 @@
  -----
  Created by Andrew Player.
 """
-
-import time
+import random
+from time import perf_counter
 
 import numpy as np
-import numpy.ma as ma
-from geopy import distance
-
-from insar_eventnet import synthetic_interferogram
 
 
 class Okada:
@@ -44,7 +40,7 @@ class Okada:
         self.tile_size = tile_size
         self.params = kwargs
 
-        self.gen_coordinates()
+        self.gen_coordiantes()
 
         self.los_vector = np.array([[0.38213591], [-0.08150437], [0.92050485]])
 
@@ -126,7 +122,7 @@ class Okada:
 
         self.compute_displacement()
 
-    def gen_coordinates(self):
+    def gen_coordiantes(self):
         x_axis, y_axis = np.meshgrid(  # Coordinate Axes
             np.arange(0, self.tile_size)
             * 90,  # ((45990 * (self.tile_size / 512)) / (self.tile_size - 1)), # 90m/pixel in x direction
@@ -284,7 +280,7 @@ class Okada:
                 - np.log(self.R + eta)
             )
 
-    def compute_I_4(self, W):
+    def compute_I_4(self, W, L):
         eta = self.eta - W
 
         if np.cos(self.dip) > 10e-8:
@@ -404,7 +400,9 @@ class Okada:
             + (I_4 * np.sin(self.dip))
         )
 
-        return np.asarray([x_direction, y_direction, z_direction])
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
 
     def dip_slip_displacement(self, W, L):
         xi, eta = self.update_params_WL(W, L)
@@ -423,7 +421,9 @@ class Okada:
             (self.d_tilda * q_rrx) + (np.sin(self.dip) * arctan) - (I_5 * sc_dip)
         )
 
-        return np.asarray([x_direction, y_direction, z_direction])
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
 
     def tensile_displacement(self, W, L):
         xi, eta = self.update_params_WL(W, L)
@@ -444,10 +444,12 @@ class Okada:
             (self.y_tilda * q_rrx) + (np.cos(self.dip) * q_rre_arctan) - (I_5 * s_d)
         )
 
-        return np.asarray([x_direction, y_direction, z_direction])
+        displacements = np.asarray([x_direction, y_direction, z_direction])
+
+        return displacements
 
 
-def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02):
+def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02, difference=True):
     """
     A function to create synthetic turbulent atmospheres based on the  methods in Lohman Simons 2005, or using Andy Hooper and Lin Shen's fft method.
     Note that due to memory issues, when using the covariance (Lohman) method, largers ones are made by interpolateing smaller ones.
@@ -510,16 +512,18 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02):
         pixel_spacing : dict
             size of each pixel (ie also the spacing between them) in 'x' and 'y' direction.
         """
+
+        from geopy import distance
+
         ny, nx = lons_mg.shape
 
-        pixel_spacing = {
-            "x": distance.distance(
-                (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-1, 0], lons_mg[-1, 1])
-            ).meters,
-            "y": distance.distance(
-                (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-2, 0], lons_mg[-1, 0])
-            ).meters,
-        }
+        pixel_spacing = {}
+        pixel_spacing["x"] = distance.distance(
+            (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-1, 0], lons_mg[-1, 1])
+        ).meters
+        pixel_spacing["y"] = distance.distance(
+            (lats_mg[-1, 0], lons_mg[-1, 0]), (lats_mg[-2, 0], lons_mg[-1, 0])
+        ).meters
 
         X, Y = np.meshgrid(
             pixel_spacing["x"] * np.arange(0, nx), pixel_spacing["y"] * np.arange(0, ny)
@@ -590,7 +594,10 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02):
         y = np.fft.ifft2(y_tmp2)
 
         APS = np.real(y)
-        return (APS / np.std(APS)) * std_long * 0.01
+        APS = APS / np.std(APS) * std_long
+        APS = APS * 0.01
+
+        return APS
 
     def rescale_atmosphere(atm, atm_mean=0.02, atm_sigma=0.005):
         """
@@ -640,10 +647,12 @@ def atmosphere_turb(n_atms, lons_mg, lats_mg, mean_m=0.02):
     for atm_n, atm in enumerate(ph_turbs):
         ph_turbs_m[atm_n,] = rescale_atmosphere(atm, mean_m)
 
-    return ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
+    ph_turbs_m = ph_turbs_m[:, : lons_mg.shape[0], : lons_mg.shape[1]]
+
+    return ph_turbs_m
 
 
-def gen_fake_topo(size: int = 512, alt_scale_max: int = 500):
+def gen_fake_topo(size: int = 512, alt_scale_min: int = 0, alt_scale_max: int = 500):
     """
     Generate fake topography (a dem in meters) for generating simulated atmospheric topographic error.
 
@@ -662,8 +671,10 @@ def gen_fake_topo(size: int = 512, alt_scale_max: int = 500):
         The array that is meant to be used as a simulated dem with values in meters.
     """
 
+    from insar_eventnet.synthetic_interferogram import generate_perlin
+
     dem = np.zeros((size, size))
-    dem = synthetic_interferogram.generate_perlin(dem.shape[0]) * alt_scale_max
+    dem = generate_perlin(dem.shape[0]) * alt_scale_max
 
     neg_indices = dem < np.max(dem) / 1.75
 
@@ -671,7 +682,9 @@ def gen_fake_topo(size: int = 512, alt_scale_max: int = 500):
 
     non_zero_indices = dem > 0
 
-    return dem[non_zero_indices] - np.min(dem[non_zero_indices])
+    dem[non_zero_indices] = dem[non_zero_indices] - np.min(dem[non_zero_indices])
+
+    return dem
 
 
 def atm_topo_simulate(
@@ -698,6 +711,9 @@ def atm_topo_simulate(
     ph_turb : np.ndarray
         The array containing the turbulent atmospheric error.
     """
+
+    import numpy as np
+    import numpy.ma as ma
 
     # Sentinel-1 Wavelength in meters
     s1_lambda = 0.0547
@@ -783,9 +799,11 @@ def coherence_mask_simulate(size: int = 512, threshold: float = 0.3):
     mask_coh_values = (mask_coh_values - np.min(mask_coh_values)) / np.max(
         mask_coh_values - np.min(mask_coh_values)
     )
-    return np.where(
+    mask_coh = np.where(
         mask_coh_values > threshold, np.ones(lons_mg.shape), np.zeros(lons_mg.shape)
     )
+
+    return mask_coh
 
 
 def gen_simulated_deformation(
@@ -907,9 +925,9 @@ def gen_simulated_deformation(
         source_y = kwargs["source_y"]
         length = kwargs["length"]
 
-    start = time.perf_counter()
+    start = perf_counter()
     Event = Okada(event_type, (source_x, source_y), tile_size=tile_size, **kwargs)
-    end = time.perf_counter()
+    end = perf_counter()
 
     los_grid = (
         Event.los_displacement * amplitude_scalar * [-1, -1][random_nums[7] < 0.5] * 0.5
@@ -1173,15 +1191,30 @@ def gen_simulated_time_series(
 
     phases = np.zeros((n_interferograms, 2, tile_size, tile_size))
 
-    for i in range(n_interferograms):
-        displacement_step = los_displacement / n_interferograms
+    inflection = (
+        random.random() * 0.6 + 0.2
+    )  # set the inflection point to a point between 0.2 and 0.8
+    inflection_rate = (
+        random.random() * 2 + 2
+    )  # set the inflection rate to be between 2 and 4
+    inflection_point = n_interferograms * inflection
+    step_size = (
+        inflection_point + (n_interferograms - inflection_point) * inflection_rate
+    )
+    displacement = los_displacement / step_size
 
+    for i in range(n_interferograms):
         topo_phase = np.abs(
             atm_topo_simulate(simulated_topography) * atmosphere_scalar * 0.15 * np.pi
         )
         turb_phase = aps_simulate(tile_size) * atmosphere_scalar * 0.3
+        displacement_step = displacement * i
+        if i > inflection_point:
+            displacement_step = displacement_step + displacement * inflection_rate * (
+                i - inflection_point
+            )
 
-        phase_step = scalar * displacement_step + topo_phase + turb_phase
+        phase_step = scalar * displacement_step * i + topo_phase + turb_phase
         wrapped_phase_step = np.angle(np.exp(1j * (phase_step)))
 
         phase_step = (phase_step + np.abs(np.min(phase_step))) / np.max(
