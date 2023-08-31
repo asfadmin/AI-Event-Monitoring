@@ -219,12 +219,16 @@ def test_images_in_dir(
             try:
                 arr_uw, dataset = io.get_image_array(os.path.join(directory, filename))
                 arr_w = np.angle(np.exp(1j * (arr_uw)))
+            except ConnectionError:
+                print("Failed to connect to dataset server")
             except Exception as e:
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
         elif "wrapped" in filename:
             try:
                 arr_w, dataset = io.get_image_array(os.path.join(directory, filename))
+            except ConnectionError:
+                print("Failed to connect to dataset server")
             except Exception as e:
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
@@ -298,6 +302,8 @@ def test_model(
     try:
         mask_model = models.load_model(mask_model_path)
         pres_model = models.load_model(pres_model_path)
+    except FileNotFoundError:
+        print("Models do not exist and couldn't be loaded")
     except Exception as e:
         print(f"Caught {type(e)}: {e}")
         return
