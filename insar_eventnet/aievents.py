@@ -21,7 +21,7 @@ from osgeo import gdal
 from PIL import Image
 from tensorflow.keras import models
 
-from insar_eventnet import gui, inference, io, processing, sarsim, training
+from insar_eventnet import inference, io, processing, sarsim, training
 from insar_eventnet.config import MASK_DIR, SYNTHETIC_DIR
 
 # ------------- #
@@ -728,61 +728,6 @@ def interactive_wrapper(event_type):
     plt.show()
 
 
-@cli.command("simulate")
-@click.option("-s", "--seed", type=int, default=0, help=seed_help)
-@click.option("-t", "--tile_size", type=int, default=512, help=tilesize_help)
-@click.option("-c", "--crop_size", type=int, default=0, help=cropsize_help)
-@click.option("-e", "--event_type", type=str, default="quake", help="")
-@click.option("-n", "--noise_only", type=bool, default=False, help="")
-@click.option("-g", "--gauss_only", type=bool, default=False, help="")
-@click.option("-v", "--verbose", type=bool, default=False, help="")
-def simulate_wrapper(
-    seed, tile_size, crop_size, event_type, noise_only, gauss_only, verbose
-):
-    """
-    Show a randomly generated wrapped interferogram with simulated deformation,
-    atmospheric turbulence, atmospheric topographic error, and incoherence masking.
-    """
-
-    if not noise_only:
-        _, masked, wrapped, event_is_present = processing.gen_simulated_deformation(
-            seed, tile_size, verbose, event_type=event_type
-        )
-    else:
-        _, masked, wrapped, event_is_present = sarsim.gen_sim_noise(
-            seed, tile_size, gaussian_only=gauss_only
-        )
-
-    if crop_size < tile_size and crop_size != 0:
-        masked = processing.simulate_unet_cropping(masked, (crop_size, crop_size))
-
-    gui.show_dataset(masked, wrapped)
-
-
-@cli.command("show")
-@click.argument("file_path", type=click.Path())
-def show_dataset_wrapper(file_path):
-    """
-    Show the wrapped interferograms and event-masks from a given dataset directory.
-
-    ARGS:\n
-    file_path       path to the .npz files to show.\n
-    """
-
-    filenames = os.listdir(file_path)
-
-    def filename_check(x):
-        "synth" in x or "sim" in x or "real" in x
-
-    data_filenames = [item for item in filenames if filename_check(item)]
-
-    for filename in data_filenames:
-        mask, wrapped, presence = io.load_dataset(file_path + "/" + filename)
-        print(f"Showing dataset {filename}")
-        print(f"Presence:       {presence}")
-        gui.show_dataset(mask, wrapped)
-
-
 @cli.command("show-product")
 @click.argument("product_path", type=str)
 @click.option("-t", "--tile_size", type=int, default=0, help=tilesize_help)
@@ -887,24 +832,6 @@ def sort_images_wrapper(images_path):
                     system(f"mv {images_path}/{filename} {images_path}/Large")
             except Exception as e:
                 print("Could not move file. Error: ", e)
-
-
-@cli.command("check-image")
-@click.argument("image_path", type=str)
-def check_image_wrapper(image_path):
-    """
-    View images in a directory for manual labeling.
-
-    ARGS:\n
-    images_path        path to folder containing the wrapped or unwrapped GeoTiffs\n
-    """
-
-    image, _ = io.get_image_array(image_path)
-
-    image = np.angle(np.exp(1j * (image)))
-
-    plt.imshow(image, cmap="jet", vmin=-np.pi, vmax=np.pi)
-    plt.show()
 
 
 @cli.command("check-images")

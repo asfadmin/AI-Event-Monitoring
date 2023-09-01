@@ -362,6 +362,8 @@ def train(
                     batch_size,
                     learning_rate,
                 )
+        except FileNotFoundError:
+            print("Eror creating log file")
 
         except Exception as e:
             print(f"Error creating results log file:\nCaught {type(e)}: {e}")
