@@ -108,10 +108,10 @@ def sagemaker_server():
             return flask.Response(
                 response=json.dumps(response), status=200, mimetype="application/json"
             )
-
+        except ConnectionError:
+            print("Could not connect to server")
         except Exception as e:
             print(f"Caught {type(e)}: {e}")
-
             return flask.Response(
                 response=json.dumps({"error": str(e)}),
                 status=500,

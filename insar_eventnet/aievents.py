@@ -218,6 +218,8 @@ def make_simulated_time_series_dataset_wrapper(
     try:
         log_file = open(output_dir.__str__() + "/" + dir_name + "/parameters.txt", "w")
         log_file.write(dataset_info)
+    except FileNotFoundError:
+        print("logfile does not exist")
     except Exception as e:
         print(f"{type(e)}: {e}")
 
@@ -1006,9 +1008,17 @@ def sagemaker_train_wrapper(
     checkpoint_dir = output_dir + "/best_checkpoint"
 
     try:
-        os.system(f"mkdir {output_dir} {checkpoint_dir} {logs_dir}")
-    except Exception as e:
-        print(f"Caught {type(e)}: {e}. Continuing Anyway...")
+        os.mkdir(output_dir)
+    except FileExistsError:
+        print("directory already exists")
+    try:
+        os.mkdir(checkpoint_dir)
+    except FileExistsError:
+        print("directory already exists")
+    try:
+        os.mkdir(logs_dir)
+    except FileExistsError:
+        print("directory already exists")
 
     try:
         with open(config_dir + "/hyperparameters.json", "r") as json_file:
@@ -1024,6 +1034,8 @@ def sagemaker_train_wrapper(
 
         os.system(f"cp -r {config_dir} {output_dir}")
 
+    except FileNotFoundError:
+        print("hyperparameter file does not exist")
     except Exception as e:
         print(f"Caught {type(e)}: {e}\n Using default hyperparameters.")
 
