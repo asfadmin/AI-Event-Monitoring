@@ -10,7 +10,7 @@ product_path = input("Product Path:")
 crop_size = 0
 tile_size = 0
 
-arr_w, arr_uw, arr_c = io.get_product_arrays(product_path)
+arr_w, arr_uw, arr_c = io._get_product_arrays(product_path)
 
 tiled_arr_uw, tile_rows, tile_cols = processing.tile(
     arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size

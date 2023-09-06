@@ -14,14 +14,14 @@ The following example generates a few events and plots them
 Generating Simulated Datasets
 -----------------------------
 
-Simulated Datasets can be generated using the :func:`insar_eventnet.io:make_simulated_dataset` function.
+Simulated Datasets can be generated using the :func:`insar_eventnet.io:_make_simulated_dataset` function.
 
 The following example creates a simulated dataset in ``data/working/synthetic/simulated_dataset``
 
 .. literalinclude:: /../examples/generate_simulated_dataset.py
     :language: python
 
-.. note:: Notice the use of :func:`insar_eventnet.io:create_directories` to create the data directory which our simulated dataset is stored in.
+.. note:: Notice the use of :func:`insar_eventnet.io:_create_directories` to create the data directory which our simulated dataset is stored in.
 
 Generating Masks from Wrapped Interferograms
 --------------------------------------------

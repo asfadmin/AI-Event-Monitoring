@@ -13,15 +13,15 @@ tile_size = 512
 crop_size = 512
 split = 0.2  # Training/Testing split
 
-io.create_directories()  # Initialize directory structure for training data
+io._create_directories()  # Initialize directory structure for training data
 
-name, count, dir_name, distribution, dataset_info = io.make_simulated_dataset(
+name, count, dir_name, distribution, dataset_info = io._make_simulated_dataset(
     dataset_name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size
 )
 
 dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
-num_train, num_validation = io.split_dataset(dataset_path, split)
+num_train, num_validation = io._split_dataset(dataset_path, split)
 
 # Then train a unet masking model on the simulated dataset
 
@@ -62,13 +62,13 @@ mask_model_path = "data/output/models/checkpoints/" + model_name
 amount = 1000
 split = 0.1
 
-name, count, dir_name, _, _ = io.make_simulated_dataset(
+name, count, dir_name, _, _ = io._make_simulated_dataset(
     name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size, model_path=mask_model_path
 )
 
 dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
-num_train, num_validation = io.split_dataset(dataset_path, split)
+num_train, num_validation = io._split_dataset(dataset_path, split)
 
 # Now train the binary classification model
 
@@ -105,7 +105,7 @@ pres_model_path = "data/output/models/pres_model_example"
 image_path = input("Image Path: ")  # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
-image, gdal_dataset = io.get_image_array(image_path)
+image, gdal_dataset = io._get_image_array(image_path)
 
 mask, presence = inference.mask(
     mask_model_path=mask_model_path,

@@ -9,12 +9,12 @@ tile_size = 512
 crop_size = 512
 split = 0.2  # Training/Testing split
 
-io.create_directories()  # Initialize directory structure for training data
+io._create_directories()  # Initialize directory structure for training data
 
-name, count, dir_name, distribution, dataset_info = io.make_simulated_dataset(
+name, count, dir_name, distribution, dataset_info = io._make_simulated_dataset(
     name, SYNTHETIC_DIR, amount, seed, tile_size, crop_size
 )
 
 dataset_path = SYNTHETIC_DIR.__str__() + "/" + dir_name
 
-num_train, num_validation = io.split_dataset(dataset_path, split)
+num_train, num_validation = io._split_dataset(dataset_path, split)

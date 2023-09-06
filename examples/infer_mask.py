@@ -10,7 +10,7 @@ pres_model_path = "data/output/models/pres_model"
 image_path = input("Image Path: ")  # Prompt user for input interferogram
 image_name = image_path.split("/")[-1].split(".")[0]
 output_path = f"masks_inferred/{image_name}_mask.tif"
-image, gdal_dataset = io.get_image_array(image_path)
+image, gdal_dataset = io._get_image_array(image_path)
 
 # The initialize function downloads the pretrained models
 io.initialize()
