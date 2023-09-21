@@ -269,7 +269,7 @@ def _test_images_in_dir(
     return positives, negatives
 
 
-def _test_model(
+def test_model(
     mask_model_path,
     pres_model_path,
     images_dir,

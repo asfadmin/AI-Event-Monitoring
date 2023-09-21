@@ -379,7 +379,7 @@ def test_model_wrapper(
 
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    inference._test_model(
+    inference.test_model(
         model_path,
         pres_model_path,
         images_dir,
