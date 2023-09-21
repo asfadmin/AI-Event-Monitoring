@@ -11,7 +11,7 @@
 import numpy as np
 
 
-def generate_perlin_noise_2d(shape, resolution):
+def _generate_perlin_noise_2d(shape, resolution):
     delta = (resolution[0] / shape[0], resolution[1] / shape[1])
     delta2 = (shape[0] // resolution[0], shape[1] // resolution[1])
 
@@ -50,7 +50,7 @@ def generate_perlin_noise_2d(shape, resolution):
     return np.sqrt(2) * ramps
 
 
-def generate_perlin(size: int) -> np.ndarray:
+def _generate_perlin(size: int) -> np.ndarray:
     """
     Generate an array with perlin noise.
 
@@ -71,7 +71,7 @@ def generate_perlin(size: int) -> np.ndarray:
         for i in range(4 * (2**j), size):
             if size % i == 0:
                 res = i
-                perlin_array += generate_perlin_noise_2d((size, size), (res, res)) * (
+                perlin_array += _generate_perlin_noise_2d((size, size), (res, res)) * (
                     2 ** (3 - j)
                 )
                 break

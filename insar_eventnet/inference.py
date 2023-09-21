@@ -175,7 +175,7 @@ def plot_results(wrapped, mask, presence_mask):
     plt.show()
 
 
-def test_images_in_dir(
+def _test_images_in_dir(
     mask_model,
     pres_model,
     directory,
@@ -185,7 +185,7 @@ def test_images_in_dir(
     output_dir=None,
 ):
     """
-    Helper for test_model(). Evaluates EventNet Models over a directory of real
+    Helper for _test_model(). Evaluates EventNet Models over a directory of real
     interferograms.
 
     Parameters
@@ -311,7 +311,7 @@ def test_model(
     positive_dir = os.path.join(images_dir, "Positives")
     negative_dir = os.path.join(images_dir, "Negatives")
 
-    true_positives, false_negatives = test_images_in_dir(
+    true_positives, false_negatives = _test_images_in_dir(
         mask_model,
         pres_model,
         positive_dir,
@@ -320,7 +320,7 @@ def test_model(
         save_images,
         output_dir,
     )
-    false_positives, true_negatives = test_images_in_dir(
+    false_positives, true_negatives = _test_images_in_dir(
         mask_model,
         pres_model,
         negative_dir,

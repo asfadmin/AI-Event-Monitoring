@@ -68,7 +68,7 @@ def tile(
             arr_offset[0:rows, 0:cols] = arr
             arr = arr_offset
 
-        arr = pad(
+        arr = _pad(
             arr,
             tile_shape,
             even_pad=even_pad,
@@ -104,7 +104,7 @@ def tile(
     return tiles, num_rows, num_cols
 
 
-def pad(
+def _pad(
     arr: np.ndarray,
     tile_shape: Tuple[int, int],
     value: float = 0.0,
@@ -230,7 +230,7 @@ def tiles_to_image(
     return rebuilt_arr[start_row:end_row, start_col:end_col]
 
 
-def blur2d(arr: np.ndarray):
+def _blur2d(arr: np.ndarray):
     """
     Apply a 5x5 Gaussian Blur/Smoothing filter with a 2D keras convolution.
 

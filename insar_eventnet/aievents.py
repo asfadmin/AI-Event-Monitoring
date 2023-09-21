@@ -106,7 +106,7 @@ def setup_wrapper():
     print("")
 
     print("Downloading models... this may take a second")
-    io.download_models("data/output")
+    io._download_models("data/output")
 
 
 @cli.command("download-models")
@@ -116,7 +116,7 @@ def download_models_wrapper():
     """
 
     print("Downloading... this may take a second")
-    io.download_models("data/output")
+    io._download_models("data/output")
 
 
 @cli.command("make-simulated-dataset")
@@ -207,7 +207,7 @@ def make_simulated_time_series_dataset_wrapper(
         dir_name,
         distribution,
         dataset_info,
-    ) = io.make_simulated_time_series_dataset(
+    ) = io._make_simulated_time_series_dataset(
         name, output_dir, amount, seed, tile_size, crop_size
     )
 

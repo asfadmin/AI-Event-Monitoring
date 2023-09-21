@@ -84,7 +84,7 @@ class DataGenerator(keras.utils.Sequence):
         return x, y
 
 
-def print_model_info(
+def _print_model_info(
     model_name,
     model,
     history,
@@ -351,7 +351,7 @@ def train(
     if not using_jupyter:
         try:
             with open(results_file, "w") as sys.stdout:
-                print_model_info(
+                _print_model_info(
                     model_name,
                     model,
                     history,

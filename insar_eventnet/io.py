@@ -22,6 +22,7 @@ import numpy as np
 from osgeo import gdal
 from tensorflow.keras import models
 
+from insar_eventnet import processing, sarsim
 from insar_eventnet.config import (
     AOI_DIR,
     MASK_DIR,
@@ -31,10 +32,9 @@ from insar_eventnet.config import (
     SYNTHETIC_DIR,
     TENSORBOARD_DIR,
 )
-from insar_eventnet.processing import processing, sarsim
 
 
-def save_dataset(
+def _save_dataset(
     save_path: Path, mask: np.ndarray, wrapped: np.ndarray, presence: int
 ) -> None:
     """
@@ -55,7 +55,7 @@ def save_dataset(
     np.savez(save_path, mask=mask, wrapped=wrapped, presence=presence)
 
 
-def save_time_series_dataset(
+def _save_time_series_dataset(
     save_path: Path, phases: list, mask: np.ndarray, presence: int
 ) -> None:
     """
@@ -65,7 +65,7 @@ def save_time_series_dataset(
     np.savez(save_path, phases=phases, mask=mask, presence=presence)
 
 
-def load_ts_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
+def _load_ts_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads event-mask and wrapped ndarrays from .npz file.
 
@@ -88,7 +88,7 @@ def load_ts_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     return dataset_file["phases"], dataset_file["mask"], dataset_file["presence"]
 
 
-def load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
+def _load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads event-mask and wrapped ndarrays from .npz file.
 
@@ -118,7 +118,7 @@ def initialize() -> None:
         and os.path.isdir("data/output/models/pres_model")
     ):
         print("Downloading model... this might take a bit.")
-        download_models("data/output")
+        _download_models("data/output")
 
 
 def create_directories() -> None:
@@ -142,7 +142,7 @@ def create_directories() -> None:
             print(directory.__str__() + " already exists.")
 
 
-def download_models(path: str) -> None:
+def _download_models(path: str) -> None:
     """
     Downloads pretrained UNet masking model and EvetNet presence prediction model
 
@@ -221,7 +221,7 @@ def get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.nd
     return wrapped, unwrapped, correlation, dataset
 
 
-def get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
 
@@ -388,7 +388,9 @@ def make_simulated_dataset(
 
         current_name = f"sim_seed{current_seed}_{count}_{event_type}"
         save_path = save_directory / current_name
-        save_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
+        _save_time_series_dataset(
+            save_path, mask=masked, wrapped=wrapped, presence=presence
+        )
 
         count += 1
 
@@ -407,7 +409,7 @@ def make_simulated_dataset(
     return seed, count, dir_name, distribution, dataset_info
 
 
-def make_simulated_time_series_dataset(
+def _make_simulated_time_series_dataset(
     name: str,
     output_dir: str,
     amount: int,
@@ -493,7 +495,7 @@ def make_simulated_time_series_dataset(
 
         current_name = f"sim_seed{current_seed}_{count}"
         save_path = save_directory / current_name
-        save_time_series_dataset(
+        _save_time_series_dataset(
             save_path, phases=phases[:, 0, :, :], mask=mask, presence=presence
         )
 
@@ -563,7 +565,7 @@ def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
     return num_train, num_validation
 
 
-def dataset_from_products(
+def _dataset_from_products(
     dataset_name: str, product_path: str, save_path: str, tile_size: int, crop_size: int
 ) -> int:
     """
@@ -604,7 +606,7 @@ def dataset_from_products(
         for progress, product in enumerate(products):
             print(f"{progress}/{product_count} | {product_path + '/' + product}")
 
-            wrapped, masked = get_dataset_arrays(product_path + "/" + product)
+            wrapped, masked = _get_dataset_arrays(product_path + "/" + product)
 
             tiled_wrapped, w_rows, w_cols = processing.tile(
                 wrapped, (tile_size, tile_size), even_pad=True, crop_size=crop_size
@@ -621,7 +623,7 @@ def dataset_from_products(
                 current_name = f"real_{product_id}_{index}"
                 save_path = save_directory / current_name
 
-                save_dataset(
+                _save_time_series_dataset(
                     save_path, mask=tiled_masked[index], wrapped=tiled_wrapped[index]
                 )
 
