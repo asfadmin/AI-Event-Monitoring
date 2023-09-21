@@ -48,7 +48,9 @@ def test_save_dataset():
     test_wrap = np.full((40, 40), 9)
     test_unwrap = np.eye(40)
 
-    io._save_time_series_dataset(Path("new_dataset"), unwrapped=test_unwrap, wrapped=test_wrap)
+    io._save_time_series_dataset(
+        Path("new_dataset"), unwrapped=test_unwrap, wrapped=test_wrap
+    )
     assert len(list(Path(".").rglob("new_dataset.npz"))) == 1
 
 
@@ -58,7 +60,9 @@ def test_save_load_dataset():
     test_wrap = np.full((17, 17), 1)
     test_unwrap = np.eye(17)
 
-    io._save_time_series_dataset(Path("new_test_dataset"), unwrapped=test_unwrap, wrapped=test_wrap)
+    io._save_time_series_dataset(
+        Path("new_test_dataset"), unwrapped=test_unwrap, wrapped=test_wrap
+    )
     unwrapped, wrapped = io._load_dataset(Path("new_test_dataset.npz"))
 
     assert np.array_equal(unwrapped, test_unwrap)

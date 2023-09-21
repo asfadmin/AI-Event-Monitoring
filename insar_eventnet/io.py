@@ -388,7 +388,9 @@ def make_simulated_dataset(
 
         current_name = f"sim_seed{current_seed}_{count}_{event_type}"
         save_path = save_directory / current_name
-        _save_time_series_dataset(save_path, mask=masked, wrapped=wrapped, presence=presence)
+        _save_time_series_dataset(
+            save_path, mask=masked, wrapped=wrapped, presence=presence
+        )
 
         count += 1
 
