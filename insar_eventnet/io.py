@@ -22,6 +22,7 @@ import numpy as np
 from osgeo import gdal
 from tensorflow.keras import models
 
+from insar_eventnet import processing, sarsim
 from insar_eventnet.config import (
     AOI_DIR,
     MASK_DIR,
@@ -31,7 +32,6 @@ from insar_eventnet.config import (
     SYNTHETIC_DIR,
     TENSORBOARD_DIR,
 )
-from insar_eventnet import processing, sarsim
 
 
 def _save_time_series_dataset(
