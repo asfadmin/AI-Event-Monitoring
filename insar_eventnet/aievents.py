@@ -99,14 +99,14 @@ def setup_wrapper():
     """
 
     print("")
-    io.create_directories()
+    io._create_directories()
 
     print("")
     click.echo("Data directory created")
     print("")
 
     print("Downloading models... this may take a second")
-    io.download_models("data/output")
+    io._download_models("data/output")
 
 
 @cli.command("download-models")
@@ -116,7 +116,7 @@ def download_models_wrapper():
     """
 
     print("Downloading... this may take a second")
-    io.download_models("data/output")
+    io._download_models("data/output")
 
 
 @cli.command("make-simulated-dataset")
@@ -148,11 +148,11 @@ def make_simulated_dataset_wrapper(
 
     print("")
 
-    name, count, dir_name, distribution, dataset_info = io.make_simulated_dataset(
+    name, count, dir_name, distribution, dataset_info = io._make_simulated_dataset(
         name, output_dir, amount, seed, tile_size, crop_size
     )
 
-    num_train, num_validation = io.split_dataset(
+    num_train, num_validation = io._split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
@@ -207,11 +207,11 @@ def make_simulated_time_series_dataset_wrapper(
         dir_name,
         distribution,
         dataset_info,
-    ) = io.make_simulated_time_series_dataset(
+    ) = io._make_simulated_time_series_dataset(
         name, output_dir, amount, seed, tile_size, crop_size
     )
 
-    num_train, num_validation = io.split_dataset(
+    num_train, num_validation = io._split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
@@ -265,11 +265,11 @@ def make_simulated_binary_dataset_wrapper(
 
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    seed, count, dir_name, _, _ = io.make_simulated_dataset(
+    seed, count, dir_name, _, _ = io._make_simulated_dataset(
         name, output_dir, amount, seed, tile_size, crop_size, model_path=model_path
     )
 
-    num_train, num_validation = io.split_dataset(
+    num_train, num_validation = io._split_dataset(
         output_dir.__str__() + "/" + dir_name, split
     )
 
@@ -291,7 +291,7 @@ def split_dataset_wrapper(dataset_path, split):
     split         decimal percent of the dataset for validation\n
     """
 
-    num_train, num_validation = io.split_dataset(dataset_path, split)
+    num_train, num_validation = io._split_dataset(dataset_path, split)
 
     print(
         f"\nSplit {dataset_path} into train and validation sets of size {num_train} and {num_validation}.\n"
@@ -379,7 +379,7 @@ def test_model_wrapper(
 
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-    inference.test_model(
+    inference._test_model(
         model_path,
         pres_model_path,
         images_dir,
@@ -450,7 +450,7 @@ def mask_image_wrapper(
     image_path          path to interferogram tif to mask.\n
     """
 
-    mask, presence = inference.mask(
+    mask, presence = inference._mask(
         mask_model_path=mask_model_path,
         pres_model_path=pres_model_path,
         image_path=image_path,
@@ -466,7 +466,7 @@ def mask_image_wrapper(
             print("Negative")
 
     if not no_plot:
-        image, _ = io.get_image_array(image_path)
+        image, _ = io._get_image_array(image_path)
 
         _, [axs_wrapped, axs_mask] = plt.subplots(1, 2, sharex=True, sharey=True)
 
@@ -546,9 +546,9 @@ def mask_directory_wrapper(
             continue
 
         image_path = directory + image_name
-        image, gdal_dataset = io.get_image_array(image_path)
+        image, gdal_dataset = io._get_image_array(image_path)
 
-        mask_pred, pres_mask, pres_vals = inference.mask_with_model(
+        mask_pred, pres_mask, pres_vals = inference._mask_with_model(
             mask_model=mask_model,
             pres_model=pres_model,
             arr_w=image,
@@ -743,9 +743,9 @@ def show_product_wrapper(product_path, crop_size, tile_size):
     from search.asf.alaska.edu.\n
     """
 
-    arr_w, arr_uw, arr_c = io.get_product_arrays(product_path)
+    arr_w, arr_uw, arr_c = io._get_product_arrays(product_path)
 
-    tiled_arr_uw, tile_rows, tile_cols = processing.tile(
+    tiled_arr_uw, tile_rows, tile_cols = processing._tile(
         arr_uw, (1024, 1024), even_pad=True, crop_size=crop_size
     )
 
@@ -758,12 +758,12 @@ def show_product_wrapper(product_path, crop_size, tile_size):
 
         # Simulate UNET Cropping
         for count, tile_ in enumerate(tiled_arr_uw):
-            cropped_tile = processing.simulate_unet_cropping(
+            cropped_tile = processing._simulate_unet_cropping(
                 tile_, (crop_size, crop_size)
             )
             cropped_arr_uw[count] = cropped_tile
 
-        rebuilt_arr_uw = processing.tiles_to_image(
+        rebuilt_arr_uw = processing._tiles_to_image(
             cropped_arr_uw,
             tile_rows,
             tile_cols,
@@ -814,7 +814,7 @@ def sort_images_wrapper(images_path):
 
     for filename in listdir(images_path):
         if filename.endswith(".tif"):
-            image, _ = io.get_image_array(f"{images_path}/{filename}")
+            image, _ = io._get_image_array(f"{images_path}/{filename}")
 
             image = np.angle(np.exp(1j * (image)))
 
@@ -848,7 +848,7 @@ def check_images_wrapper(images_path):
 
     for filename in os.listdir(images_path):
         if filename.endswith(".tif"):
-            image, _ = io.get_image_array(f"{images_path}/{filename}")
+            image, _ = io._get_image_array(f"{images_path}/{filename}")
 
             image = np.angle(np.exp(1j * (image)))
 
@@ -899,13 +899,13 @@ def create_model_wrapper(
 
     output_dir = SYNTHETIC_DIR
 
-    _, count, dir_name = io.make_simulated_dataset(
+    _, count, dir_name = io._make_simulated_dataset(
         mask_dataset_name, output_dir, dataset_size, seed, input_shape, input_shape
     )
 
     dataset_path = output_dir.__str__() + "/" + dir_name
 
-    io.split_dataset(dataset_path, val_split)
+    io._split_dataset(dataset_path, val_split)
 
     print("______________________\n")
     print("Training Masking Model")
@@ -937,7 +937,7 @@ def create_model_wrapper(
     pres_dataset_name = "tmp_dataset_presence_" + str(time.time()).strip(".")[0]
     mask_model_path = "models/checkpoints/" + model_name + "_masking"
 
-    _, count, dir_name = io.make_simulated_dataset(
+    _, count, dir_name = io._make_simulated_dataset(
         pres_dataset_name,
         output_dir,
         dataset_size,
@@ -949,7 +949,7 @@ def create_model_wrapper(
 
     dataset_path = output_dir.__str__() + "/" + dir_name
 
-    io.split_dataset(dataset_path, val_split)
+    io._split_dataset(dataset_path, val_split)
 
     print("_________________\n")
     print("Training EventNet")

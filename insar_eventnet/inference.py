@@ -20,7 +20,7 @@ from tensorflow.keras import models
 from insar_eventnet import io
 
 
-def mask(
+def _mask(
     mask_model_path: str,
     pres_model_path: str,
     image_path: str,
@@ -58,9 +58,9 @@ def mask(
     """
     mask_model = models.load_model(mask_model_path)
     pres_model = models.load_model(pres_model_path)
-    image, gdal_dataset = io.get_image_array(image_path)
+    image, gdal_dataset = io._get_image_array(image_path)
 
-    mask_pred, pres_mask, pres_vals = mask_with_model(
+    mask_pred, pres_mask, pres_vals = _mask_with_model(
         mask_model=mask_model,
         pres_model=pres_model,
         arr_w=image,
@@ -81,7 +81,7 @@ def mask(
     return mask_pred, presence_guess
 
 
-def mask_with_model(
+def _mask_with_model(
     mask_model, pres_model, arr_w: np.ndarray, tile_size: int, crop_size: int = 0
 ) -> np.ndarray:
     """
@@ -159,7 +159,7 @@ def mask_with_model(
     return mask, pres_mask, pres_vals
 
 
-def plot_results(wrapped, mask, presence_mask):
+def _plot_results(wrapped, mask, presence_mask):
     _, [axs_wrapped, axs_mask, axs_presence_mask] = plt.subplots(
         1, 3, sharex=True, sharey=True
     )
@@ -175,7 +175,7 @@ def plot_results(wrapped, mask, presence_mask):
     plt.show()
 
 
-def test_images_in_dir(
+def _test_images_in_dir(
     mask_model,
     pres_model,
     directory,
@@ -185,7 +185,7 @@ def test_images_in_dir(
     output_dir=None,
 ):
     """
-    Helper for test_model(). Evaluates EventNet Models over a directory of real
+    Helper for _test_model(). Evaluates EventNet Models over a directory of real
     interferograms.
 
     Parameters
@@ -217,7 +217,7 @@ def test_images_in_dir(
     for filename in os.listdir(directory):
         if "unw_phase" in filename:
             try:
-                arr_uw, dataset = io.get_image_array(os.path.join(directory, filename))
+                arr_uw, dataset = io._get_image_array(os.path.join(directory, filename))
                 arr_w = np.angle(np.exp(1j * (arr_uw)))
             except ConnectionError:
                 print("Failed to connect to dataset server")
@@ -226,14 +226,14 @@ def test_images_in_dir(
                 continue
         elif "wrapped" in filename:
             try:
-                arr_w, dataset = io.get_image_array(os.path.join(directory, filename))
+                arr_w, dataset = io._get_image_array(os.path.join(directory, filename))
             except ConnectionError:
                 print("Failed to connect to dataset server")
             except Exception as e:
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
 
-        mask, pres_mask, pres_vals = mask_with_model(
+        mask, pres_mask, pres_vals = _mask_with_model(
             mask_model=mask_model,
             pres_model=pres_model,
             arr_w=arr_w,
@@ -249,7 +249,7 @@ def test_images_in_dir(
 
         print(f"{tag} | {label} | {guess} |{np.max(pres_vals): 0.8f}")
 
-        plot_results(arr_w, mask, pres_mask)
+        _plot_results(arr_w, mask, pres_mask)
 
         if presence_guess:
             positives += 1
@@ -269,7 +269,7 @@ def test_images_in_dir(
     return positives, negatives
 
 
-def test_model(
+def _test_model(
     mask_model_path,
     pres_model_path,
     images_dir,
@@ -311,7 +311,7 @@ def test_model(
     positive_dir = os.path.join(images_dir, "Positives")
     negative_dir = os.path.join(images_dir, "Negatives")
 
-    true_positives, false_negatives = test_images_in_dir(
+    true_positives, false_negatives = _test_images_in_dir(
         mask_model,
         pres_model,
         positive_dir,
@@ -320,7 +320,7 @@ def test_model(
         save_images,
         output_dir,
     )
-    false_positives, true_negatives = test_images_in_dir(
+    false_positives, true_negatives = _test_images_in_dir(
         mask_model,
         pres_model,
         negative_dir,

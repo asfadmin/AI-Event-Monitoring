@@ -16,7 +16,7 @@ import tensorflow
 from tensorflow import keras
 
 
-def tile(
+def _tile(
     arr: np.ndarray,
     tile_shape: Tuple[int, int],
     crop_size: int = 0,
@@ -68,7 +68,7 @@ def tile(
             arr_offset[0:rows, 0:cols] = arr
             arr = arr_offset
 
-        arr = pad(
+        arr = _pad(
             arr,
             tile_shape,
             even_pad=even_pad,
@@ -104,7 +104,7 @@ def tile(
     return tiles, num_rows, num_cols
 
 
-def pad(
+def _pad(
     arr: np.ndarray,
     tile_shape: Tuple[int, int],
     value: float = 0.0,
@@ -149,7 +149,7 @@ def pad(
     return arr_padded
 
 
-def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
+def _simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     """
     Symmetrically crop the inputed array.
 
@@ -173,7 +173,7 @@ def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     return arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
 
 
-def tiles_to_image(
+def _tiles_to_image(
     arr: np.ndarray, rows: int, cols: int, original_shape: Tuple[int, int]
 ) -> np.ndarray:
     """
@@ -230,7 +230,7 @@ def tiles_to_image(
     return rebuilt_arr[start_row:end_row, start_col:end_col]
 
 
-def blur2d(arr: np.ndarray):
+def _blur2d(arr: np.ndarray):
     """
     Apply a 5x5 Gaussian Blur/Smoothing filter with a 2D keras convolution.
 
