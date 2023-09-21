@@ -548,7 +548,7 @@ def mask_directory_wrapper(
         image_path = directory + image_name
         image, gdal_dataset = io.get_image_array(image_path)
 
-        mask_pred, pres_mask, pres_vals = inference._mask_with_model(
+        mask_pred, pres_mask, pres_vals = inference.mask_with_model(
             mask_model=mask_model,
             pres_model=pres_model,
             arr_w=image,

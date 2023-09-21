@@ -60,7 +60,7 @@ def mask(
     pres_model = models.load_model(pres_model_path)
     image, gdal_dataset = io.get_image_array(image_path)
 
-    mask_pred, pres_mask, pres_vals = _mask_with_model(
+    mask_pred, pres_mask, pres_vals = mask_with_model(
         mask_model=mask_model,
         pres_model=pres_model,
         arr_w=image,
@@ -81,7 +81,7 @@ def mask(
     return mask_pred, presence_guess
 
 
-def _mask_with_model(
+def mask_with_model(
     mask_model, pres_model, arr_w: np.ndarray, tile_size: int, crop_size: int = 0
 ) -> np.ndarray:
     """
@@ -159,7 +159,7 @@ def _mask_with_model(
     return mask, pres_mask, pres_vals
 
 
-def _plot_results(wrapped, mask, presence_mask):
+def plot_results(wrapped, mask, presence_mask):
     _, [axs_wrapped, axs_mask, axs_presence_mask] = plt.subplots(
         1, 3, sharex=True, sharey=True
     )
@@ -233,7 +233,7 @@ def _test_images_in_dir(
                 print(f"Failed to load unwrapped phase image: {filename} due to {e}")
                 continue
 
-        mask, pres_mask, pres_vals = _mask_with_model(
+        mask, pres_mask, pres_vals = mask_with_model(
             mask_model=mask_model,
             pres_model=pres_model,
             arr_w=arr_w,
@@ -249,7 +249,7 @@ def _test_images_in_dir(
 
         print(f"{tag} | {label} | {guess} |{np.max(pres_vals): 0.8f}")
 
-        _plot_results(arr_w, mask, pres_mask)
+        plot_results(arr_w, mask, pres_mask)
 
         if presence_guess:
             positives += 1

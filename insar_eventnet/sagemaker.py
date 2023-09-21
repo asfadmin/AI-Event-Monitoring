@@ -137,7 +137,7 @@ def sagemaker_server():
             image, dataset = io.get_image_array(image_path)
             wrapped_image = np.angle(np.exp(1j * image))
 
-            masked, presence_mask, presence_vals = inference._mask_with_model(
+            masked, presence_mask, presence_vals = inference.mask_with_model(
                 mask_model, pres_model, wrapped_image, tile_size=512
             )
 
