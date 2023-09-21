@@ -16,7 +16,7 @@ import tensorflow
 from tensorflow import keras
 
 
-def _tile(
+def tile(
     arr: np.ndarray,
     tile_shape: Tuple[int, int],
     crop_size: int = 0,
@@ -149,7 +149,7 @@ def _pad(
     return arr_padded
 
 
-def _simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
+def simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     """
     Symmetrically crop the inputed array.
 
@@ -173,7 +173,7 @@ def _simulate_unet_cropping(arr: np.ndarray, crop_shape: tuple) -> np.ndarray:
     return arr[starty : starty + crop_shape[0], startx : startx + crop_shape[1]]
 
 
-def _tiles_to_image(
+def tiles_to_image(
     arr: np.ndarray, rows: int, cols: int, original_shape: Tuple[int, int]
 ) -> np.ndarray:
     """

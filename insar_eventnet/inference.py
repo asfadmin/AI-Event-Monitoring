@@ -20,7 +20,7 @@ from tensorflow.keras import models
 from insar_eventnet import io
 
 
-def _mask(
+def mask(
     mask_model_path: str,
     pres_model_path: str,
     image_path: str,
@@ -58,7 +58,7 @@ def _mask(
     """
     mask_model = models.load_model(mask_model_path)
     pres_model = models.load_model(pres_model_path)
-    image, gdal_dataset = io._get_image_array(image_path)
+    image, gdal_dataset = io.get_image_array(image_path)
 
     mask_pred, pres_mask, pres_vals = _mask_with_model(
         mask_model=mask_model,
@@ -217,7 +217,7 @@ def _test_images_in_dir(
     for filename in os.listdir(directory):
         if "unw_phase" in filename:
             try:
-                arr_uw, dataset = io._get_image_array(os.path.join(directory, filename))
+                arr_uw, dataset = io.get_image_array(os.path.join(directory, filename))
                 arr_w = np.angle(np.exp(1j * (arr_uw)))
             except ConnectionError:
                 print("Failed to connect to dataset server")
@@ -226,7 +226,7 @@ def _test_images_in_dir(
                 continue
         elif "wrapped" in filename:
             try:
-                arr_w, dataset = io._get_image_array(os.path.join(directory, filename))
+                arr_w, dataset = io.get_image_array(os.path.join(directory, filename))
             except ConnectionError:
                 print("Failed to connect to dataset server")
             except Exception as e:

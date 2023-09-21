@@ -112,7 +112,7 @@ def _load_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def initialize() -> None:
-    _create_directories()
+    create_directories()
     if not (
         os.path.isdir("data/output/models/mask_model")
         and os.path.isdir("data/output/models/pres_model")
@@ -121,7 +121,7 @@ def initialize() -> None:
         _download_models("data/output")
 
 
-def _create_directories() -> None:
+def create_directories() -> None:
     """
     Creates the directories for storing our data.
     """
@@ -157,7 +157,7 @@ def _download_models(path: str) -> None:
         file.extractall(path)
 
 
-def _get_image_array(image_path: str) -> np.ndarray:
+def get_image_array(image_path: str) -> np.ndarray:
     """
     Load a interferogram .tif from storage into an array.
 
@@ -179,7 +179,7 @@ def _get_image_array(image_path: str) -> np.ndarray:
     return arr, dataset
 
 
-def _get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Load wrapped, unwrapped, and correlation .tifs from storage into arrays.
 
@@ -210,11 +210,11 @@ def _get_product_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.n
         elif filename[-13:] == "unw_phase.tif":
             unwrapped_path = product_path + "/" + filename
 
-    correlation, _ = _get_image_array(correlation_path)
-    unwrapped, dataset = _get_image_array(unwrapped_path)
+    correlation, _ = get_image_array(correlation_path)
+    unwrapped, dataset = get_image_array(unwrapped_path)
 
     if wrapped_path != "":
-        wrapped, _ = _get_image_array(wrapped_path)
+        wrapped, _ = get_image_array(wrapped_path)
     else:
         wrapped = np.angle(np.exp(1j * unwrapped))
 
@@ -250,8 +250,8 @@ def _get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.n
         else:
             wrapped_path = product_path + "/" + filename
 
-    masked = _get_image_array(masked_path)
-    wrapped = _get_image_array(wrapped_path)
+    masked = get_image_array(masked_path)
+    wrapped = get_image_array(wrapped_path)
 
     unmasked_area = masked != 1
     masked[unmasked_area] = 0
@@ -259,7 +259,7 @@ def _get_dataset_arrays(product_path: str) -> Tuple[np.ndarray, np.ndarray, np.n
     return wrapped, masked
 
 
-def _make_simulated_dataset(
+def make_simulated_dataset(
     name: str,
     output_dir: str,
     amount: int,
@@ -381,7 +381,7 @@ def _make_simulated_dataset(
                 masked_pred[zeros] = 0
 
         if crop_size < tile_size:
-            masked = processing._simulate_unet_cropping(masked, (crop_size, crop_size))
+            masked = processing.simulate_unet_cropping(masked, (crop_size, crop_size))
 
         if count % 10 == 0 and count != 0:
             print(f"Generated {count} of {amount} simulated interferogram pairs.")
@@ -514,7 +514,7 @@ def _make_simulated_time_series_dataset(
     return seed, count, dir_name, distribution, dataset_info
 
 
-def _split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
+def split_dataset(dataset_path: str, split: float) -> Tuple[int, int]:
     """
     Split the dataset into train and test folders
 
@@ -606,11 +606,11 @@ def _dataset_from_products(
 
             wrapped, masked = _get_dataset_arrays(product_path + "/" + product)
 
-            tiled_wrapped, w_rows, w_cols = processing._tile(
+            tiled_wrapped, w_rows, w_cols = processing.tile(
                 wrapped, (tile_size, tile_size), even_pad=True, crop_size=crop_size
             )
 
-            tiled_masked, _, _ = processing._tile(
+            tiled_masked, _, _ = processing.tile(
                 masked, (tile_size, tile_size), even_pad=True, crop_size=crop_size
             )
 
