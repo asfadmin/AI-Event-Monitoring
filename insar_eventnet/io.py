@@ -55,16 +55,6 @@ def _save_time_series_dataset(
     np.savez(save_path, mask=mask, wrapped=wrapped, presence=presence)
 
 
-def _save_time_series_dataset(
-    save_path: Path, phases: list, mask: np.ndarray, presence: int
-) -> None:
-    """
-    Saves event-mask and wrapped ndarrays to a single .npz file.
-    """
-
-    np.savez(save_path, phases=phases, mask=mask, presence=presence)
-
-
 def _load_ts_dataset(load_path: Path) -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads event-mask and wrapped ndarrays from .npz file.
