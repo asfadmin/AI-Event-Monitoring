@@ -8,7 +8,6 @@
  Created by Jason Herning, Andrew Player, and Robert Lawton.
 """
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 

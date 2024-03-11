@@ -3,6 +3,7 @@
  File Name:   aievents.py
  Description: CLI Interface
 """
+
 import json
 import os
 import time

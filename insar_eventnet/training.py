@@ -22,7 +22,6 @@ from insar_eventnet.architectures import eventnet, resnet, unet, unet3d
 
 
 class DataGenerator(keras.utils.Sequence):
-
     """
     Dataset Generator for sequencially passing files from storange into the model.
     """
