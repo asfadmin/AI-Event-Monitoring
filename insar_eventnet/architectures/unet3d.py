@@ -8,7 +8,6 @@
  Created By: Andrew Player
 """
 
-
 from tensorflow import Tensor, keras
 from tensorflow.keras import layers
 from tensorflow.keras.models import Model

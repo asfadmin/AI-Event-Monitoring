@@ -10,6 +10,7 @@
  -----
  Created by Andrew Player.
 """
+
 import random
 from time import perf_counter
 
@@ -17,7 +18,6 @@ import numpy as np
 
 
 class Okada:
-
     """
     Class that models surface deformation.
 

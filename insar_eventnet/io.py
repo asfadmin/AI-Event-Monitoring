@@ -8,7 +8,6 @@
  Created by Andrew Player.
 """
 
-
 import contextlib
 import os
 from datetime import datetime
