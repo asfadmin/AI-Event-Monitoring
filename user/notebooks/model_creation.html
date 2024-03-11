@@ -1,0 +1,1438 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="insar_eventnet" href="../../api/modules.html" /><link rel="prev" title="Generate Masks for Time Series Data" href="generate_masks_time_series.html" />
+
+    <!-- Generated with Sphinx 7.1.2 and Furo 2024.01.29 -->
+        <title>EventNet Creation - insar-eventnet documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">insar-eventnet  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  
+  <span class="sidebar-brand-text">insar-eventnet  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Install the Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html#setup">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Using the Command Line interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../library.html">Using the Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">Model Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inferenceapi.html">Use the Cloud Inference API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Notebooks</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="evaluate_model.html">Evaluate an EventNet Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generate_masks.html">Generating Masks and Presence Predictions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generate_masks_time_series.html">Generate Masks for Time Series Data</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">EventNet Creation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Package Interface Documentation</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/modules.html">insar_eventnet</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of insar_eventnet</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../api/insar_eventnet.html">insar_eventnet package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of insar_eventnet package</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/insar_eventnet.architectures.html">insar_eventnet.architectures package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="EventNet-Creation">
+<h1>EventNet Creation<a class="headerlink" href="#EventNet-Creation" title="Permalink to this heading">#</a></h1>
+<p>EventNet consists of 2 models: a masking model and a binary classification model. In order to mask potential event-related deformation in interferograms, a masking model is required. An event presence model is then trained in order automatically provide a probabilistic answer on whether there is an event in the masked image.</p>
+<p>Thus, the four main steps are: 1. Create a Dataset with Simulated Wrapped Interferograms and their Masks 2. Train a masking model in the Simulated Masking Dataset 3. Create a Binary Classification Dataset of Masks and their Presence 4. Train a Binary Classification Model from the Mask/Presence Dataset</p>
+<section id="Imports">
+<h2>Imports<a class="headerlink" href="#Imports" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="s2">&quot;NOTEBOOK_INITIATED_FLAG&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+    <span class="n">NOTEBOOK_INITIATED_FLAG</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="o">%</span><span class="k">cd</span> ..
+<span class="o">%</span><span class="k">pwd</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">environ</span>
+
+<span class="n">environ</span><span class="p">[</span><span class="s2">&quot;TF_CPP_MIN_LOG_LEVEL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;3&quot;</span>
+
+<span class="kn">from</span> <span class="nn">insar_eventnet.config</span> <span class="kn">import</span> <span class="n">SYNTHETIC_DIR</span>
+<span class="kn">from</span> <span class="nn">insar_eventnet.io</span> <span class="kn">import</span> <span class="n">make_simulated_dataset</span><span class="p">,</span> <span class="n">split_dataset</span>
+<span class="kn">from</span> <span class="nn">insar_eventnet.training</span> <span class="kn">import</span> <span class="n">train</span>
+<span class="kn">from</span> <span class="nn">insar_eventnet.inference</span> <span class="kn">import</span> <span class="n">plot_results</span>
+<span class="kn">from</span> <span class="nn">insar_eventnet.sarsim</span> <span class="kn">import</span> <span class="n">gen_simulated_deformation</span><span class="p">,</span> <span class="n">gen_sim_noise</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+/home/andrew/repos/AI-Event-Monitoring
+INFO:tensorflow:Mixed precision compatibility check (mixed_float16): OK
+Your GPU will likely run quickly with dtype policy mixed_float16 as it has compute capability of at least 7.0. Your GPU: NVIDIA GeForce RTX 2080 SUPER, compute capability 7.5
+</pre></div></div>
+</div>
+</section>
+<section id="Simulated-Events">
+<h2>Simulated Events<a class="headerlink" href="#Simulated-Events" title="Permalink to this heading">#</a></h2>
+<p>By using the gen_simulated_deformation and gen_sim_noise functions, we can create simulated interferogram datasets containing “Positives” which contain events and “Negatives” which contain noise. gen_simulated_deformation generates our “Positive” training examples and supports ‘quake’, ‘dyke’, and ‘sill’ event types. gen_sim_noise generates our “Negative” training images with either atmospheric and topographic noise or gaussian noise. The gaussian noise is primarily used as a negative
+representing unmasked incoherence.</p>
+<p>Each of these functions returns 4 things: an unwrapped phase image, a deformation mask, a wrapped image, and a presence value. These are used as follows: - Unwrapped: Only used as a visual aid. Since gen_simulated_deformation contaminates this image, you must use the Okada class manually if you want an accurate displacement image. - Wrapped: This is the primary input for training the masking model. Wrapped images are turned into deformation masks. - Deformation Mask: This is used as a ground
+truth for training. Pixels are set to 1 where there is an event and its phase is greater than 2π. - Presence: [1] if the image contains a deformation event (it was from gen_simulated_deformation), otherwise its [0] (it was from gen_sim_noise).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">seed</span> <span class="o">=</span> <span class="mi">232323</span>
+<span class="n">tile_size</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">event_type</span> <span class="o">=</span> <span class="s2">&quot;quake&quot;</span>
+
+<span class="n">unwrapped_def</span><span class="p">,</span> <span class="n">masked_def</span><span class="p">,</span> <span class="n">wrapped_def</span><span class="p">,</span> <span class="n">presence_def</span> <span class="o">=</span> <span class="n">gen_simulated_deformation</span><span class="p">(</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span><span class="p">,</span> <span class="n">event_type</span><span class="o">=</span><span class="n">event_type</span>
+<span class="p">)</span>
+<span class="n">unwrapped_mix</span><span class="p">,</span> <span class="n">masked_mix</span><span class="p">,</span> <span class="n">wrapped_mix</span><span class="p">,</span> <span class="n">presence_mix</span> <span class="o">=</span> <span class="n">gen_sim_noise</span><span class="p">(</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span>
+<span class="p">)</span>
+<span class="n">unwrapped_gsn</span><span class="p">,</span> <span class="n">masked_gsn</span><span class="p">,</span> <span class="n">wrapped_gsn</span><span class="p">,</span> <span class="n">presence_gsn</span> <span class="o">=</span> <span class="n">gen_sim_noise</span><span class="p">(</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span><span class="p">,</span> <span class="n">gaussian_only</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deformation Presence: </span><span class="si">{</span><span class="n">presence_def</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mixed Noise Presence: </span><span class="si">{</span><span class="n">presence_mix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Gauss Noise Presence: </span><span class="si">{</span><span class="n">presence_gsn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="p">[</span><span class="n">axs_unwrapped_def</span><span class="p">,</span> <span class="n">axs_wrapped_def</span><span class="p">,</span> <span class="n">axs_mask_def</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="p">[</span><span class="n">axs_unwrapped_mix</span><span class="p">,</span> <span class="n">axs_wrapped_mix</span><span class="p">,</span> <span class="n">axs_mask_mix</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="p">[</span><span class="n">axs_unwrapped_gsn</span><span class="p">,</span> <span class="n">axs_wrapped_gsn</span><span class="p">,</span> <span class="n">axs_mask_gsn</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">axs_unwrapped_def</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Deformation Event&quot;</span><span class="p">)</span>
+<span class="n">axs_unwrapped_mix</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Atmospheric/Topographic Noise&quot;</span><span class="p">)</span>
+<span class="n">axs_unwrapped_gsn</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Gaussian Noise&quot;</span><span class="p">)</span>
+
+<span class="n">axs_unwrapped_def</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">unwrapped_def</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_unwrapped_mix</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">unwrapped_mix</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_unwrapped_gsn</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">unwrapped_gsn</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_wrapped_def</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wrapped_def</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_wrapped_mix</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wrapped_mix</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_wrapped_gsn</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wrapped_gsn</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_mask_def</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masked_def</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">axs_mask_mix</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masked_mix</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">axs_mask_gsn</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">masked_gsn</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Deformation Presence: [1]
+Mixed Noise Presence: [0]
+Gauss Noise Presence: [0]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_4_1.png" src="../../_images/user_notebooks_model_creation_4_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_4_2.png" src="../../_images/user_notebooks_model_creation_4_2.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_4_3.png" src="../../_images/user_notebooks_model_creation_4_3.png" />
+</div>
+</div>
+</section>
+<section id="Create-Dataset-of-Simulated-Events">
+<h2>Create Dataset of Simulated Events<a class="headerlink" href="#Create-Dataset-of-Simulated-Events" title="Permalink to this heading">#</a></h2>
+<p>The make_simulated_dataset function is used to generate the datasets for training the masking model. It creates a dataset of specified size with a positive-to-negative ratio of 60/40, where 30% of the negatives are atmospheric noise and 10% are gaussian noise. The ratios can be modified easily in the source code, but the default ratios are what has worked best so far.</p>
+<p>Note: while you can train a binary model with the same dataset that you train the masking model with, it is not recommended.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;mask_model_dataset&quot;</span>
+
+<span class="n">amount</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="mi">2000</span>  <span class="c1"># The number of images to generate. ~1500 is sufficient for a decent model.</span>
+<span class="p">)</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># The seed for the random number generators</span>
+<span class="n">tile_size</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># The size of the tiles to generate</span>
+<span class="n">crop_size</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># Crop size for model (same as tile_size for our U-Net currently)</span>
+<span class="n">split</span> <span class="o">=</span> <span class="mf">0.2</span>  <span class="c1"># The percentage of the dataset to use for validation</span>
+
+<span class="n">name</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">,</span> <span class="n">distribution</span><span class="p">,</span> <span class="n">dataset_info</span> <span class="o">=</span> <span class="n">make_simulated_dataset</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">SYNTHETIC_DIR</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="n">crop_size</span>
+<span class="p">)</span>
+
+<span class="n">dataset_path</span> <span class="o">=</span> <span class="n">SYNTHETIC_DIR</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">dir_name</span>
+
+<span class="n">num_train</span><span class="p">,</span> <span class="n">num_validation</span> <span class="o">=</span> <span class="n">split_dataset</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset Path:      </span><span class="si">{</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train Amount:      </span><span class="si">{</span><span class="n">num_train</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation Amount: </span><span class="si">{</span><span class="n">num_validation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Generated 10 of 2000 simulated interferogram pairs.
+Generated 20 of 2000 simulated interferogram pairs.
+Generated 30 of 2000 simulated interferogram pairs.
+Generated 40 of 2000 simulated interferogram pairs.
+Generated 50 of 2000 simulated interferogram pairs.
+Generated 60 of 2000 simulated interferogram pairs.
+Generated 70 of 2000 simulated interferogram pairs.
+Generated 80 of 2000 simulated interferogram pairs.
+Generated 90 of 2000 simulated interferogram pairs.
+Generated 100 of 2000 simulated interferogram pairs.
+Generated 110 of 2000 simulated interferogram pairs.
+Generated 120 of 2000 simulated interferogram pairs.
+Generated 130 of 2000 simulated interferogram pairs.
+Generated 140 of 2000 simulated interferogram pairs.
+Generated 150 of 2000 simulated interferogram pairs.
+Generated 160 of 2000 simulated interferogram pairs.
+Generated 170 of 2000 simulated interferogram pairs.
+Generated 180 of 2000 simulated interferogram pairs.
+Generated 190 of 2000 simulated interferogram pairs.
+Generated 200 of 2000 simulated interferogram pairs.
+Generated 210 of 2000 simulated interferogram pairs.
+Generated 220 of 2000 simulated interferogram pairs.
+Generated 230 of 2000 simulated interferogram pairs.
+Generated 240 of 2000 simulated interferogram pairs.
+Generated 250 of 2000 simulated interferogram pairs.
+Generated 260 of 2000 simulated interferogram pairs.
+Generated 270 of 2000 simulated interferogram pairs.
+Generated 280 of 2000 simulated interferogram pairs.
+Generated 290 of 2000 simulated interferogram pairs.
+Generated 300 of 2000 simulated interferogram pairs.
+Generated 310 of 2000 simulated interferogram pairs.
+Generated 320 of 2000 simulated interferogram pairs.
+Generated 330 of 2000 simulated interferogram pairs.
+Generated 340 of 2000 simulated interferogram pairs.
+Generated 350 of 2000 simulated interferogram pairs.
+Generated 360 of 2000 simulated interferogram pairs.
+Generated 370 of 2000 simulated interferogram pairs.
+Generated 380 of 2000 simulated interferogram pairs.
+Generated 390 of 2000 simulated interferogram pairs.
+Generated 400 of 2000 simulated interferogram pairs.
+Generated 410 of 2000 simulated interferogram pairs.
+Generated 420 of 2000 simulated interferogram pairs.
+Generated 430 of 2000 simulated interferogram pairs.
+Generated 440 of 2000 simulated interferogram pairs.
+Generated 450 of 2000 simulated interferogram pairs.
+Generated 460 of 2000 simulated interferogram pairs.
+Generated 470 of 2000 simulated interferogram pairs.
+Generated 480 of 2000 simulated interferogram pairs.
+Generated 490 of 2000 simulated interferogram pairs.
+Generated 500 of 2000 simulated interferogram pairs.
+Generated 510 of 2000 simulated interferogram pairs.
+Generated 520 of 2000 simulated interferogram pairs.
+Generated 530 of 2000 simulated interferogram pairs.
+Generated 540 of 2000 simulated interferogram pairs.
+Generated 550 of 2000 simulated interferogram pairs.
+Generated 560 of 2000 simulated interferogram pairs.
+Generated 570 of 2000 simulated interferogram pairs.
+Generated 580 of 2000 simulated interferogram pairs.
+Generated 590 of 2000 simulated interferogram pairs.
+Generated 600 of 2000 simulated interferogram pairs.
+Generated 610 of 2000 simulated interferogram pairs.
+Generated 620 of 2000 simulated interferogram pairs.
+Generated 630 of 2000 simulated interferogram pairs.
+Generated 640 of 2000 simulated interferogram pairs.
+Generated 650 of 2000 simulated interferogram pairs.
+Generated 660 of 2000 simulated interferogram pairs.
+Generated 670 of 2000 simulated interferogram pairs.
+Generated 680 of 2000 simulated interferogram pairs.
+Generated 690 of 2000 simulated interferogram pairs.
+Generated 700 of 2000 simulated interferogram pairs.
+Generated 710 of 2000 simulated interferogram pairs.
+Generated 720 of 2000 simulated interferogram pairs.
+Generated 730 of 2000 simulated interferogram pairs.
+Generated 740 of 2000 simulated interferogram pairs.
+Generated 750 of 2000 simulated interferogram pairs.
+Generated 760 of 2000 simulated interferogram pairs.
+Generated 770 of 2000 simulated interferogram pairs.
+Generated 780 of 2000 simulated interferogram pairs.
+Generated 790 of 2000 simulated interferogram pairs.
+Generated 800 of 2000 simulated interferogram pairs.
+Generated 810 of 2000 simulated interferogram pairs.
+Generated 820 of 2000 simulated interferogram pairs.
+Generated 830 of 2000 simulated interferogram pairs.
+Generated 840 of 2000 simulated interferogram pairs.
+Generated 850 of 2000 simulated interferogram pairs.
+Generated 860 of 2000 simulated interferogram pairs.
+Generated 870 of 2000 simulated interferogram pairs.
+Generated 880 of 2000 simulated interferogram pairs.
+Generated 890 of 2000 simulated interferogram pairs.
+Generated 900 of 2000 simulated interferogram pairs.
+Generated 910 of 2000 simulated interferogram pairs.
+Generated 920 of 2000 simulated interferogram pairs.
+Generated 930 of 2000 simulated interferogram pairs.
+Generated 940 of 2000 simulated interferogram pairs.
+Generated 950 of 2000 simulated interferogram pairs.
+Generated 960 of 2000 simulated interferogram pairs.
+Generated 970 of 2000 simulated interferogram pairs.
+Generated 980 of 2000 simulated interferogram pairs.
+Generated 990 of 2000 simulated interferogram pairs.
+Generated 1000 of 2000 simulated interferogram pairs.
+Generated 1010 of 2000 simulated interferogram pairs.
+Generated 1020 of 2000 simulated interferogram pairs.
+Generated 1030 of 2000 simulated interferogram pairs.
+Generated 1040 of 2000 simulated interferogram pairs.
+Generated 1050 of 2000 simulated interferogram pairs.
+Generated 1060 of 2000 simulated interferogram pairs.
+Generated 1070 of 2000 simulated interferogram pairs.
+Generated 1080 of 2000 simulated interferogram pairs.
+Generated 1090 of 2000 simulated interferogram pairs.
+Generated 1100 of 2000 simulated interferogram pairs.
+Generated 1110 of 2000 simulated interferogram pairs.
+Generated 1120 of 2000 simulated interferogram pairs.
+Generated 1130 of 2000 simulated interferogram pairs.
+Generated 1140 of 2000 simulated interferogram pairs.
+Generated 1150 of 2000 simulated interferogram pairs.
+Generated 1160 of 2000 simulated interferogram pairs.
+Generated 1170 of 2000 simulated interferogram pairs.
+Generated 1180 of 2000 simulated interferogram pairs.
+Generated 1190 of 2000 simulated interferogram pairs.
+Generated 1200 of 2000 simulated interferogram pairs.
+Generated 1210 of 2000 simulated interferogram pairs.
+Generated 1220 of 2000 simulated interferogram pairs.
+Generated 1230 of 2000 simulated interferogram pairs.
+Generated 1240 of 2000 simulated interferogram pairs.
+Generated 1250 of 2000 simulated interferogram pairs.
+Generated 1260 of 2000 simulated interferogram pairs.
+Generated 1270 of 2000 simulated interferogram pairs.
+Generated 1280 of 2000 simulated interferogram pairs.
+Generated 1290 of 2000 simulated interferogram pairs.
+Generated 1300 of 2000 simulated interferogram pairs.
+Generated 1310 of 2000 simulated interferogram pairs.
+Generated 1320 of 2000 simulated interferogram pairs.
+Generated 1330 of 2000 simulated interferogram pairs.
+Generated 1340 of 2000 simulated interferogram pairs.
+Generated 1350 of 2000 simulated interferogram pairs.
+Generated 1360 of 2000 simulated interferogram pairs.
+Generated 1370 of 2000 simulated interferogram pairs.
+Generated 1380 of 2000 simulated interferogram pairs.
+Generated 1390 of 2000 simulated interferogram pairs.
+Generated 1400 of 2000 simulated interferogram pairs.
+Generated 1410 of 2000 simulated interferogram pairs.
+Generated 1420 of 2000 simulated interferogram pairs.
+Generated 1430 of 2000 simulated interferogram pairs.
+Generated 1440 of 2000 simulated interferogram pairs.
+Generated 1450 of 2000 simulated interferogram pairs.
+Generated 1460 of 2000 simulated interferogram pairs.
+Generated 1470 of 2000 simulated interferogram pairs.
+Generated 1480 of 2000 simulated interferogram pairs.
+Generated 1490 of 2000 simulated interferogram pairs.
+Generated 1500 of 2000 simulated interferogram pairs.
+Generated 1510 of 2000 simulated interferogram pairs.
+Generated 1520 of 2000 simulated interferogram pairs.
+Generated 1530 of 2000 simulated interferogram pairs.
+Generated 1540 of 2000 simulated interferogram pairs.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Generated 1550 of 2000 simulated interferogram pairs.
+Generated 1560 of 2000 simulated interferogram pairs.
+Generated 1570 of 2000 simulated interferogram pairs.
+Generated 1580 of 2000 simulated interferogram pairs.
+Generated 1590 of 2000 simulated interferogram pairs.
+Generated 1600 of 2000 simulated interferogram pairs.
+Generated 1610 of 2000 simulated interferogram pairs.
+Generated 1620 of 2000 simulated interferogram pairs.
+Generated 1630 of 2000 simulated interferogram pairs.
+Generated 1640 of 2000 simulated interferogram pairs.
+Generated 1650 of 2000 simulated interferogram pairs.
+Generated 1660 of 2000 simulated interferogram pairs.
+Generated 1670 of 2000 simulated interferogram pairs.
+Generated 1680 of 2000 simulated interferogram pairs.
+Generated 1690 of 2000 simulated interferogram pairs.
+Generated 1700 of 2000 simulated interferogram pairs.
+Generated 1710 of 2000 simulated interferogram pairs.
+Generated 1720 of 2000 simulated interferogram pairs.
+Generated 1730 of 2000 simulated interferogram pairs.
+Generated 1740 of 2000 simulated interferogram pairs.
+Generated 1750 of 2000 simulated interferogram pairs.
+Generated 1760 of 2000 simulated interferogram pairs.
+Generated 1770 of 2000 simulated interferogram pairs.
+Generated 1780 of 2000 simulated interferogram pairs.
+Generated 1790 of 2000 simulated interferogram pairs.
+Generated 1800 of 2000 simulated interferogram pairs.
+Generated 1810 of 2000 simulated interferogram pairs.
+Generated 1820 of 2000 simulated interferogram pairs.
+Generated 1830 of 2000 simulated interferogram pairs.
+Generated 1840 of 2000 simulated interferogram pairs.
+Generated 1850 of 2000 simulated interferogram pairs.
+Generated 1860 of 2000 simulated interferogram pairs.
+Generated 1870 of 2000 simulated interferogram pairs.
+Generated 1880 of 2000 simulated interferogram pairs.
+Generated 1890 of 2000 simulated interferogram pairs.
+Generated 1900 of 2000 simulated interferogram pairs.
+Generated 1910 of 2000 simulated interferogram pairs.
+Generated 1920 of 2000 simulated interferogram pairs.
+Generated 1930 of 2000 simulated interferogram pairs.
+Generated 1940 of 2000 simulated interferogram pairs.
+Generated 1950 of 2000 simulated interferogram pairs.
+Generated 1960 of 2000 simulated interferogram pairs.
+Generated 1970 of 2000 simulated interferogram pairs.
+Generated 1980 of 2000 simulated interferogram pairs.
+Generated 1990 of 2000 simulated interferogram pairs.
+Generated 2000 of 2000 simulated interferogram pairs.
+
+Dataset Path:      /home/andrew/repos/AI-Event-Monitoring/data/working/synthetic/mask_model_dataset_amount2000_seed512283
+Train Amount:      1602
+Validation Amount: 398
+</pre></div></div>
+</div>
+</section>
+<section id="Train-UNet-Masking-Model">
+<h2>Train UNet Masking Model<a class="headerlink" href="#Train-UNet-Masking-Model" title="Permalink to this heading">#</a></h2>
+<p>The main model we use for masking is a form of U-Net. It is also possible to use a ResNet-like model by switching “unet” to “resnet”, but the “unet” tends to produce better results in less time. The default hyperparameters here should be sufficient for getting good results.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;mask_modelV36&quot;</span>
+<span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;unet&quot;</span>
+<span class="n">dataset_path</span> <span class="o">=</span> <span class="n">dataset_path</span>
+<span class="n">input_shape</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<span class="n">use_wandb</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">using_aws</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">using_jupyter</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">logs_dir</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+<span class="n">mask_model</span><span class="p">,</span> <span class="n">mask_history</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span>
+    <span class="n">model_name</span><span class="p">,</span>
+    <span class="n">dataset_path</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="p">,</span>
+    <span class="n">input_shape</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="p">,</span>
+    <span class="n">filters</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="p">,</span>
+    <span class="n">use_wandb</span><span class="p">,</span>
+    <span class="n">using_aws</span><span class="p">,</span>
+    <span class="n">using_jupyter</span><span class="p">,</span>
+    <span class="n">logs_dir</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Epoch 1/15
+1602/1602 [==============================] - ETA: 0s - loss: 0.0757 - mean_squared_error: 0.1515 - mean_absolute_error: 0.3034
+Epoch 1: val_loss improved from inf to 0.03571, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 65s 34ms/step - loss: 0.0757 - mean_squared_error: 0.1515 - mean_absolute_error: 0.3034 - val_loss: 0.0357 - val_mean_squared_error: 0.0714 - val_mean_absolute_error: 0.1696
+Epoch 2/15
+1602/1602 [==============================] - ETA: 0s - loss: 0.0303 - mean_squared_error: 0.0606 - mean_absolute_error: 0.1406
+Epoch 2: val_loss improved from 0.03571 to 0.02510, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 53s 33ms/step - loss: 0.0303 - mean_squared_error: 0.0606 - mean_absolute_error: 0.1406 - val_loss: 0.0251 - val_mean_squared_error: 0.0502 - val_mean_absolute_error: 0.1331
+Epoch 3/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0297 - mean_squared_error: 0.0594 - mean_absolute_error: 0.1354
+Epoch 3: val_loss improved from 0.02510 to 0.02078, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 52s 33ms/step - loss: 0.0297 - mean_squared_error: 0.0594 - mean_absolute_error: 0.1353 - val_loss: 0.0208 - val_mean_squared_error: 0.0416 - val_mean_absolute_error: 0.0879
+Epoch 4/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0213 - mean_squared_error: 0.0426 - mean_absolute_error: 0.1024
+Epoch 4: val_loss did not improve from 0.02078
+1602/1602 [==============================] - 53s 33ms/step - loss: 0.0213 - mean_squared_error: 0.0425 - mean_absolute_error: 0.1024 - val_loss: 0.0209 - val_mean_squared_error: 0.0418 - val_mean_absolute_error: 0.0930
+Epoch 5/15
+1602/1602 [==============================] - ETA: 0s - loss: 0.0173 - mean_squared_error: 0.0347 - mean_absolute_error: 0.0848
+Epoch 5: val_loss improved from 0.02078 to 0.01769, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 50s 31ms/step - loss: 0.0173 - mean_squared_error: 0.0347 - mean_absolute_error: 0.0848 - val_loss: 0.0177 - val_mean_squared_error: 0.0354 - val_mean_absolute_error: 0.0825
+Epoch 6/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0160 - mean_squared_error: 0.0320 - mean_absolute_error: 0.0778
+Epoch 6: val_loss did not improve from 0.01769
+1602/1602 [==============================] - 48s 30ms/step - loss: 0.0160 - mean_squared_error: 0.0320 - mean_absolute_error: 0.0777 - val_loss: 0.0350 - val_mean_squared_error: 0.0701 - val_mean_absolute_error: 0.1694
+Epoch 7/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0125 - mean_squared_error: 0.0251 - mean_absolute_error: 0.0639
+Epoch 7: val_loss improved from 0.01769 to 0.01671, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 50s 31ms/step - loss: 0.0125 - mean_squared_error: 0.0251 - mean_absolute_error: 0.0639 - val_loss: 0.0167 - val_mean_squared_error: 0.0334 - val_mean_absolute_error: 0.0699
+Epoch 8/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0094 - mean_squared_error: 0.0187 - mean_absolute_error: 0.0487
+Epoch 8: val_loss did not improve from 0.01671
+1602/1602 [==============================] - 49s 30ms/step - loss: 0.0094 - mean_squared_error: 0.0187 - mean_absolute_error: 0.0487 - val_loss: 0.0169 - val_mean_squared_error: 0.0339 - val_mean_absolute_error: 0.0588
+Epoch 9/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0078 - mean_squared_error: 0.0156 - mean_absolute_error: 0.0414
+Epoch 9: val_loss improved from 0.01671 to 0.01618, saving model to ./data/output/models/checkpoints/mask_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/mask_modelV36/assets
+1602/1602 [==============================] - 50s 31ms/step - loss: 0.0078 - mean_squared_error: 0.0156 - mean_absolute_error: 0.0414 - val_loss: 0.0162 - val_mean_squared_error: 0.0324 - val_mean_absolute_error: 0.0597
+Epoch 10/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0063 - mean_squared_error: 0.0125 - mean_absolute_error: 0.0335
+Epoch 10: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 49s 30ms/step - loss: 0.0063 - mean_squared_error: 0.0125 - mean_absolute_error: 0.0335 - val_loss: 0.0184 - val_mean_squared_error: 0.0367 - val_mean_absolute_error: 0.0868
+Epoch 11/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0053 - mean_squared_error: 0.0106 - mean_absolute_error: 0.0292
+Epoch 11: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 62s 39ms/step - loss: 0.0053 - mean_squared_error: 0.0106 - mean_absolute_error: 0.0292 - val_loss: 0.0171 - val_mean_squared_error: 0.0341 - val_mean_absolute_error: 0.0534
+Epoch 12/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0048 - mean_squared_error: 0.0095 - mean_absolute_error: 0.0268
+Epoch 12: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 55s 34ms/step - loss: 0.0048 - mean_squared_error: 0.0095 - mean_absolute_error: 0.0268 - val_loss: 0.0173 - val_mean_squared_error: 0.0346 - val_mean_absolute_error: 0.0518
+Epoch 13/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0044 - mean_squared_error: 0.0088 - mean_absolute_error: 0.0253
+Epoch 13: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 58s 36ms/step - loss: 0.0044 - mean_squared_error: 0.0088 - mean_absolute_error: 0.0253 - val_loss: 0.0169 - val_mean_squared_error: 0.0339 - val_mean_absolute_error: 0.0638
+Epoch 14/15
+1602/1602 [==============================] - ETA: 0s - loss: 0.0059 - mean_squared_error: 0.0118 - mean_absolute_error: 0.0297
+Epoch 14: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 55s 34ms/step - loss: 0.0059 - mean_squared_error: 0.0118 - mean_absolute_error: 0.0297 - val_loss: 0.0175 - val_mean_squared_error: 0.0350 - val_mean_absolute_error: 0.0563
+Epoch 15/15
+1601/1602 [============================&gt;.] - ETA: 0s - loss: 0.0034 - mean_squared_error: 0.0068 - mean_absolute_error: 0.0208
+Epoch 15: val_loss did not improve from 0.01618
+1602/1602 [==============================] - 55s 35ms/step - loss: 0.0034 - mean_squared_error: 0.0068 - mean_absolute_error: 0.0208 - val_loss: 0.0172 - val_mean_squared_error: 0.0345 - val_mean_absolute_error: 0.0489
+INFO:tensorflow:Assets written to: ./data/output/models/mask_modelV36/assets
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">print_model_info</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">history</span><span class="p">):</span>
+    <span class="n">losses</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span>
+    <span class="n">val_losses</span> <span class="o">=</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s2">&quot;val_loss&quot;</span><span class="p">]</span>
+
+    <span class="n">min_loss</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
+    <span class="n">min_val_loss</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">val_losses</span><span class="p">)</span>
+
+    <span class="n">min_loss_at</span> <span class="o">=</span> <span class="n">losses</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">min_loss</span><span class="p">)</span>
+    <span class="n">min_val_loss_at</span> <span class="o">=</span> <span class="n">val_losses</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">min_val_loss</span><span class="p">)</span>
+
+    <span class="n">summary_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">print_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">summary_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="p">))</span>
+    <span class="n">summary_string</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">summary_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Model Name:    </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Model Type:    </span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Minimum Training Loss:   </span><span class="si">{</span><span class="n">min_loss</span><span class="si">:</span><span class="s2"> 0.15f</span><span class="si">}</span><span class="s2"> at epoch </span><span class="si">{</span><span class="n">min_loss_at</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Minimum Validation Loss: </span><span class="si">{</span><span class="n">min_val_loss</span><span class="si">:</span><span class="s2"> 0.15f</span><span class="si">}</span><span class="s2"> at epoch </span><span class="si">{</span><span class="n">min_val_loss_at</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;All Training Losses:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">losses</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;All Validation Losses:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">val_losses</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Model Parameters from History:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">history</span><span class="o">.</span><span class="n">params</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;Model Summary:</span><span class="se">\n</span><span class="si">{</span><span class="n">summary_string</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="n">print_model_info</span><span class="p">(</span><span class="n">mask_model</span><span class="p">,</span> <span class="n">mask_history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ Model Name:    mask_modelV36
+ Model Type:    unet
+
+ Minimum Training Loss:    0.003421352710575 at epoch 14.
+ Minimum Validation Loss:  0.016181165352464 at epoch 8.
+
+ All Training Losses:
+ [0.07569071650505066, 0.030308237299323082, 0.029678167775273323, 0.021265355870127678, 0.01732829585671425, 0.015977075323462486, 0.012531604617834091, 0.009357718750834465, 0.007819187827408314, 0.006264141295105219, 0.005277558695524931, 0.004769966006278992, 0.004400080535560846, 0.005891966633498669, 0.0034213527105748653]
+
+ All Validation Losses:
+ [0.03570585325360298, 0.025097331032156944, 0.0207799281924963, 0.020895613357424736, 0.017689848318696022, 0.035025373101234436, 0.016706326976418495, 0.016934551298618317, 0.016181165352463722, 0.018362348899245262, 0.01706208847463131, 0.01730268821120262, 0.016937458887696266, 0.017519645392894745, 0.017228467389941216]
+
+ Model Parameters from History:
+ {&#39;verbose&#39;: 1, &#39;epochs&#39;: 15, &#39;steps&#39;: 1602}
+
+ Model Summary:
+ __________________________________________________________________________________________________
+  Layer (type)                   Output Shape         Param #     Connected to
+ ==================================================================================================
+  input_1 (InputLayer)           [(None, 512, 512, 1  0           []
+                                 )]
+
+  conv2d (Conv2D)                (None, 256, 256, 64  640         [&#39;input_1[0][0]&#39;]
+                                 )
+
+  conv2d_1 (Conv2D)              (None, 256, 256, 64  36928       [&#39;conv2d[0][0]&#39;]
+                                 )
+
+  dropout (Dropout)              (None, 256, 256, 64  0           [&#39;conv2d_1[0][0]&#39;]
+                                 )
+
+  conv2d_2 (Conv2D)              (None, 128, 128, 12  73856       [&#39;dropout[0][0]&#39;]
+                                 8)
+
+  conv2d_3 (Conv2D)              (None, 128, 128, 12  147584      [&#39;conv2d_2[0][0]&#39;]
+                                 8)
+
+  conv2d_4 (Conv2D)              (None, 64, 64, 256)  295168      [&#39;conv2d_3[0][0]&#39;]
+
+  conv2d_5 (Conv2D)              (None, 64, 64, 256)  590080      [&#39;conv2d_4[0][0]&#39;]
+
+  conv2d_6 (Conv2D)              (None, 32, 32, 512)  1180160     [&#39;conv2d_5[0][0]&#39;]
+
+  conv2d_7 (Conv2D)              (None, 32, 32, 512)  2359808     [&#39;conv2d_6[0][0]&#39;]
+
+  conv2d_8 (Conv2D)              (None, 16, 16, 1024  4719616     [&#39;conv2d_7[0][0]&#39;]
+                                 )
+
+  conv2d_9 (Conv2D)              (None, 16, 16, 1024  9438208     [&#39;conv2d_8[0][0]&#39;]
+                                 )
+
+  dropout_1 (Dropout)            (None, 16, 16, 1024  0           [&#39;conv2d_9[0][0]&#39;]
+                                 )
+
+  conv2d_transpose (Conv2DTransp  (None, 32, 32, 512)  2097664    [&#39;dropout_1[0][0]&#39;]
+  ose)
+
+  conv2d_10 (Conv2D)             (None, 32, 32, 512)  2359808     [&#39;conv2d_transpose[0][0]&#39;]
+
+  conv2d_11 (Conv2D)             (None, 32, 32, 512)  2359808     [&#39;conv2d_10[0][0]&#39;]
+
+  concatenate (Concatenate)      (None, 32, 32, 1024  0           [&#39;conv2d_11[0][0]&#39;,
+                                 )                                 &#39;conv2d_7[0][0]&#39;]
+
+  conv2d_transpose_1 (Conv2DTran  (None, 64, 64, 256)  1048832    [&#39;concatenate[0][0]&#39;]
+  spose)
+
+  conv2d_12 (Conv2D)             (None, 64, 64, 256)  590080      [&#39;conv2d_transpose_1[0][0]&#39;]
+
+  conv2d_13 (Conv2D)             (None, 64, 64, 256)  590080      [&#39;conv2d_12[0][0]&#39;]
+
+  concatenate_1 (Concatenate)    (None, 64, 64, 512)  0           [&#39;conv2d_13[0][0]&#39;,
+                                                                   &#39;conv2d_5[0][0]&#39;]
+
+  conv2d_transpose_2 (Conv2DTran  (None, 128, 128, 12  262272     [&#39;concatenate_1[0][0]&#39;]
+  spose)                         8)
+
+  conv2d_14 (Conv2D)             (None, 128, 128, 12  147584      [&#39;conv2d_transpose_2[0][0]&#39;]
+                                 8)
+
+  conv2d_15 (Conv2D)             (None, 128, 128, 12  147584      [&#39;conv2d_14[0][0]&#39;]
+                                 8)
+
+  concatenate_2 (Concatenate)    (None, 128, 128, 25  0           [&#39;conv2d_15[0][0]&#39;,
+                                 6)                                &#39;conv2d_3[0][0]&#39;]
+
+  conv2d_transpose_3 (Conv2DTran  (None, 256, 256, 64  65600      [&#39;concatenate_2[0][0]&#39;]
+  spose)                         )
+
+  conv2d_16 (Conv2D)             (None, 256, 256, 64  36928       [&#39;conv2d_transpose_3[0][0]&#39;]
+                                 )
+
+  conv2d_17 (Conv2D)             (None, 256, 256, 64  36928       [&#39;conv2d_16[0][0]&#39;]
+                                 )
+
+  concatenate_3 (Concatenate)    (None, 256, 256, 12  0           [&#39;conv2d_17[0][0]&#39;,
+                                 8)                                &#39;dropout[0][0]&#39;]
+
+  conv2d_transpose_4 (Conv2DTran  (None, 512, 512, 64  32832      [&#39;concatenate_3[0][0]&#39;]
+  spose)                         )
+
+  last_layer (Conv2D)            (None, 512, 512, 1)  65          [&#39;conv2d_transpose_4[0][0]&#39;]
+
+  activation (Activation)        (None, 512, 512, 1)  0           [&#39;last_layer[0][0]&#39;]
+
+ ==================================================================================================
+ Total params: 28,618,113
+ Trainable params: 28,618,113
+ Non-trainable params: 0
+ __________________________________________________________________________________________________
+
+</pre></div></div>
+</div>
+</section>
+<section id="Run-Inference-on-a-Simulated-Event-with-the-Masking-Model">
+<h2>Run Inference on a Simulated Event with the Masking Model<a class="headerlink" href="#Run-Inference-on-a-Simulated-Event-with-the-Masking-Model" title="Permalink to this heading">#</a></h2>
+<p>Now that we have a masking model, we can do a basic evaluation of our model using the simulated data. As you will see, the U-Net outputs pixel values that can range from slightly below 0 to slightly above 1. These values can be roughly thought of as a confidence in whether the pixel represents deformation from an event.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval_mask_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">event_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">noise_only</span><span class="p">,</span> <span class="n">round_mask</span><span class="p">,</span> <span class="n">zero_output</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="n">crop_size</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">noise_only</span><span class="p">:</span>
+        <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">,</span> <span class="n">presence</span> <span class="o">=</span> <span class="n">gen_simulated_deformation</span><span class="p">(</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span><span class="p">,</span> <span class="n">event_type</span><span class="o">=</span><span class="n">event_type</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">,</span> <span class="n">presence</span> <span class="o">=</span> <span class="n">gen_sim_noise</span><span class="p">(</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span>
+        <span class="p">)</span>
+
+    <span class="n">wrapped</span> <span class="o">=</span> <span class="n">wrapped</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">mask_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">wrapped</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">crop_size</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">)))</span>
+    <span class="n">wrapped</span> <span class="o">=</span> <span class="n">wrapped</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">tile_size</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">))</span>
+
+    <span class="n">mask_pred_rounded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">mask_pred</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">round_mask</span><span class="p">:</span>
+        <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.7</span>
+        <span class="n">round_up</span> <span class="o">=</span> <span class="n">mask_pred</span> <span class="o">&gt;=</span> <span class="n">tolerance</span>
+        <span class="n">round_down</span> <span class="o">=</span> <span class="n">mask_pred</span> <span class="o">&lt;</span> <span class="n">tolerance</span>
+        <span class="n">mask_pred_rounded</span><span class="p">[</span><span class="n">round_up</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">mask_pred_rounded</span><span class="p">[</span><span class="n">round_down</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">zero_output</span><span class="p">:</span>
+        <span class="n">zeros</span> <span class="o">=</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">mask</span><span class="p">[</span><span class="n">zeros</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">mask_pred_rounded</span><span class="p">[</span><span class="n">zeros</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">wrapped</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span>
+
+
+<span class="n">event_type</span> <span class="o">=</span> <span class="s2">&quot;quake&quot;</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">noise_only</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">round_mask</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">zero_output</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">wrapped</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span> <span class="o">=</span> <span class="n">eval_mask_model</span><span class="p">(</span>
+    <span class="n">mask_model</span><span class="p">,</span>
+    <span class="n">event_type</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">,</span>
+    <span class="n">noise_only</span><span class="p">,</span>
+    <span class="n">round_mask</span><span class="p">,</span>
+    <span class="n">zero_output</span><span class="p">,</span>
+    <span class="n">tile_size</span><span class="p">,</span>
+    <span class="n">crop_size</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plot_results</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_11_0.png" src="../../_images/user_notebooks_model_creation_11_0.png" />
+</div>
+</div>
+</section>
+<section id="Create-Dataset-of-Simulated-Events-with-Masks-from-the-UNet">
+<h2>Create Dataset of Simulated Events with Masks from the UNet<a class="headerlink" href="#Create-Dataset-of-Simulated-Events-with-Masks-from-the-UNet" title="Permalink to this heading">#</a></h2>
+<p>As mentioned before, it is possible to train the binary classification model on any dataset generated by make_simulated_dataset; however, each masking model may have slight quirks and imperfections which can result in worse performance when a binary model is expecting perfection. Thus, it is better to use the masking model to generate the masks for training the binary classification model. This is done by including the masking model’s path in the function arguments.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;classification_model_dataset&quot;</span>
+<span class="n">model_path</span> <span class="o">=</span> <span class="s2">&quot;data/output/models/checkpoints/&quot;</span> <span class="o">+</span> <span class="n">model_name</span>
+
+<span class="n">amount</span> <span class="o">=</span> <span class="mi">1000</span>  <span class="c1"># A size of ~1000 usually produces good results.</span>
+<span class="n">split</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="n">name</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_simulated_dataset</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">SYNTHETIC_DIR</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="n">crop_size</span><span class="p">,</span> <span class="n">model_path</span><span class="o">=</span><span class="n">model_path</span>
+<span class="p">)</span>
+
+<span class="n">dataset_path</span> <span class="o">=</span> <span class="n">SYNTHETIC_DIR</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">dir_name</span>
+
+<span class="n">num_train</span><span class="p">,</span> <span class="n">num_validation</span> <span class="o">=</span> <span class="n">split_dataset</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset Path:      </span><span class="si">{</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train Amount:      </span><span class="si">{</span><span class="n">num_train</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation Amount: </span><span class="si">{</span><span class="n">num_validation</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Generated 10 of 1000 simulated interferogram pairs.
+Generated 20 of 1000 simulated interferogram pairs.
+Generated 30 of 1000 simulated interferogram pairs.
+Generated 40 of 1000 simulated interferogram pairs.
+Generated 50 of 1000 simulated interferogram pairs.
+Generated 60 of 1000 simulated interferogram pairs.
+Generated 70 of 1000 simulated interferogram pairs.
+Generated 80 of 1000 simulated interferogram pairs.
+Generated 90 of 1000 simulated interferogram pairs.
+Generated 100 of 1000 simulated interferogram pairs.
+Generated 110 of 1000 simulated interferogram pairs.
+Generated 120 of 1000 simulated interferogram pairs.
+Generated 130 of 1000 simulated interferogram pairs.
+Generated 140 of 1000 simulated interferogram pairs.
+Generated 150 of 1000 simulated interferogram pairs.
+Generated 160 of 1000 simulated interferogram pairs.
+Generated 170 of 1000 simulated interferogram pairs.
+Generated 180 of 1000 simulated interferogram pairs.
+Generated 190 of 1000 simulated interferogram pairs.
+Generated 200 of 1000 simulated interferogram pairs.
+Generated 210 of 1000 simulated interferogram pairs.
+Generated 220 of 1000 simulated interferogram pairs.
+Generated 230 of 1000 simulated interferogram pairs.
+Generated 240 of 1000 simulated interferogram pairs.
+Generated 250 of 1000 simulated interferogram pairs.
+Generated 260 of 1000 simulated interferogram pairs.
+Generated 270 of 1000 simulated interferogram pairs.
+Generated 280 of 1000 simulated interferogram pairs.
+Generated 290 of 1000 simulated interferogram pairs.
+Generated 300 of 1000 simulated interferogram pairs.
+Generated 310 of 1000 simulated interferogram pairs.
+Generated 320 of 1000 simulated interferogram pairs.
+Generated 330 of 1000 simulated interferogram pairs.
+Generated 340 of 1000 simulated interferogram pairs.
+Generated 350 of 1000 simulated interferogram pairs.
+Generated 360 of 1000 simulated interferogram pairs.
+Generated 370 of 1000 simulated interferogram pairs.
+Generated 380 of 1000 simulated interferogram pairs.
+Generated 390 of 1000 simulated interferogram pairs.
+Generated 400 of 1000 simulated interferogram pairs.
+Generated 410 of 1000 simulated interferogram pairs.
+Generated 420 of 1000 simulated interferogram pairs.
+Generated 430 of 1000 simulated interferogram pairs.
+Generated 440 of 1000 simulated interferogram pairs.
+Generated 450 of 1000 simulated interferogram pairs.
+Generated 460 of 1000 simulated interferogram pairs.
+Generated 470 of 1000 simulated interferogram pairs.
+Generated 480 of 1000 simulated interferogram pairs.
+Generated 490 of 1000 simulated interferogram pairs.
+Generated 500 of 1000 simulated interferogram pairs.
+Generated 510 of 1000 simulated interferogram pairs.
+Generated 520 of 1000 simulated interferogram pairs.
+Generated 530 of 1000 simulated interferogram pairs.
+Generated 540 of 1000 simulated interferogram pairs.
+Generated 550 of 1000 simulated interferogram pairs.
+Generated 560 of 1000 simulated interferogram pairs.
+Generated 570 of 1000 simulated interferogram pairs.
+Generated 580 of 1000 simulated interferogram pairs.
+Generated 590 of 1000 simulated interferogram pairs.
+Generated 600 of 1000 simulated interferogram pairs.
+Generated 610 of 1000 simulated interferogram pairs.
+Generated 620 of 1000 simulated interferogram pairs.
+Generated 630 of 1000 simulated interferogram pairs.
+Generated 640 of 1000 simulated interferogram pairs.
+Generated 650 of 1000 simulated interferogram pairs.
+Generated 660 of 1000 simulated interferogram pairs.
+Generated 670 of 1000 simulated interferogram pairs.
+Generated 680 of 1000 simulated interferogram pairs.
+Generated 690 of 1000 simulated interferogram pairs.
+Generated 700 of 1000 simulated interferogram pairs.
+Generated 710 of 1000 simulated interferogram pairs.
+Generated 720 of 1000 simulated interferogram pairs.
+Generated 730 of 1000 simulated interferogram pairs.
+Generated 740 of 1000 simulated interferogram pairs.
+Generated 750 of 1000 simulated interferogram pairs.
+Generated 760 of 1000 simulated interferogram pairs.
+Generated 770 of 1000 simulated interferogram pairs.
+Generated 780 of 1000 simulated interferogram pairs.
+Generated 790 of 1000 simulated interferogram pairs.
+Generated 800 of 1000 simulated interferogram pairs.
+Generated 810 of 1000 simulated interferogram pairs.
+Generated 820 of 1000 simulated interferogram pairs.
+Generated 830 of 1000 simulated interferogram pairs.
+Generated 840 of 1000 simulated interferogram pairs.
+Generated 850 of 1000 simulated interferogram pairs.
+Generated 860 of 1000 simulated interferogram pairs.
+Generated 870 of 1000 simulated interferogram pairs.
+Generated 880 of 1000 simulated interferogram pairs.
+Generated 890 of 1000 simulated interferogram pairs.
+Generated 900 of 1000 simulated interferogram pairs.
+Generated 910 of 1000 simulated interferogram pairs.
+Generated 920 of 1000 simulated interferogram pairs.
+Generated 930 of 1000 simulated interferogram pairs.
+Generated 940 of 1000 simulated interferogram pairs.
+Generated 950 of 1000 simulated interferogram pairs.
+Generated 960 of 1000 simulated interferogram pairs.
+Generated 970 of 1000 simulated interferogram pairs.
+Generated 980 of 1000 simulated interferogram pairs.
+Generated 990 of 1000 simulated interferogram pairs.
+Generated 1000 of 1000 simulated interferogram pairs.
+
+Dataset Path:      /home/andrew/repos/AI-Event-Monitoring/data/working/synthetic/classification_model_dataset_amount1000_seed890963
+Train Amount:      896
+Validation Amount: 104
+</pre></div></div>
+</div>
+</section>
+<section id="Train-the-Binary-Classification-Model">
+<h2>Train the Binary Classification Model<a class="headerlink" href="#Train-the-Binary-Classification-Model" title="Permalink to this heading">#</a></h2>
+<p>Finally, we can train the binary classification model. This model is simple, being made up of only a couple convolutional layers and a dense layer, so it trains very fast. The default hyperparameters here should be sufficient for achieving satisfactory results.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_name_bin</span> <span class="o">=</span> <span class="s2">&quot;classification_modelV36&quot;</span>
+<span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;eventnet&quot;</span>
+<span class="n">dataset_path</span> <span class="o">=</span> <span class="n">dataset_path</span>
+<span class="n">input_shape</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="mf">5e-3</span>
+<span class="n">use_wandb</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">using_aws</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">using_jupyter</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">logs_dir</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+<span class="n">binary_model</span><span class="p">,</span> <span class="n">binary_history</span> <span class="o">=</span> <span class="n">train</span><span class="p">(</span>
+    <span class="n">model_name_bin</span><span class="p">,</span>
+    <span class="n">dataset_path</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="p">,</span>
+    <span class="n">input_shape</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="p">,</span>
+    <span class="n">filters</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="p">,</span>
+    <span class="n">use_wandb</span><span class="p">,</span>
+    <span class="n">using_aws</span><span class="p">,</span>
+    <span class="n">using_jupyter</span><span class="p">,</span>
+    <span class="n">logs_dir</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Epoch 1/5
+893/896 [============================&gt;.] - ETA: 0s - loss: 0.1261 - acc: 0.8365 - mean_absolute_error: 0.2982
+Epoch 1: val_loss improved from inf to 0.08135, saving model to ./data/output/models/checkpoints/classification_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/classification_modelV36/assets
+896/896 [==============================] - 9s 9ms/step - loss: 0.1257 - acc: 0.8371 - mean_absolute_error: 0.2973 - val_loss: 0.0814 - val_acc: 1.0000 - val_mean_absolute_error: 0.2092
+Epoch 2/5
+890/896 [============================&gt;.] - ETA: 0s - loss: 0.0603 - acc: 1.0000 - mean_absolute_error: 0.1729
+Epoch 2: val_loss improved from 0.08135 to 0.05094, saving model to ./data/output/models/checkpoints/classification_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/classification_modelV36/assets
+896/896 [==============================] - 7s 8ms/step - loss: 0.0600 - acc: 1.0000 - mean_absolute_error: 0.1723 - val_loss: 0.0509 - val_acc: 1.0000 - val_mean_absolute_error: 0.1589
+Epoch 3/5
+894/896 [============================&gt;.] - ETA: 0s - loss: 0.0388 - acc: 1.0000 - mean_absolute_error: 0.1351
+Epoch 3: val_loss improved from 0.05094 to 0.03424, saving model to ./data/output/models/checkpoints/classification_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/classification_modelV36/assets
+896/896 [==============================] - 7s 8ms/step - loss: 0.0388 - acc: 1.0000 - mean_absolute_error: 0.1351 - val_loss: 0.0342 - val_acc: 1.0000 - val_mean_absolute_error: 0.1279
+Epoch 4/5
+895/896 [============================&gt;.] - ETA: 0s - loss: 0.0270 - acc: 1.0000 - mean_absolute_error: 0.1107
+Epoch 4: val_loss improved from 0.03424 to 0.02464, saving model to ./data/output/models/checkpoints/classification_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/classification_modelV36/assets
+896/896 [==============================] - 7s 8ms/step - loss: 0.0270 - acc: 1.0000 - mean_absolute_error: 0.1109 - val_loss: 0.0246 - val_acc: 1.0000 - val_mean_absolute_error: 0.1075
+Epoch 5/5
+893/896 [============================&gt;.] - ETA: 0s - loss: 0.0199 - acc: 1.0000 - mean_absolute_error: 0.0945
+Epoch 5: val_loss improved from 0.02464 to 0.01866, saving model to ./data/output/models/checkpoints/classification_modelV36
+INFO:tensorflow:Assets written to: ./data/output/models/checkpoints/classification_modelV36/assets
+896/896 [==============================] - 6s 7ms/step - loss: 0.0199 - acc: 1.0000 - mean_absolute_error: 0.0944 - val_loss: 0.0187 - val_acc: 1.0000 - val_mean_absolute_error: 0.0928
+INFO:tensorflow:Assets written to: ./data/output/models/classification_modelV36/assets
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">print_model_info</span><span class="p">(</span><span class="n">binary_model</span><span class="p">,</span> <span class="n">binary_history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+ Model Name:    mask_modelV36
+ Model Type:    eventnet
+
+ Minimum Training Loss:    0.019914656877518 at epoch 4.
+ Minimum Validation Loss:  0.018656941130757 at epoch 4.
+
+ All Training Losses:
+ [0.1256965696811676, 0.05998332425951958, 0.038810163736343384, 0.026984436437487602, 0.0199146568775177]
+
+ All Validation Losses:
+ [0.08135028183460236, 0.050937019288539886, 0.03424043580889702, 0.024643391370773315, 0.018656941130757332]
+
+ Model Parameters from History:
+ {&#39;verbose&#39;: 1, &#39;epochs&#39;: 5, &#39;steps&#39;: 896}
+
+ Model Summary:
+ _________________________________________________________________
+  Layer (type)                Output Shape              Param #
+ =================================================================
+  input_2 (InputLayer)        [(None, 512, 512, 1)]     0
+
+  conv2d_18 (Conv2D)          (None, 256, 256, 64)      3200
+
+  leaky_re_lu (LeakyReLU)     (None, 256, 256, 64)      0
+
+  conv2d_19 (Conv2D)          (None, 128, 128, 64)      36928
+
+  leaky_re_lu_1 (LeakyReLU)   (None, 128, 128, 64)      0
+
+  conv2d_20 (Conv2D)          (None, 128, 128, 1)       65
+
+  leaky_re_lu_2 (LeakyReLU)   (None, 128, 128, 1)       0
+
+  global_average_pooling2d (G  (None, 1, 1, 1)          0
+  lobalAveragePooling2D)
+
+  dense (Dense)               (None, 1, 1, 1)           2
+
+ =================================================================
+ Total params: 40,195
+ Trainable params: 40,195
+ Non-trainable params: 0
+ _________________________________________________________________
+
+</pre></div></div>
+</div>
+</section>
+<section id="Run-Inference-on-a-Simulated-Event-with-the-Binary-Classification-Model">
+<h2>Run Inference on a Simulated Event with the Binary Classification Model<a class="headerlink" href="#Run-Inference-on-a-Simulated-Event-with-the-Binary-Classification-Model" title="Permalink to this heading">#</a></h2>
+<p>Just like before, a great way to get a basic evaulation of this model is to use simulated events. However, this time we need to remember to get the mask from the masking model, rather than from gen_simulated_deformation or gen_sim_noise.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eval_binary_model</span><span class="p">(</span>
+    <span class="n">mask_model</span><span class="p">,</span>
+    <span class="n">binary_model</span><span class="p">,</span>
+    <span class="n">event_type</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">,</span>
+    <span class="n">noise_only</span><span class="p">,</span>
+    <span class="n">round_mask</span><span class="p">,</span>
+    <span class="n">zero_output</span><span class="p">,</span>
+    <span class="n">tile_size</span><span class="p">,</span>
+    <span class="n">crop_size</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">wrapped</span><span class="p">,</span> <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span> <span class="o">=</span> <span class="n">eval_mask_model</span><span class="p">(</span>
+        <span class="n">mask_model</span><span class="p">,</span>
+        <span class="n">event_type</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">,</span>
+        <span class="n">noise_only</span><span class="p">,</span>
+        <span class="n">round_mask</span><span class="p">,</span>
+        <span class="n">zero_output</span><span class="p">,</span>
+        <span class="n">tile_size</span><span class="p">,</span>
+        <span class="n">crop_size</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">presence_pred</span> <span class="o">=</span> <span class="n">binary_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+        <span class="n">mask_pred_rounded</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="n">tile_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped</span><span class="p">,</span> <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span><span class="p">,</span> <span class="n">presence_pred</span>
+
+
+<span class="n">event_type</span> <span class="o">=</span> <span class="s2">&quot;quake&quot;</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">noise_only</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">round_mask</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">zero_output</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">wrapped</span><span class="p">,</span> <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span><span class="p">,</span> <span class="n">presence_pred</span> <span class="o">=</span> <span class="n">eval_binary_model</span><span class="p">(</span>
+    <span class="n">mask_model</span><span class="p">,</span>
+    <span class="n">binary_model</span><span class="p">,</span>
+    <span class="n">event_type</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">,</span>
+    <span class="n">noise_only</span><span class="p">,</span>
+    <span class="n">round_mask</span><span class="p">,</span>
+    <span class="n">zero_output</span><span class="p">,</span>
+    <span class="n">tile_size</span><span class="p">,</span>
+    <span class="n">crop_size</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plot_results</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">unwrapped</span><span class="p">,</span> <span class="n">mask_pred</span><span class="p">,</span> <span class="n">mask_pred_rounded</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Event Prediction: </span><span class="si">{</span><span class="n">presence_pred</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_18_0.png" src="../../_images/user_notebooks_model_creation_18_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Event Prediction: [[[0.9688]]]
+</pre></div></div>
+</div>
+</section>
+<section id="Run-Inference-on-a-Real-Interferogram">
+<h2>Run Inference on a Real Interferogram<a class="headerlink" href="#Run-Inference-on-a-Real-Interferogram" title="Permalink to this heading">#</a></h2>
+<p>Finally, now that we have working masking and classification models, we can generate a mask and a presence prediction for a real interferogram.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">insar_eventnet.inference</span> <span class="kn">import</span> <span class="n">mask_with_model</span>
+<span class="kn">from</span> <span class="nn">insar_eventnet.io</span> <span class="kn">import</span> <span class="n">get_image_array</span>
+
+<span class="n">image_path</span> <span class="o">=</span> <span class="s2">&quot;tests/test_image.tif&quot;</span>
+<span class="n">wrapped</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_image_array</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
+
+<span class="n">mask</span><span class="p">,</span> <span class="n">presence_mask</span><span class="p">,</span> <span class="n">presence_values</span> <span class="o">=</span> <span class="n">mask_with_model</span><span class="p">(</span>
+    <span class="n">mask_model</span><span class="o">=</span><span class="n">mask_model</span><span class="p">,</span>
+    <span class="n">pres_model</span><span class="o">=</span><span class="n">binary_model</span><span class="p">,</span>
+    <span class="n">arr_w</span><span class="o">=</span><span class="n">wrapped</span><span class="p">,</span>
+    <span class="n">tile_size</span><span class="o">=</span><span class="n">tile_size</span><span class="p">,</span>
+    <span class="n">crop_size</span><span class="o">=</span><span class="n">crop_size</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="p">[</span><span class="n">axs_wrapped</span><span class="p">,</span> <span class="n">axs_mask</span><span class="p">,</span> <span class="n">axs_presence_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="n">axs_wrapped</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_mask</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+<span class="n">axs_presence_mask</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">presence_mask</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;jet&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.image.AxesImage at 0x7f47007cf9d0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/user_notebooks_model_creation_21_1.png" src="../../_images/user_notebooks_model_creation_21_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../../api/modules.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">insar_eventnet</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="generate_masks_time_series.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Generate Masks for Time Series Data</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, BSD 3-Clause License
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">EventNet Creation</a><ul>
+<li><a class="reference internal" href="#Imports">Imports</a></li>
+<li><a class="reference internal" href="#Simulated-Events">Simulated Events</a></li>
+<li><a class="reference internal" href="#Create-Dataset-of-Simulated-Events">Create Dataset of Simulated Events</a></li>
+<li><a class="reference internal" href="#Train-UNet-Masking-Model">Train UNet Masking Model</a></li>
+<li><a class="reference internal" href="#Run-Inference-on-a-Simulated-Event-with-the-Masking-Model">Run Inference on a Simulated Event with the Masking Model</a></li>
+<li><a class="reference internal" href="#Create-Dataset-of-Simulated-Events-with-Masks-from-the-UNet">Create Dataset of Simulated Events with Masks from the UNet</a></li>
+<li><a class="reference internal" href="#Train-the-Binary-Classification-Model">Train the Binary Classification Model</a></li>
+<li><a class="reference internal" href="#Run-Inference-on-a-Simulated-Event-with-the-Binary-Classification-Model">Run Inference on a Simulated Event with the Binary Classification Model</a></li>
+<li><a class="reference internal" href="#Run-Inference-on-a-Real-Interferogram">Run Inference on a Real Interferogram</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=b3ba4146"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>
